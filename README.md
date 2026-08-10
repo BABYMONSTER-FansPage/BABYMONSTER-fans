@@ -30,7 +30,8 @@ npm run build
    - `supabase/migrations/202608100001_monstiez_community.sql`
    - `supabase/migrations/202608100002_site_content_cms.sql`
    - `supabase/migrations/202608100003_inline_editing_content.sql`
-3. 部署 `supabase/functions/translate-comment`。
+   - `supabase/migrations/202608100004_profile_nickname_policy.sql`
+3. 部署 `supabase/functions/translate-comment`。若要自動抓 Spotify 最新專輯／單曲，也部署 `supabase/functions/spotify-releases`。
 4. 在 Supabase Auth 的 URL Configuration 設定：
    - Site URL：`https://babymonster.fans`
    - Redirect URL：`https://babymonster.fans/**`
@@ -54,6 +55,15 @@ TRANSLATION_API_KEY
 ```
 
 可使用自架 LibreTranslate。未設定時留言仍正常顯示原文。
+
+Spotify 自動更新專輯／單曲需要 Supabase Edge Function，不能把 Spotify Client Secret 放到 GitHub Pages 前端。請在 Supabase secrets 設定：
+
+```text
+SPOTIFY_CLIENT_ID
+SPOTIFY_CLIENT_SECRET
+```
+
+部署後，網站會呼叫 `spotify-releases` 取得 BABYMONSTER 官方 Spotify metadata，專輯圖使用 Spotify 回傳的圖片 URL，不下載進 repo。
 
 ## GitHub Pages
 

@@ -9,9 +9,9 @@ import {
 import { getInitialLocale, localeLabels, messages, supportedLocales, type Locale } from "./i18n";
 import {
   createFanPost, currentFanUser, deleteFanPost, editFanPost, emailAuth, listFanPosts,
-  listAnnouncements, loadSiteContent, moderateFanPost, observeFanUser, reportFanPost,
+  fetchSpotifyReleases, listAnnouncements, loadSiteContent, moderateFanPost, observeFanUser, reportFanPost,
   saveSiteContent, signOutFan, socialAuth, toggleFanLike, translateFanPost, updateFanNickname,
-  type EditableEvent, type FanPost as ApiPost, type FanUser as User, type SiteContent,
+  type EditableEvent, type FanPost as ApiPost, type FanUser as User, type SiteContent, type SpotifyRelease,
 } from "./lib/supabase-browser";
 
 // ─────────────────────────────────────────────
@@ -484,6 +484,7 @@ function AboutSection({ locale, content }: { locale: Locale; content: SiteConten
   const ref = useRef<HTMLElement>(null);
   const isInView = useInView(ref, { once: true, amount: 0.15 });
   const t = messages[locale];
+  const [detailOpen, setDetailOpen] = useState(false);
 
   return (
     <section ref={ref} className="py-32 md:py-44 bg-black relative overflow-hidden">
@@ -562,9 +563,11 @@ function AboutSection({ locale, content }: { locale: Locale; content: SiteConten
                 </div>
               ))}
             </motion.div>
+            <button onClick={() => setDetailOpen(true)} className="mt-8 text-red-400/80 hover:text-red-300 text-xs tracking-[0.25em] uppercase">詳細介紹</button>
           </div>
         </div>
       </div>
+      {detailOpen && <DetailModal title="BABYMONSTER" textKey="groupDetail" fallback="" onClose={() => setDetailOpen(false)} />}
     </section>
   );
 }
@@ -583,6 +586,7 @@ function MemberSpotlight({ member, index, photoUrl }: { member: typeof MEMBERS[0
   const copyY = useTransform(scrollYProgress, [0, 0.3, 0.7, 1], [110, 0, 0, -90]);
   const copyOpacity = useTransform(scrollYProgress, [0, 0.2, 0.82, 1], [0, 1, 1, 0]);
   const progressX = useTransform(scrollYProgress, [0.12, 0.88], [0, 1]);
+  const [detailOpen, setDetailOpen] = useState(false);
 
   return (
     <div ref={ref} className="cinematic-member min-h-[145vh] md:min-h-[175vh] relative overflow-clip border-t border-white/5">
@@ -678,10 +682,12 @@ function MemberSpotlight({ member, index, photoUrl }: { member: typeof MEMBERS[0
               className="text-white/55 leading-relaxed text-sm md:text-base mb-8">
               <EditableText k={`member.${member.id}.bio`} fallback="" />
             </motion.p>
+            <button onClick={() => setDetailOpen(true)} className="text-red-400/80 hover:text-red-300 text-xs tracking-[0.25em] uppercase">詳細介紹</button>
 
           </motion.div>
         </div>
       </div>
+      {detailOpen && <DetailModal title={member.name} textKey={`member.${member.id}.detail`} fallback="" onClose={() => setDetailOpen(false)} />}
     </div>
   );
 }
@@ -730,7 +736,7 @@ function MembersSection({ locale, content }: { locale: Locale; content: SiteCont
 // ALBUM CARD
 // ─────────────────────────────────────────────
 
-function AlbumCard({ album, index, isVisible, locale }: { album: typeof ALBUMS[0]; index: number; isVisible: boolean; locale: Locale }) {
+function AlbumCard({ album, index, isVisible, locale }: { album: SpotifyRelease; index: number; isVisible: boolean; locale: Locale }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -741,12 +747,8 @@ function AlbumCard({ album, index, isVisible, locale }: { album: typeof ALBUMS[0
       className="group cursor-pointer"
       onClick={() => setExpanded(!expanded)}>
       <div className="relative aspect-square overflow-hidden rounded-sm mb-5 bg-neutral-900">
-        <img
-          src={`https://images.unsplash.com/${album.photo}?w=600&h=600&fit=crop&auto=format`}
-          alt={album.title}
-          className="w-full h-full object-cover transition-all duration-[1200ms] group-hover:scale-105"
-          style={{ filter: "grayscale(20%) contrast(1.12) brightness(0.72)" }}
-        />
+        {album.imageUrl && <img src={album.imageUrl} alt={album.title} className="w-full h-full object-cover transition-all duration-[1200ms] group-hover:scale-105" style={{ filter: "contrast(1.08) brightness(0.78)" }} />}
+        {!album.imageUrl && <div className="w-full h-full grid place-items-center text-white/20 text-xs tracking-[0.25em] uppercase">Spotify image</div>}
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
         <div className="absolute inset-0 border border-transparent group-hover:border-red-600/40 transition-colors duration-300 rounded-sm" />
 
@@ -786,10 +788,17 @@ function AlbumCard({ album, index, isVisible, locale }: { album: typeof ALBUMS[0
   );
 }
 
-function MusicSection({ locale }: { locale: Locale }) {
+function MusicSection({ locale, content }: { locale: Locale; content: SiteContent }) {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, amount: 0.15 });
   const t = messages[locale];
+  const [spotifyAlbums, setSpotifyAlbums] = useState<SpotifyRelease[]>([]);
+  const albums = Array.isArray(content.albums) && content.albums.length ? content.albums : spotifyAlbums;
+
+  useEffect(() => {
+    if (Array.isArray(content.albums) && content.albums.length) return;
+    void fetchSpotifyReleases().then(setSpotifyAlbums).catch(() => setSpotifyAlbums([]));
+  }, [content.albums]);
 
   return (
     <section id="music" className="bg-black py-24 md:py-44 border-t border-white/5">
@@ -809,9 +818,9 @@ function MusicSection({ locale }: { locale: Locale }) {
           </div>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8">
-          {ALBUMS.map((a, i) => <AlbumCard key={a.id} album={a} index={i} isVisible={isInView} locale={locale} />)}
-        </div>
+        {albums.length > 0 && <div className="grid md:grid-cols-3 gap-8">
+          {albums.map((a, i) => <AlbumCard key={a.id || a.title} album={a} index={i} isVisible={isInView} locale={locale} />)}
+        </div>}
 
         <div className="grid md:grid-cols-[1.4fr_.6fr] gap-8 mt-16">
           <div className="border border-white/8 rounded-sm p-3" style={{ background: "rgba(255,255,255,0.018)" }}>
@@ -1022,6 +1031,7 @@ function CommunitySection({ user, locale, onLogin }: { user: User | null; locale
   const isInView = useInView(ref, { once: true, amount: 0.12 });
   const [posts, setPosts] = useState<ApiPost[]>(EMPTY_POSTS);
   const [body, setBody] = useState("");
+  const [allOpen, setAllOpen] = useState(false);
   const t = messages[locale];
 
   const refresh = useCallback(() => {
@@ -1091,12 +1101,33 @@ function CommunitySection({ user, locale, onLogin }: { user: User | null; locale
         </motion.div>
 
         {/* Posts */}
+        <div className="mb-5 flex justify-end">
+          <button onClick={() => setAllOpen(true)} className="text-red-400/80 hover:text-red-300 text-xs tracking-[0.25em] uppercase">查看全部留言</button>
+        </div>
         <div className="space-y-4">
           {posts.map((p, i) => <PostCard key={p.id} post={p} index={i} onLike={handleLike} onRefresh={refresh} user={user} locale={locale} />)}
         </div>
       </div>
+      {allOpen && <AllPostsModal posts={posts} onLike={handleLike} onRefresh={refresh} user={user} locale={locale} onClose={() => setAllOpen(false)} />}
     </section>
   );
+}
+
+function AllPostsModal({ posts, onLike, onRefresh, user, locale, onClose }: {
+  posts: ApiPost[]; onLike: (post: ApiPost) => void; onRefresh: () => void; user: User | null; locale: Locale; onClose: () => void;
+}) {
+  return <div className="fixed inset-0 z-[112] bg-black/90 grid place-items-center p-4" role="dialog" aria-modal="true" aria-label="All MONSTIEZ posts">
+    <div className="w-full max-w-4xl max-h-[90vh] overflow-auto bg-[#090909] border border-white/15 p-6 shadow-2xl">
+      <div className="flex items-start justify-between gap-5 mb-6">
+        <h2 className="text-white font-black text-5xl leading-none" style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>MONSTIEZ BOARD</h2>
+        <button onClick={onClose} className="text-white/50 hover:text-white text-2xl" aria-label="Close">×</button>
+      </div>
+      <div className="space-y-4">
+        {posts.map((post, index) => <PostCard key={post.id} post={post} index={index} onLike={onLike} onRefresh={onRefresh} user={user} locale={locale} />)}
+        {!posts.length && <p className="text-white/35 text-sm">目前還沒有留言。</p>}
+      </div>
+    </div>
+  </div>;
 }
 
 function FanVoices({ locale, user }: { locale: Locale; user: User | null }) {
@@ -1131,6 +1162,18 @@ function LegalModal({ title, body, onClose }: { title: string; body: string; onC
         <button onClick={onClose} className="text-white/50 hover:text-white text-2xl" aria-label="Close">×</button>
       </div>
       <div className="whitespace-pre-wrap text-white/58 text-sm leading-7">{body}</div>
+    </div>
+  </div>;
+}
+
+function DetailModal({ title, textKey, fallback, onClose }: { title: string; textKey: string; fallback?: string; onClose: () => void }) {
+  return <div className="fixed inset-0 z-[115] bg-black/88 grid place-items-center p-5" role="dialog" aria-modal="true" aria-label={title}>
+    <div className="w-full max-w-3xl max-h-[86vh] overflow-auto bg-[#090909] border border-white/15 p-7 shadow-2xl">
+      <div className="flex items-start justify-between gap-5 mb-6">
+        <h2 className="text-white font-black text-5xl leading-none" style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>{title}</h2>
+        <button onClick={onClose} className="text-white/50 hover:text-white text-2xl" aria-label="Close">×</button>
+      </div>
+      <EditableText k={textKey} fallback={fallback || ""} as="p" className="whitespace-pre-wrap text-white/58 text-sm leading-7" />
     </div>
   </div>;
 }
@@ -1622,7 +1665,7 @@ export default function App() {
       <Hero playing={playing} onToggle={toggle} locale={locale} content={siteContent} />
       <AboutSection locale={locale} content={siteContent} />
       <MembersSection locale={locale} content={siteContent} />
-      <MusicSection locale={locale} />
+      <MusicSection locale={locale} content={siteContent} />
       <EventsSection locale={locale} content={siteContent} />
       <CustomSections sections={siteContent.customSections || []} />
       <CommunitySection user={user} locale={locale} onLogin={() => setAuthOpen(true)} />

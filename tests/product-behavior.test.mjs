@@ -16,9 +16,13 @@ test("translation failure always falls back to original", async () => {
 
 test("role permissions are enforced by Supabase RLS", async () => {
   const { readFile } = await import("node:fs/promises");
-  const sql = await readFile(new URL("../supabase/migrations/202608100001_monstiez_community.sql", import.meta.url), "utf8");
+  const [sql, nicknamePolicy] = await Promise.all([
+    readFile(new URL("../supabase/migrations/202608100001_monstiez_community.sql", import.meta.url), "utf8"),
+    readFile(new URL("../supabase/migrations/202608100004_profile_nickname_policy.sql", import.meta.url), "utf8"),
+  ]);
   assert.match(sql, /alter table public\.posts enable row level security/i);
   assert.match(sql, /user_id = auth\.uid\(\) or public\.is_admin\(\)/i);
   assert.match(sql, /role public\.fan_role not null default 'monstiez'/i);
   assert.doesNotMatch(sql, /service_role.*grant/i);
+  assert.match(nicknamePolicy, /grant update \(nickname\) on public\.profiles to authenticated/i);
 });

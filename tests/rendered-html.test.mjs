@@ -29,6 +29,8 @@ test("bundles six static languages and translates fan posts only", async () => {
   assert.match(i18n, /\bth:/); assert.match(i18n, /\ben:/); assert.match(i18n, /\bko:/); assert.match(i18n, /\bja:/);
   assert.match(page, /InlineEditContext/);
   assert.match(page, /customSections/);
+  assert.match(page, /fetchSpotifyReleases/);
+  assert.match(page, /AllPostsModal/);
   assert.match(page, /updateFanNickname/);
   assert.match(page, /useScroll/); assert.match(page, /useTransform/);
   assert.match(client, /translateFanPost/); assert.match(client, /functions\.invoke\("translate-comment"/);

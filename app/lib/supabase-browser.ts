@@ -10,6 +10,9 @@ export type EditableEvent = {
   title: string; sub: string; dates: string; locations: string; type: string;
   status: "upcoming" | "past"; desc: string;
 };
+export type SpotifyRelease = {
+  id: string; title: string; year: string; type: string; releaseDate?: string; imageUrl?: string; spotifyUrl?: string; tracks: string[];
+};
 export type SiteContent = {
   siteName?: string;
   siteTagline?: string;
@@ -27,6 +30,7 @@ export type SiteContent = {
   privacy?: string;
   uiText?: Record<string, string>;
   customSections?: Array<{ id: string; title?: string; body?: string; imageUrl?: string; kind: "text" | "image" | "mixed" }>;
+  albums?: SpotifyRelease[];
 };
 
 let browserClient: SupabaseClient | null | undefined;
@@ -212,6 +216,14 @@ export async function translateFanPost(postId: number, target: string, original:
   const { data, error } = await client.functions.invoke("translate-comment", { body: { postId, target } });
   if (error) return original;
   return String(data?.text || original);
+}
+
+export async function fetchSpotifyReleases(): Promise<SpotifyRelease[]> {
+  const client = supabaseClient();
+  if (!client) return [];
+  const { data, error } = await client.functions.invoke("spotify-releases");
+  if (error) return [];
+  return Array.isArray(data?.releases) ? data.releases : [];
 }
 
 export async function listAnnouncements(locale: string) {
