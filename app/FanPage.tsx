@@ -178,16 +178,16 @@ function EditPencil({ onClick, label }: { onClick: () => void; label: string }) 
     aria-label={label}>✎</button>;
 }
 
-function EditableText({ k, fallback = "", as = "span", className, children }: {
+function EditableText({ k, fallback = "", as = "span", className, style, children }: {
   k: string; fallback?: string; as?: "span" | "p" | "h1" | "h2" | "h3" | "div";
-  className?: string; children?: ReactNode;
+  className?: string; style?: CSSProperties; children?: ReactNode;
 }) {
   const editor = useContext(InlineEditContext);
   const Tag = as;
   const value = editor.text(k, fallback);
   const visible = value || (editor.editing ? "點鉛筆新增文字" : "");
   if (!visible && !children) return null;
-  return <Tag className={className}>
+  return <Tag className={className} style={style}>
     {children ?? visible}
     {editor.editing && <EditPencil label={`Edit ${k}`} onClick={() => {
       const next = window.prompt("編輯文字", value);
@@ -472,6 +472,42 @@ function Hero({ playing, onToggle, locale, content }: { playing: boolean; onTogg
           <ChevronDown size={15} className="text-white/25" />
         </motion.div>
       </motion.div>
+    </section>
+  );
+}
+
+function AppPurposeSection() {
+  return (
+    <section id="purpose" className="bg-black border-t border-white/5 py-16 md:py-20">
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="grid md:grid-cols-[0.7fr_1.3fr] gap-8 md:gap-16 items-start border border-white/8 p-6 md:p-8 bg-white/[0.018]">
+          <div>
+            <p className="text-red-400 text-xs tracking-[0.35em] uppercase mb-3">APP PURPOSE</p>
+            <EditableText
+              k="appPurposeTitle"
+              fallback="MONSTIEZ GLOBAL 是什麼？"
+              as="h2"
+              className="text-white font-black text-4xl md:text-5xl leading-none"
+              style={{ fontFamily: "'Barlow Condensed', sans-serif" }} />
+          </div>
+          <div className="space-y-4">
+            <EditableText
+              k="appPurposeBody"
+              fallback="babymonster.fans 是非官方 BABYMONSTER 全球粉絲社群網站。本站用途是讓粉絲使用 Google、Kakao 或電子郵件登入後設定暱稱、參與留言板、按讚、交流討論，並瀏覽由管理員整理的公開活動資訊、官方 Spotify、YouTube 與 Instagram 連結。"
+              as="p"
+              className="text-white/55 text-sm md:text-base leading-relaxed" />
+            <EditableText
+              k="appPurposeDataUse"
+              fallback="Google 登入僅用於建立與辨識你的粉絲帳號；本站只使用登入必要的基本帳號資訊，例如 Google 帳號識別碼、電子郵件與公開名稱，以維持登入狀態、顯示暱稱與保護留言板安全。本站不會讀取你的 Google Drive、Gmail、日曆或其他 Google 內容。"
+              as="p"
+              className="text-white/45 text-sm leading-relaxed" />
+            <div className="flex flex-wrap gap-4 pt-2">
+              <a href="/privacy.html" className="text-red-300 hover:text-red-200 text-xs tracking-[0.25em] uppercase">Privacy Policy ↗</a>
+              <a href="/terms.html" className="text-white/35 hover:text-white text-xs tracking-[0.25em] uppercase">Terms of Service ↗</a>
+            </div>
+          </div>
+        </div>
+      </div>
     </section>
   );
 }
@@ -825,8 +861,10 @@ function MusicSection({ locale, content }: { locale: Locale; content: SiteConten
         {albums.length > 0 && <div className="grid md:grid-cols-3 gap-8">
           {albums.map((a, i) => <AlbumCard key={a.id || a.title} album={a} index={i} isVisible={isInView} locale={locale} />)}
         </div>}
-        {editor.editing && albums.length === 0 && <div className="border border-red-600/25 bg-red-950/10 p-6 text-red-200/70 text-sm leading-relaxed">
-          Spotify 專輯尚未載入。狀態：{spotifyStatus || "loading"}。請確認已部署 Supabase Edge Function `spotify-releases`，並設定 `SPOTIFY_CLIENT_ID` / `SPOTIFY_CLIENT_SECRET`；或在齒輪後台手動新增專輯。
+        {albums.length === 0 && spotifyStatus && <div className="border border-white/8 bg-white/[0.018] p-6 text-white/45 text-sm leading-relaxed">
+          <p className="text-white/65 mb-2">Spotify 專輯資料暫時沒有載入。</p>
+          <p>狀態：<code className="text-red-300">{spotifyStatus}</code>。如果你是管理員，請確認 `spotify-releases` Edge Function 已重新部署，或先在齒輪後台手動新增專輯／單曲。</p>
+          <a href="https://open.spotify.com/artist/1SIocsqdEefUTE6XKGUiVS" target="_blank" rel="noreferrer" className="inline-block mt-4 text-red-300 hover:text-red-200 text-xs tracking-[0.25em] uppercase">Open Spotify Discography ↗</a>
         </div>}
 
         <div className="grid md:grid-cols-[1.4fr_.6fr] gap-8 mt-16">
@@ -1718,6 +1756,7 @@ export default function App() {
       {booting && <OpeningLoader />}
       <Nav playing={playing} onToggle={toggle} user={user} locale={locale} siteName={contentText(siteContent.siteName, DEFAULT_SITE_CONTENT.siteName)} onLocale={changeLocale} onLogin={() => setAuthOpen(true)} onLogout={logout} onAdmin={() => setAdminOpen(true)} onEdit={() => setEditMode(true)} />
       <Hero playing={playing} onToggle={toggle} locale={locale} content={siteContent} />
+      <AppPurposeSection />
       <AboutSection locale={locale} content={siteContent} />
       <MembersSection locale={locale} content={siteContent} />
       <MusicSection locale={locale} content={siteContent} />
