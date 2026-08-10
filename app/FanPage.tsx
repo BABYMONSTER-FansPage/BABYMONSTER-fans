@@ -4,13 +4,14 @@ import { FormEvent, useState, useEffect, useRef, useCallback } from "react";
 import { motion, useInView, useScroll, useTransform } from "motion/react";
 import {
   Play, Pause, Volume2, VolumeX, Heart, MessageCircle,
-  ChevronDown, Menu, X, Calendar, MapPin, Music, Send, Disc3,
+  ChevronDown, Menu, X, Calendar, MapPin, Music, Send, Disc3, Settings, Save,
 } from "lucide-react";
 import { getInitialLocale, localeLabels, memberBios, messages, supportedLocales, type Locale } from "./i18n";
 import {
   createFanPost, currentFanUser, deleteFanPost, editFanPost, emailAuth, listFanPosts,
-  listAnnouncements, moderateFanPost, observeFanUser, reportFanPost, signOutFan, socialAuth,
-  toggleFanLike, translateFanPost, type FanPost as ApiPost, type FanUser as User,
+  listAnnouncements, loadSiteContent, moderateFanPost, observeFanUser, reportFanPost,
+  saveSiteContent, signOutFan, socialAuth, toggleFanLike, translateFanPost,
+  type EditableEvent, type FanPost as ApiPost, type FanUser as User, type SiteContent,
 } from "./lib/supabase-browser";
 
 // ─────────────────────────────────────────────
@@ -119,7 +120,7 @@ const ALBUMS = [
   },
 ];
 
-const EVENTS = [
+const EVENTS: EditableEvent[] = [
   {
     id: 1, title: "BABYMONSTER", sub: "OFFICIAL SCHEDULE",
     dates: "2026–2027", locations: "Worldwide",
@@ -141,6 +142,73 @@ const EVENTS = [
     type: "Community", status: "upcoming", desc: "Fan conversations from around the world.",
   },
 ];
+
+const DEFAULT_SITE_CONTENT: Required<Pick<SiteContent, "siteName" | "siteTagline" | "terms" | "privacy">> = {
+  siteName: "MONSTIEZ GLOBAL",
+  siteTagline: "BABYMONSTER unofficial global fan community",
+  terms: `服務條款
+
+最後更新：2026-08-10
+
+歡迎使用 babymonster.fans。本網站是由粉絲建立的非官方全球粉絲社群，目的在於整理公開資訊、連結官方平台、提供粉絲交流空間。本網站並非 YG Entertainment、BABYMONSTER、其成員或任何權利人之官方網站、代理人或授權代表。
+
+使用本網站即表示你同意遵守本服務條款。若你不同意，請停止使用本網站。
+
+1. 帳號與社群行為
+你需對自己帳號下的所有活動負責。請勿冒充官方、藝人、工作人員或其他使用者。禁止發布騷擾、仇恨、威脅、違法、侵犯隱私、未經證實之私生活追蹤資訊、盜版下載連結、惡意程式或垃圾訊息。管理員得依社群安全與法律風險移除內容、限制功能或停用帳號。
+
+2. 使用者內容
+你保留自己留言與投稿的權利，但授權本網站在營運、展示、備份、審核、翻譯與改善社群體驗所需範圍內使用該內容。請只發布你有權分享的內容。你不得上傳或提交侵犯第三方著作權、商標權、肖像權、隱私權或其他權利的素材。
+
+3. 第三方內容與官方平台
+本網站可能嵌入或連結 Spotify、YouTube、Instagram、Supabase、Google、KakaoTalk 或其他第三方服務。第三方內容與登入流程受其各自條款與隱私政策約束。本網站不提供官方音樂、影片、照片或歌詞之下載，也不主張對 BABYMONSTER 名稱、成員姓名、音樂、影像、標誌或商標擁有權利。
+
+4. 活動與資訊
+活動、發行、行程、票務、成員出席及其他資訊可能變更。本網站會盡力標示來源與提醒使用者以官方公告為準，但不保證所有資訊即時、完整或無誤。
+
+5. 免責聲明
+本網站以「現況」提供。於法律允許範圍內，本網站不對服務不中斷、資料遺失、第三方服務異常、使用者內容或任何間接損害承擔責任。
+
+6. 條款更新
+我們可能因功能、法律或營運需求更新本條款。更新後繼續使用本網站，即表示你接受更新內容。`,
+  privacy: `隱私權政策
+
+最後更新：2026-08-10
+
+本政策說明 babymonster.fans 如何處理與保護使用者資訊。本網站是非官方粉絲社群，採用 GitHub Pages 提供靜態網站，並以 Supabase 提供登入、資料庫與社群功能。
+
+1. 我們收集的資訊
+當你註冊或登入時，我們可能處理你的電子郵件、暱稱、登入提供者、使用者 ID、角色權限與建立時間。當你使用留言板、按讚、檢舉或管理功能時，我們會儲存你提交的留言、語言、按讚紀錄、檢舉原因、公告或網站內容編輯紀錄。系統也可能由第三方服務處理基本技術資訊，例如 IP 位址、瀏覽器資訊與安全記錄。
+
+2. 使用目的
+我們使用資料以提供帳號登入、社群留言、按讚、翻譯、檢舉、管理員審核、網站內容管理、安全防濫用、錯誤排查與法律合規。管理員權限僅用於維護社群秩序與網站內容。
+
+3. 第三方服務
+本網站可能使用 Supabase、GitHub Pages、Google OAuth、Kakao OAuth、Spotify Embed、YouTube Embed、Instagram Embed 與翻譯服務。這些服務可能依其政策處理資料。嵌入內容可能讓第三方平台知道你的瀏覽器載入了該內容。
+
+4. Cookie 與本機儲存
+本網站與登入服務可能使用 cookie、localStorage 或類似技術維持登入狀態、記住語言偏好並保護服務安全。你可透過瀏覽器設定管理，但部分功能可能因此無法正常使用。
+
+5. 資料分享
+除提供服務所必要的第三方供應商、法律要求、保護使用者安全、調查濫用或取得你的同意外，我們不出售你的個人資料。
+
+6. 資料保存與刪除
+帳號資料與社群內容會在提供服務所需期間保存。你可聯絡網站管理者請求刪除或更正資料；部分資料可能因安全、備份、法律或爭議處理需要短期保留。
+
+7. 兒少與全球使用者
+若你所在司法管轄區要求監護人同意，請先取得同意再使用互動功能。請勿公開自己的住址、電話、學校、即時位置或其他敏感個資。
+
+8. 聯絡方式
+若對隱私或資料處理有疑問，請透過本網站公布的管理聯絡方式與站方聯繫。`,
+};
+
+function contentText(value: unknown, fallback: string) {
+  return typeof value === "string" && value.trim() ? value : fallback;
+}
+
+function contentUrl(value: unknown, fallback: string) {
+  return typeof value === "string" && /^https?:\/\//.test(value.trim()) ? value.trim() : fallback;
+}
 
 const INITIAL_POSTS = [
   {
@@ -260,9 +328,9 @@ function useAmbientMusic() {
 // NAV
 // ─────────────────────────────────────────────
 
-function Nav({ playing, onToggle, user, locale, onLocale, onLogin, onLogout }: {
-  playing: boolean; onToggle: () => void; user: User | null; locale: Locale;
-  onLocale: (locale: Locale) => void; onLogin: () => void; onLogout: () => void;
+function Nav({ playing, onToggle, user, locale, siteName, onLocale, onLogin, onLogout, onAdmin }: {
+  playing: boolean; onToggle: () => void; user: User | null; locale: Locale; siteName: string;
+  onLocale: (locale: Locale) => void; onLogin: () => void; onLogout: () => void; onAdmin: () => void;
 }) {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
@@ -288,7 +356,9 @@ function Nav({ playing, onToggle, user, locale, onLocale, onLogin, onLogout }: {
     >
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         <a href="#top" className="font-black text-xl tracking-[0.12em] text-white" style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>
-          BABY<span style={{ color: "#E01020" }}>MONSTER</span>
+          {siteName.includes(" ")
+            ? <>{siteName.split(" ")[0]}<span style={{ color: "#E01020" }}> {siteName.split(" ").slice(1).join(" ")}</span></>
+            : <>BABY<span style={{ color: "#E01020" }}>MONSTER</span></>}
         </a>
 
         <div className="hidden md:flex items-center gap-8">
@@ -309,6 +379,7 @@ function Nav({ playing, onToggle, user, locale, onLocale, onLogin, onLogout }: {
           {user
             ? <button onClick={onLogout} className="hidden sm:block text-white/50 hover:text-white text-xs tracking-widest uppercase">{user.nickname} · {messages[locale].logout}</button>
             : <button onClick={onLogin} className="hidden sm:block text-white/50 hover:text-white text-xs tracking-widest uppercase">{messages[locale].login}</button>}
+          {user?.role === "admin" && <button onClick={onAdmin} className="text-red-400/80 hover:text-red-300" aria-label="Admin dashboard"><Settings size={16} /></button>}
           <button onClick={onToggle}
             className="flex items-center gap-1.5 text-white/50 hover:text-white transition-colors duration-200">
             {playing ? <Volume2 size={15} /> : <VolumeX size={15} />}
@@ -335,6 +406,7 @@ function Nav({ playing, onToggle, user, locale, onLocale, onLogin, onLogout }: {
           <button onClick={() => { setOpen(false); if (user) onLogout(); else onLogin(); }} className="min-h-11 text-left text-red-400 text-sm tracking-[0.2em] uppercase">
             {user ? `${user.nickname} · ${t.logout}` : t.login}
           </button>
+          {user?.role === "admin" && <button onClick={() => { setOpen(false); onAdmin(); }} className="min-h-11 text-left text-white/60 text-sm tracking-[0.2em] uppercase">Admin</button>}
         </motion.div>
       )}
     </nav>
@@ -345,14 +417,15 @@ function Nav({ playing, onToggle, user, locale, onLocale, onLogin, onLogout }: {
 // HERO
 // ─────────────────────────────────────────────
 
-function Hero({ playing, onToggle, locale }: { playing: boolean; onToggle: () => void; locale: Locale }) {
+function Hero({ playing, onToggle, locale, content }: { playing: boolean; onToggle: () => void; locale: Locale; content: SiteContent }) {
   const t = messages[locale];
+  const heroImage = contentUrl(content.heroImageUrl, "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=1920&h=1080&fit=crop&auto=format");
   return (
     <section id="top" className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-black">
       {/* Concert bg */}
       <div className="absolute inset-0">
         <img
-          src="https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=1920&h=1080&fit=crop&auto=format"
+          src={heroImage}
           alt="Concert stage"
           className="w-full h-full object-cover opacity-20"
         />
@@ -374,7 +447,7 @@ function Hero({ playing, onToggle, locale }: { playing: boolean; onToggle: () =>
         <motion.p initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.3 }}
           className="text-white/35 text-xs tracking-[0.45em] uppercase mb-8">
-          {t.heroKicker}
+          {contentText(content.heroKicker, t.heroKicker)}
         </motion.p>
 
         {/* BABY — slides up from mask */}
@@ -402,7 +475,7 @@ function Hero({ playing, onToggle, locale }: { playing: boolean; onToggle: () =>
         <motion.p initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 1.1 }}
           className="text-white/50 text-sm md:text-base tracking-[0.35em] uppercase mt-8 mb-14">
-          {t.heroNote}
+          {contentText(content.heroNote, t.heroNote)}
         </motion.p>
 
         {/* Stat row */}
@@ -444,7 +517,7 @@ function Hero({ playing, onToggle, locale }: { playing: boolean; onToggle: () =>
 // ABOUT
 // ─────────────────────────────────────────────
 
-function AboutSection({ locale }: { locale: Locale }) {
+function AboutSection({ locale, content }: { locale: Locale; content: SiteContent }) {
   const ref = useRef<HTMLElement>(null);
   const isInView = useInView(ref, { once: true, amount: 0.15 });
   const t = messages[locale];
@@ -465,7 +538,7 @@ function AboutSection({ locale }: { locale: Locale }) {
             className="relative">
             <div className="aspect-[4/5] overflow-hidden rounded-sm relative bg-neutral-900">
               <img
-                src="https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=800&h=1000&fit=crop&auto=format"
+                src={contentUrl(content.aboutImageUrl, "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=800&h=1000&fit=crop&auto=format")}
                 alt="BABYMONSTER group performance"
                 className="w-full h-full object-cover"
                 style={{ filter: "grayscale(25%) contrast(1.12) brightness(0.8)" }}
@@ -501,13 +574,13 @@ function AboutSection({ locale }: { locale: Locale }) {
             <motion.p initial={{ opacity: 0, y: 28 }} animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.8, delay: 0.4 }}
               className="text-white/60 leading-relaxed text-sm md:text-base mb-5">
-              {t.storyLead}
+              {contentText(content.storyLead, t.storyLead)}
             </motion.p>
 
             <motion.p initial={{ opacity: 0, y: 28 }} animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.8, delay: 0.52 }}
               className="text-white/40 leading-relaxed text-sm mb-12">
-              {t.storyBody}
+              {contentText(content.storyBody, t.storyBody)}
             </motion.p>
 
             <motion.div initial={{ opacity: 0, y: 28 }} animate={isInView ? { opacity: 1, y: 0 } : {}}
@@ -537,7 +610,7 @@ function AboutSection({ locale }: { locale: Locale }) {
 // MEMBER SPOTLIGHT (individual)
 // ─────────────────────────────────────────────
 
-function MemberSpotlight({ member, index, biography }: { member: typeof MEMBERS[0]; index: number; biography: string }) {
+function MemberSpotlight({ member, index, biography, photoUrl }: { member: typeof MEMBERS[0]; index: number; biography: string; photoUrl?: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, amount: 0.08 });
   const isEven = index % 2 === 0;
@@ -570,7 +643,7 @@ function MemberSpotlight({ member, index, biography }: { member: typeof MEMBERS[
             className={!isEven ? "md:order-last" : ""}>
             <div className="aspect-[3/4] max-w-sm mx-auto relative overflow-hidden rounded-sm bg-neutral-900 group">
               <img
-                src={`https://images.unsplash.com/${member.photo}?w=600&h=800&fit=crop&auto=format&q=90`}
+                src={contentUrl(photoUrl, `https://images.unsplash.com/${member.photo}?w=600&h=800&fit=crop&auto=format&q=90`)}
                 alt={`${member.name}`}
                 className="w-full h-full object-cover transition-transform duration-[1.2s] group-hover:scale-105"
                 style={{ filter: "contrast(1.08) brightness(0.88)" }}
@@ -650,7 +723,7 @@ function MemberSpotlight({ member, index, biography }: { member: typeof MEMBERS[
   );
 }
 
-function MembersSection({ locale }: { locale: Locale }) {
+function MembersSection({ locale, content }: { locale: Locale; content: SiteContent }) {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, amount: 0.2 });
   const t = messages[locale];
@@ -685,7 +758,7 @@ function MembersSection({ locale }: { locale: Locale }) {
         </motion.p>
       </div>
 
-      {MEMBERS.map((m, i) => <MemberSpotlight key={m.id} member={m} index={i} biography={memberBios[locale][i]} />)}
+      {MEMBERS.map((m, i) => <MemberSpotlight key={m.id} member={m} index={i} biography={memberBios[locale][i]} photoUrl={content.memberPhotos?.[m.id]} />)}
     </section>
   );
 }
@@ -799,7 +872,7 @@ function MusicSection({ locale }: { locale: Locale }) {
 // EVENT CARD
 // ─────────────────────────────────────────────
 
-function EventCard({ event, index, locale }: { event: typeof EVENTS[0]; index: number; locale: Locale }) {
+function EventCard({ event, index, locale }: { event: EditableEvent; index: number; locale: Locale }) {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, amount: 0.2 });
   const isLeft = index % 2 === 0;
@@ -844,10 +917,10 @@ function EventCard({ event, index, locale }: { event: typeof EVENTS[0]; index: n
 
         <h3 className="text-white font-black text-2xl md:text-3xl leading-tight mb-1 group-hover:text-red-400 transition-colors duration-300"
           style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>
-          {localizedTitle}
+          {contentText(event.title, localizedTitle)}
         </h3>
-        <p className="text-white/35 text-xs tracking-widest uppercase mb-4">{t.verifyOfficial}</p>
-        <p className="text-white/50 text-sm mb-5">{messages[locale].eventsLead}</p>
+        <p className="text-white/35 text-xs tracking-widest uppercase mb-4">{contentText(event.sub, t.verifyOfficial)}</p>
+        <p className="text-white/50 text-sm mb-5">{contentText(event.desc, messages[locale].eventsLead)}</p>
 
         <div className="flex flex-wrap gap-5 text-xs text-white/35">
           <span className="flex items-center gap-1.5">
@@ -864,10 +937,11 @@ function EventCard({ event, index, locale }: { event: typeof EVENTS[0]; index: n
   );
 }
 
-function EventsSection({ locale }: { locale: Locale }) {
+function EventsSection({ locale, content }: { locale: Locale; content: SiteContent }) {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, amount: 0.15 });
   const t = messages[locale];
+  const events = Array.isArray(content.events) && content.events.length ? content.events : EVENTS;
 
   return (
     <section id="events" className="bg-black py-24 md:py-44 border-t border-white/5">
@@ -891,7 +965,7 @@ function EventsSection({ locale }: { locale: Locale }) {
           {/* Timeline line */}
           <div className="absolute left-4 md:left-1/2 top-0 bottom-0 w-px bg-white/8" />
           <div className="space-y-14">
-            {EVENTS.map((e, i) => <EventCard key={e.id} event={e} index={i} locale={locale} />)}
+            {events.map((e, i) => <EventCard key={`${e.title}-${i}`} event={e} index={i} locale={locale} />)}
           </div>
         </div>
       </div>
@@ -1084,11 +1158,24 @@ function Announcements({ locale }: { locale: Locale }) {
 // FOOTER
 // ─────────────────────────────────────────────
 
-function Footer({ locale }: { locale: Locale }) {
+function LegalModal({ title, body, onClose }: { title: string; body: string; onClose: () => void }) {
+  return <div className="fixed inset-0 z-[110] bg-black/88 grid place-items-center p-5" role="dialog" aria-modal="true" aria-label={title}>
+    <div className="w-full max-w-3xl max-h-[86vh] overflow-auto bg-[#090909] border border-white/15 p-7 shadow-2xl">
+      <div className="flex items-start justify-between gap-5 mb-6">
+        <h2 className="text-white font-black text-4xl leading-none" style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>{title}</h2>
+        <button onClick={onClose} className="text-white/50 hover:text-white text-2xl" aria-label="Close">×</button>
+      </div>
+      <div className="whitespace-pre-wrap text-white/58 text-sm leading-7">{body}</div>
+    </div>
+  </div>;
+}
+
+function Footer({ locale, content, onLegal }: { locale: Locale; content: SiteContent; onLegal: (kind: "terms" | "privacy") => void }) {
   const ref = useRef<HTMLElement>(null);
   const isInView = useInView(ref, { once: true, amount: 0.3 });
   const t = messages[locale];
   const links = [{ id: "members", label: t.nav[1] }, { id: "music", label: t.nav[2] }, { id: "events", label: t.nav[3] }, { id: "community", label: t.nav[4] }];
+  const siteName = contentText(content.siteName, DEFAULT_SITE_CONTENT.siteName);
 
   return (
     <footer ref={ref} className="bg-black border-t border-white/8 py-16">
@@ -1098,11 +1185,11 @@ function Footer({ locale }: { locale: Locale }) {
             transition={{ delay: 0.1 }}>
             <div className="text-white font-black text-2xl mb-3 tracking-wider"
               style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>
-              BABY<span style={{ color: "#E01020" }}>MONSTER</span>
+              {siteName}
             </div>
             <p className="text-white/28 text-xs leading-relaxed">
-              {t.heroKicker}<br />
-              {t.heroNote}
+              {contentText(content.siteTagline, DEFAULT_SITE_CONTENT.siteTagline)}<br />
+              {contentText(content.heroNote, t.heroNote)}
             </p>
           </motion.div>
 
@@ -1130,7 +1217,9 @@ function Footer({ locale }: { locale: Locale }) {
 
         <div className="border-t border-white/5 pt-8 flex items-center justify-between">
           <span className="text-white/18 text-xs">© 2026 babymonster.fans</span>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-4">
+            <button onClick={() => onLegal("terms")} className="text-white/28 hover:text-white text-xs tracking-widest">服務條款</button>
+            <button onClick={() => onLegal("privacy")} className="text-white/28 hover:text-white text-xs tracking-widest">隱私權政策</button>
             <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "#E01020" }} />
             <span className="text-white/18 text-xs tracking-widest">MONSTERS FOREVER</span>
           </div>
@@ -1191,6 +1280,140 @@ function AudioPlayerBar({ playing, onToggle, locale }: { playing: boolean; onTog
 // APP
 // ─────────────────────────────────────────────
 
+function AdminPanel({ content, onSaved, onClose }: { content: SiteContent; onSaved: (content: SiteContent) => void; onClose: () => void }) {
+  const [draft, setDraft] = useState<SiteContent>(() => ({
+    ...content,
+    siteName: contentText(content.siteName, DEFAULT_SITE_CONTENT.siteName),
+    siteTagline: contentText(content.siteTagline, DEFAULT_SITE_CONTENT.siteTagline),
+    terms: contentText(content.terms, DEFAULT_SITE_CONTENT.terms),
+    privacy: contentText(content.privacy, DEFAULT_SITE_CONTENT.privacy),
+    memberPhotos: { ...(content.memberPhotos || {}) },
+    events: Array.isArray(content.events) && content.events.length ? content.events : EVENTS,
+  }));
+  const [feedback, setFeedback] = useState("");
+
+  function update<K extends keyof SiteContent>(key: K, value: SiteContent[K]) {
+    setDraft(current => ({ ...current, [key]: value }));
+  }
+
+  function updateMemberPhoto(memberId: string, value: string) {
+    setDraft(current => ({ ...current, memberPhotos: { ...(current.memberPhotos || {}), [memberId]: value } }));
+  }
+
+  function updateEvent(index: number, key: keyof EditableEvent, value: string) {
+    setDraft(current => {
+      const events = [...(current.events || EVENTS)];
+      events[index] = { ...events[index], [key]: key === "status" && value !== "past" ? "upcoming" : value } as EditableEvent;
+      return { ...current, events };
+    });
+  }
+
+  function addEvent() {
+    setDraft(current => ({
+      ...current,
+      events: [...(current.events || EVENTS), { title: "New activity", sub: "Official update", dates: "TBA", locations: "Official channels", type: "News", status: "upcoming", desc: "Confirm details with official announcements." }],
+    }));
+  }
+
+  function removeEvent(index: number) {
+    setDraft(current => ({ ...current, events: (current.events || EVENTS).filter((_, eventIndex) => eventIndex !== index) }));
+  }
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setFeedback("Saving...");
+    try {
+      await saveSiteContent(draft);
+      onSaved(draft);
+      setFeedback("Saved. Public pages will use the new content immediately.");
+    } catch (error) {
+      setFeedback(error instanceof Error && error.message !== "SUPABASE_NOT_CONFIGURED" ? error.message : "Supabase is not configured or your account is not admin.");
+    }
+  }
+
+  const inputClass = "mt-2 w-full bg-black border border-white/15 p-3 text-white/75 text-sm focus:outline-none focus:border-red-600/60";
+  const labelClass = "block text-white/45 text-xs tracking-wider";
+  const events = draft.events || EVENTS;
+
+  return <div className="fixed inset-0 z-[105] bg-black/88 grid place-items-center p-4" role="dialog" aria-modal="true" aria-label="Admin dashboard">
+    <form onSubmit={submit} className="w-full max-w-5xl max-h-[92vh] overflow-auto bg-[#090909] border border-white/15 p-6 md:p-8 shadow-2xl">
+      <div className="flex items-start justify-between gap-5 mb-7">
+        <div>
+          <p className="text-red-400 text-xs tracking-[0.35em] uppercase mb-2">Admin CMS</p>
+          <h2 className="text-white font-black text-4xl md:text-5xl leading-none" style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>SITE CONTENT</h2>
+        </div>
+        <button type="button" onClick={onClose} className="text-white/50 hover:text-white text-2xl" aria-label="Close">×</button>
+      </div>
+
+      <div className="grid gap-8">
+        <section className="border-t border-white/8 pt-6">
+          <h3 className="text-white font-bold mb-4">網站名稱與 Icon</h3>
+          <div className="grid md:grid-cols-2 gap-4">
+            <label className={labelClass}>網站名稱<input value={draft.siteName || ""} onChange={e => update("siteName", e.target.value)} className={inputClass} /></label>
+            <label className={labelClass}>網站短標語<input value={draft.siteTagline || ""} onChange={e => update("siteTagline", e.target.value)} className={inputClass} /></label>
+            <label className={labelClass}>Favicon / icon URL<input value={draft.faviconUrl || ""} onChange={e => update("faviconUrl", e.target.value)} placeholder="https://..." className={inputClass} /></label>
+            <label className={labelClass}>社群分享圖片 URL<input value={draft.ogImageUrl || ""} onChange={e => update("ogImageUrl", e.target.value)} placeholder="https://..." className={inputClass} /></label>
+          </div>
+        </section>
+
+        <section className="border-t border-white/8 pt-6">
+          <h3 className="text-white font-bold mb-4">首頁與介紹</h3>
+          <div className="grid md:grid-cols-2 gap-4">
+            <label className={labelClass}>Hero 小標<input value={draft.heroKicker || ""} onChange={e => update("heroKicker", e.target.value)} className={inputClass} /></label>
+            <label className={labelClass}>Hero 背景圖片 URL<input value={draft.heroImageUrl || ""} onChange={e => update("heroImageUrl", e.target.value)} placeholder="https://..." className={inputClass} /></label>
+            <label className={`${labelClass} md:col-span-2`}>Hero 文字<textarea rows={3} value={draft.heroNote || ""} onChange={e => update("heroNote", e.target.value)} className={inputClass} /></label>
+            <label className={labelClass}>介紹圖片 URL<input value={draft.aboutImageUrl || ""} onChange={e => update("aboutImageUrl", e.target.value)} placeholder="https://..." className={inputClass} /></label>
+            <label className={labelClass}>介紹短文<textarea rows={4} value={draft.storyLead || ""} onChange={e => update("storyLead", e.target.value)} className={inputClass} /></label>
+            <label className={`${labelClass} md:col-span-2`}>完整介紹<textarea rows={5} value={draft.storyBody || ""} onChange={e => update("storyBody", e.target.value)} className={inputClass} /></label>
+          </div>
+        </section>
+
+        <section className="border-t border-white/8 pt-6">
+          <h3 className="text-white font-bold mb-4">成員圖片 URL</h3>
+          <p className="text-white/35 text-xs leading-relaxed mb-4">建議使用官方允許 embed 的內容、授權素材、自己拍攝或粉絲授權圖片。不要直接抓未授權官方照或 Google 圖片。</p>
+          <div className="grid md:grid-cols-2 gap-4">
+            {MEMBERS.map(member => <label key={member.id} className={labelClass}>{member.name}<input value={draft.memberPhotos?.[member.id] || ""} onChange={e => updateMemberPhoto(member.id, e.target.value)} placeholder="https://..." className={inputClass} /></label>)}
+          </div>
+        </section>
+
+        <section className="border-t border-white/8 pt-6">
+          <div className="flex items-center justify-between gap-4 mb-4">
+            <h3 className="text-white font-bold">近期活動</h3>
+            <button type="button" onClick={addEvent} className="px-3 py-2 border border-white/15 text-white/60 text-xs hover:text-white">新增活動</button>
+          </div>
+          <div className="grid gap-4">
+            {events.map((event, index) => <div key={`${event.title}-${index}`} className="border border-white/8 p-4">
+              <div className="grid md:grid-cols-2 gap-3">
+                <label className={labelClass}>標題<input value={event.title} onChange={e => updateEvent(index, "title", e.target.value)} className={inputClass} /></label>
+                <label className={labelClass}>副標<input value={event.sub} onChange={e => updateEvent(index, "sub", e.target.value)} className={inputClass} /></label>
+                <label className={labelClass}>日期<input value={event.dates} onChange={e => updateEvent(index, "dates", e.target.value)} className={inputClass} /></label>
+                <label className={labelClass}>地點<input value={event.locations} onChange={e => updateEvent(index, "locations", e.target.value)} className={inputClass} /></label>
+                <label className={labelClass}>狀態<select value={event.status} onChange={e => updateEvent(index, "status", e.target.value)} className={inputClass}><option value="upcoming">upcoming</option><option value="past">past</option></select></label>
+                <label className={labelClass}>類型<input value={event.type} onChange={e => updateEvent(index, "type", e.target.value)} className={inputClass} /></label>
+                <label className={`${labelClass} md:col-span-2`}>說明<textarea rows={3} value={event.desc} onChange={e => updateEvent(index, "desc", e.target.value)} className={inputClass} /></label>
+              </div>
+              <button type="button" onClick={() => removeEvent(index)} className="mt-3 text-red-400/70 hover:text-red-300 text-xs">刪除這筆活動</button>
+            </div>)}
+          </div>
+        </section>
+
+        <section className="border-t border-white/8 pt-6">
+          <h3 className="text-white font-bold mb-4">服務條款與隱私權</h3>
+          <div className="grid md:grid-cols-2 gap-4">
+            <label className={labelClass}>服務條款<textarea rows={12} value={draft.terms || ""} onChange={e => update("terms", e.target.value)} className={inputClass} /></label>
+            <label className={labelClass}>隱私權政策<textarea rows={12} value={draft.privacy || ""} onChange={e => update("privacy", e.target.value)} className={inputClass} /></label>
+          </div>
+        </section>
+      </div>
+
+      <div className="sticky bottom-0 mt-8 -mx-6 md:-mx-8 -mb-6 md:-mb-8 border-t border-white/10 bg-[#090909]/95 backdrop-blur px-6 md:px-8 py-4 flex flex-wrap items-center justify-between gap-3">
+        <p className="text-white/35 text-xs">{feedback || "只有 Supabase role=admin 的帳號能儲存。"}</p>
+        <button type="submit" className="inline-flex items-center gap-2 px-5 py-3 bg-[#E01020] text-white text-xs tracking-[0.2em] uppercase"><Save size={14} />儲存變更</button>
+      </div>
+    </form>
+  </div>;
+}
+
 function AuthModal({ locale, mode, onMode, onClose, onAuthenticated }: {
   locale: Locale; mode: "login" | "register"; onMode: (mode: "login" | "register") => void;
   onClose: () => void; onAuthenticated: (user: User) => void;
@@ -1233,6 +1456,9 @@ export default function App() {
   const [locale, setLocale] = useState<Locale>("zh-TW");
   const [authOpen, setAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState<"login" | "register">("login");
+  const [adminOpen, setAdminOpen] = useState(false);
+  const [legalOpen, setLegalOpen] = useState<"terms" | "privacy" | null>(null);
+  const [siteContent, setSiteContent] = useState<SiteContent>({});
 
   useEffect(() => {
     const next = getInitialLocale(navigator.languages, localStorage.getItem("monstiez-locale"));
@@ -1240,6 +1466,26 @@ export default function App() {
     void currentFanUser().then(setUser);
     return observeFanUser(setUser);
   }, []);
+
+  useEffect(() => { void loadSiteContent().then(setSiteContent).catch(() => setSiteContent({})); }, []);
+
+  useEffect(() => {
+    const siteName = contentText(siteContent.siteName, DEFAULT_SITE_CONTENT.siteName);
+    const tagline = contentText(siteContent.siteTagline, DEFAULT_SITE_CONTENT.siteTagline);
+    document.title = `${siteName}｜${tagline}`;
+    const faviconUrl = contentUrl(siteContent.faviconUrl, "/favicon.svg");
+    let icon = document.querySelector<HTMLLinkElement>("link[rel='icon']");
+    if (!icon) {
+      icon = document.createElement("link");
+      icon.rel = "icon";
+      document.head.appendChild(icon);
+    }
+    icon.href = faviconUrl;
+    const description = document.querySelector<HTMLMetaElement>("meta[name='description']");
+    if (description) description.content = tagline;
+    const ogImage = document.querySelector<HTMLMetaElement>("meta[property='og:image']");
+    if (ogImage && siteContent.ogImageUrl) ogImage.content = siteContent.ogImageUrl;
+  }, [siteContent]);
 
   function changeLocale(next: Locale) { setLocale(next); localStorage.setItem("monstiez-locale", next); document.documentElement.lang = next; }
   async function logout() { await signOutFan(); setUser(null); }
@@ -1254,18 +1500,20 @@ export default function App() {
 
   return (
     <div className="bg-black min-h-screen" style={{ fontFamily: "'Inter', sans-serif" }}>
-      <Nav playing={playing} onToggle={toggle} user={user} locale={locale} onLocale={changeLocale} onLogin={() => setAuthOpen(true)} onLogout={logout} />
-      <Hero playing={playing} onToggle={toggle} locale={locale} />
-      <AboutSection locale={locale} />
-      <MembersSection locale={locale} />
+      <Nav playing={playing} onToggle={toggle} user={user} locale={locale} siteName={contentText(siteContent.siteName, DEFAULT_SITE_CONTENT.siteName)} onLocale={changeLocale} onLogin={() => setAuthOpen(true)} onLogout={logout} onAdmin={() => setAdminOpen(true)} />
+      <Hero playing={playing} onToggle={toggle} locale={locale} content={siteContent} />
+      <AboutSection locale={locale} content={siteContent} />
+      <MembersSection locale={locale} content={siteContent} />
       <MusicSection locale={locale} />
-      <EventsSection locale={locale} />
+      <EventsSection locale={locale} content={siteContent} />
       <CommunitySection user={user} locale={locale} onLogin={() => setAuthOpen(true)} />
       <FanVoices locale={locale} user={user} />
       <Announcements locale={locale} />
-      <Footer locale={locale} />
+      <Footer locale={locale} content={siteContent} onLegal={setLegalOpen} />
       <AudioPlayerBar playing={playing} onToggle={toggle} locale={locale} />
       {authOpen && <AuthModal locale={locale} mode={authMode} onMode={setAuthMode} onClose={() => setAuthOpen(false)} onAuthenticated={setUser} />}
+      {adminOpen && user?.role === "admin" && <AdminPanel content={siteContent} onSaved={setSiteContent} onClose={() => setAdminOpen(false)} />}
+      {legalOpen && <LegalModal title={legalOpen === "terms" ? "服務條款" : "隱私權政策"} body={contentText(siteContent[legalOpen], DEFAULT_SITE_CONTENT[legalOpen])} onClose={() => setLegalOpen(null)} />}
       {/* Spacer for fixed audio bar */}
       <div className="h-[calc(3.5rem+env(safe-area-inset-bottom))]" />
     </div>

@@ -6,6 +6,26 @@ export type FanPost = {
   id: number; userId: string; nickname: string; role: FanRole; body: string; sourceLanguage: string;
   likes: number; comments: number; liked: boolean; canEdit: boolean; createdAt: string;
 };
+export type EditableEvent = {
+  title: string; sub: string; dates: string; locations: string; type: string;
+  status: "upcoming" | "past"; desc: string;
+};
+export type SiteContent = {
+  siteName?: string;
+  siteTagline?: string;
+  faviconUrl?: string;
+  ogImageUrl?: string;
+  heroKicker?: string;
+  heroNote?: string;
+  heroImageUrl?: string;
+  storyLead?: string;
+  storyBody?: string;
+  aboutImageUrl?: string;
+  memberPhotos?: Record<string, string>;
+  events?: EditableEvent[];
+  terms?: string;
+  privacy?: string;
+};
 
 let browserClient: SupabaseClient | null | undefined;
 
@@ -160,4 +180,20 @@ export async function listAnnouncements(locale: string) {
     .eq("locale", locale).order("pinned", { ascending: false }).order("published_at", { ascending: false }).limit(5);
   if (error) throw error;
   return data || [];
+}
+
+export async function loadSiteContent(): Promise<SiteContent> {
+  const client = supabaseClient();
+  if (!client) return {};
+  const { data, error } = await client.from("site_content").select("key,value");
+  if (error) return {};
+  return (data || []).reduce((content, row) => ({ ...content, [String(row.key)]: row.value }), {} as SiteContent);
+}
+
+export async function saveSiteContent(content: SiteContent) {
+  const client = supabaseClient();
+  if (!client) throw new Error("SUPABASE_NOT_CONFIGURED");
+  const rows = Object.entries(content).map(([key, value]) => ({ key, value }));
+  const { error } = await client.from("site_content").upsert(rows, { onConflict: "key" });
+  if (error) throw error;
 }

@@ -26,7 +26,7 @@ npm run build
 ## Supabase 設定
 
 1. 建立 Supabase 專案。
-2. 套用 `supabase/migrations/202608100001_monstiez_community.sql`。
+2. 依序套用 `supabase/migrations/202608100001_monstiez_community.sql` 與 `supabase/migrations/202608100002_site_content_cms.sql`。
 3. 部署 `supabase/functions/translate-comment`。
 4. 在 Supabase Auth 的 URL Configuration 設定：
    - Site URL：`https://babymonster.fans`
@@ -67,9 +67,19 @@ TRANSLATION_API_KEY
 
 - `monstiez`：發文、按讚、編輯／刪除自己的留言及檢舉。
 - `artist`：藍色驗證勾；角色由資料庫管理。
-- `admin`：紅色驗證勾；可審核與隱藏留言。
+- `admin`：紅色驗證勾；可審核與隱藏留言，也可開啟網站後台修改網站名稱、icon、首頁文字、成員圖片、近期活動、服務條款與隱私權政策。
 
 使用者無法從前端更改角色。Supabase RLS 會在資料庫層再次驗證所有寫入。
+
+將已註冊帳號設為管理員時，請在 Supabase SQL Editor 執行：
+
+```sql
+update public.profiles
+set role = 'admin'
+where id = 'USER_UUID';
+```
+
+登入 admin 帳號後，網站導覽列會出現齒輪按鈕。圖片欄位請使用授權素材、官方允許嵌入或你有權使用的 CDN 圖片 URL；不要直接使用未授權官方照片或熱連 Google 圖片。
 
 ## 檢查
 
