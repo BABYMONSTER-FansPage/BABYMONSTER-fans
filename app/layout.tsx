@@ -3,13 +3,13 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://babymonster.fans"),
-  title: "BABYMONSTER FANS｜Global Fan Community",
+  title: "Monstiez",
   description: "認識 BABYMONSTER、收聽官方音樂、追蹤近期活動，和全球 MONSTIEZ 一起交流。",
   openGraph: {
-    title: "BABYMONSTER FANS",
+    title: "Monstiez",
     description: "Seven voices. One monster energy. 非官方 BABYMONSTER 粉絲交流站。",
     type: "website",
-    images: [{ url: "/og.png", width: 1730, height: 909, alt: "BABYMONSTER FANS unofficial BABYMONSTER fan community" }],
+    images: [{ url: "/og.png", width: 1730, height: 909, alt: "Monstiez unofficial BABYMONSTER fan community" }],
   },
   twitter: { card: "summary_large_image", images: ["/og.png"] },
   alternates: { canonical: "https://babymonster.fans/" },

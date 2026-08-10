@@ -144,8 +144,8 @@ const EVENTS: EditableEvent[] = [
 ];
 
 const DEFAULT_SITE_CONTENT: Required<Pick<SiteContent, "siteName" | "siteTagline">> = {
-  siteName: "BABYMONSTER FANS",
-  siteTagline: "Global Fan Community",
+  siteName: "Monstiez",
+  siteTagline: "",
 };
 
 function contentText(value: unknown, fallback: string) {
@@ -485,7 +485,7 @@ function AppPurposeSection() {
             <p className="text-red-400 text-xs tracking-[0.35em] uppercase mb-3">APP PURPOSE</p>
             <EditableText
               k="appPurposeTitle"
-              fallback="MONSTIEZ GLOBAL 是什麼？"
+              fallback="Monstiez 是什麼？"
               as="h2"
               className="text-white font-black text-4xl md:text-5xl leading-none"
               style={{ fontFamily: "'Barlow Condensed', sans-serif" }} />
@@ -1261,7 +1261,7 @@ function Footer({ locale, content }: { locale: Locale; content: SiteContent }) {
 
           <motion.div initial={{ opacity: 0, y: 20 }} animate={isInView ? { opacity: 1, y: 0 } : {}}
             transition={{ delay: 0.26 }}>
-            <div className="text-white/45 text-xs tracking-[0.3em] uppercase mb-4">MONSTIEZ GLOBAL</div>
+            <div className="text-white/45 text-xs tracking-[0.3em] uppercase mb-4">MONSTIEZ</div>
             <EditableText k="footerDescription" fallback="" as="p" className="text-white/22 text-xs leading-relaxed" />
           </motion.div>
         </div>
@@ -1688,9 +1688,10 @@ export default function App() {
   useEffect(() => {
     const siteName = contentText(siteContent.siteName, DEFAULT_SITE_CONTENT.siteName);
     const tagline = contentText(siteContent.siteTagline, DEFAULT_SITE_CONTENT.siteTagline);
-    const nextTitle = `${siteName}｜${tagline}`;
+    const nextTitle = siteName;
     document.title = nextTitle;
-    localStorage.setItem("babymonster-site-title", nextTitle);
+    localStorage.removeItem("babymonster-site-title");
+    localStorage.setItem("monstiez-site-title", nextTitle);
     const faviconUrl = contentUrl(siteContent.faviconUrl, "/favicon.svg");
     let icon = document.querySelector<HTMLLinkElement>("link[rel='icon']");
     if (!icon) {

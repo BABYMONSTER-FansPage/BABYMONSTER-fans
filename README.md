@@ -1,4 +1,4 @@
-# MONSTIEZ GLOBAL
+# Monstiez
 
 `https://babymonster.fans` 的非官方 BABYMONSTER 全球粉絲交流網站。前端以 GitHub Pages 純靜態發布；Supabase 提供帳號、資料庫、RLS 權限與留言翻譯 Edge Function，因此不需要自架伺服器。
 
@@ -33,6 +33,7 @@ npm run build
    - `supabase/migrations/202608100004_profile_nickname_policy.sql`
    - `supabase/migrations/202608100005_site_content_albums.sql`
    - `supabase/migrations/202608110001_relax_site_content_keys.sql`
+   - `supabase/migrations/202608110002_set_monstiez_site_name.sql`
 3. 部署 `supabase/functions/translate-comment`。若要自動抓 Spotify 最新專輯／單曲，也部署 `supabase/functions/spotify-releases`；若未部署或未設定 Spotify secrets，管理員仍可在後台手動新增專輯資料。
 4. 在 Supabase Auth 的 URL Configuration 設定：
    - Site URL：`https://babymonster.fans`

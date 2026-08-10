@@ -8,7 +8,7 @@ test("builds a GitHub Pages entry for babymonster.fans", async () => {
     readFile(new URL("../public/CNAME", import.meta.url), "utf8"),
     readFile(new URL("../.github/workflows/pages.yml", import.meta.url), "utf8"),
   ]);
-  assert.match(html, /<title>BABYMONSTER FANS/);
+  assert.match(html, /<title>Monstiez<\/title>/);
   assert.match(html, /https:\/\/babymonster\.fans\/og\.png/);
   assert.equal(cname.trim(), "babymonster.fans");
   assert.match(workflow, /actions\/deploy-pages@v4/);
