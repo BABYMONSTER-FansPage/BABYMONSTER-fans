@@ -8,7 +8,13 @@
     <link rel="icon" href="/favicon.svg" />
     <link rel="canonical" href="https://babymonster.fans/" />
     <meta property="og:image" content="https://babymonster.fans/og.png" />
-    <title>MONSTIEZ GLOBAL｜BABYMONSTER Fan Community</title>
+    <title>BABYMONSTER FANS｜Global Fan Community</title>
+    <script>
+      try {
+        var cachedTitle = window.localStorage.getItem("babymonster-site-title");
+        if (cachedTitle) document.title = cachedTitle;
+      } catch (error) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -144,8 +144,8 @@ const EVENTS: EditableEvent[] = [
 ];
 
 const DEFAULT_SITE_CONTENT: Required<Pick<SiteContent, "siteName" | "siteTagline">> = {
-  siteName: "MONSTIEZ GLOBAL",
-  siteTagline: "BABYMONSTER unofficial global fan community",
+  siteName: "BABYMONSTER FANS",
+  siteTagline: "Global Fan Community",
 };
 
 function contentText(value: unknown, fallback: string) {
@@ -1688,7 +1688,9 @@ export default function App() {
   useEffect(() => {
     const siteName = contentText(siteContent.siteName, DEFAULT_SITE_CONTENT.siteName);
     const tagline = contentText(siteContent.siteTagline, DEFAULT_SITE_CONTENT.siteTagline);
-    document.title = `${siteName}｜${tagline}`;
+    const nextTitle = `${siteName}｜${tagline}`;
+    document.title = nextTitle;
+    localStorage.setItem("babymonster-site-title", nextTitle);
     const faviconUrl = contentUrl(siteContent.faviconUrl, "/favicon.svg");
     let icon = document.querySelector<HTMLLinkElement>("link[rel='icon']");
     if (!icon) {
