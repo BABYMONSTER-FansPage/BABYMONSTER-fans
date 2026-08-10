@@ -28,6 +28,17 @@ export type SiteContent = {
 };
 
 let browserClient: SupabaseClient | null | undefined;
+const FAN_COOKIE = "monstiez_session";
+
+function writeFanCookie(user: FanUser | null) {
+  if (typeof document === "undefined") return;
+  if (!user) {
+    document.cookie = `${FAN_COOKIE}=; Max-Age=0; Path=/; SameSite=Lax; Secure`;
+    return;
+  }
+  const value = encodeURIComponent(JSON.stringify({ nickname: user.nickname, role: user.role }));
+  document.cookie = `${FAN_COOKIE}=${value}; Max-Age=2592000; Path=/; SameSite=Lax; Secure`;
+}
 
 export function supabaseClient() {
   if (browserClient !== undefined) return browserClient;
@@ -53,15 +64,17 @@ export async function currentFanUser() {
   const client = supabaseClient();
   if (!client) return null;
   const { data } = await client.auth.getUser();
-  return data.user ? profileFor(data.user) : null;
+  const user = data.user ? await profileFor(data.user) : null;
+  writeFanCookie(user);
+  return user;
 }
 
 export function observeFanUser(callback: (user: FanUser | null) => void) {
   const client = supabaseClient();
   if (!client) { callback(null); return () => {}; }
   const { data } = client.auth.onAuthStateChange((_event, session) => {
-    if (!session?.user) callback(null);
-    else void profileFor(session.user).then(callback);
+    if (!session?.user) { writeFanCookie(null); callback(null); }
+    else void profileFor(session.user).then(user => { writeFanCookie(user); callback(user); });
   });
   return () => data.subscription.unsubscribe();
 }
@@ -72,11 +85,15 @@ export async function emailAuth(mode: "login" | "register", email: string, passw
   if (mode === "register") {
     const { data, error } = await client.auth.signUp({ email, password, options: { data: { nickname } } });
     if (error) throw error;
-    return data.user ? profileFor(data.user) : null;
+    const user = data.user ? await profileFor(data.user) : null;
+    writeFanCookie(user);
+    return user;
   }
   const { data, error } = await client.auth.signInWithPassword({ email, password });
   if (error) throw error;
-  return data.user ? profileFor(data.user) : null;
+  const user = data.user ? await profileFor(data.user) : null;
+  writeFanCookie(user);
+  return user;
 }
 
 export async function socialAuth(provider: "google" | "kakao") {
@@ -93,6 +110,7 @@ export async function socialAuth(provider: "google" | "kakao") {
 export async function signOutFan() {
   const client = supabaseClient();
   if (client) await client.auth.signOut();
+  writeFanCookie(null);
 }
 
 export async function listFanPosts(viewer: FanUser | null): Promise<FanPost[]> {

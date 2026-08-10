@@ -1276,6 +1276,64 @@ function AudioPlayerBar({ playing, onToggle, locale }: { playing: boolean; onTog
   );
 }
 
+function OpeningLoader({ siteName }: { siteName: string }) {
+  return <motion.div
+    initial={{ opacity: 1 }}
+    exit={{ opacity: 0, transition: { duration: 0.65, ease: [0.16, 1, 0.3, 1] } }}
+    className="fixed inset-0 z-[200] bg-black overflow-hidden grid place-items-center"
+    role="status"
+    aria-live="polite"
+    aria-label="Loading BABYMONSTER fan site">
+    <div className="absolute inset-0">
+      <motion.div
+        className="absolute left-0 right-0 top-1/2 h-px bg-[#E01020]"
+        initial={{ scaleX: 0, opacity: 0 }}
+        animate={{ scaleX: [0, 1, 1], opacity: [0, 1, 0.35] }}
+        transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1] }}
+        style={{ transformOrigin: "left" }} />
+      <motion.div
+        className="absolute -left-1/4 top-0 h-full w-1/2 bg-gradient-to-r from-transparent via-red-700/18 to-transparent skew-x-[-18deg]"
+        animate={{ x: ["0%", "260%"] }}
+        transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }} />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_45%,rgba(224,16,32,0.18),transparent_34%),linear-gradient(180deg,transparent,rgba(0,0,0,0.88))]" />
+    </div>
+
+    <div className="relative z-10 text-center px-6">
+      <motion.p
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.55 }}
+        className="text-white/35 text-xs tracking-[0.5em] uppercase mb-5">
+        MONSTIEZ SIGNAL
+      </motion.p>
+      <div className="overflow-hidden">
+        <motion.h1
+          initial={{ y: "110%" }}
+          animate={{ y: 0 }}
+          transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+          className="text-white font-black leading-[0.82]"
+          style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: "clamp(3.8rem, 14vw, 12rem)" }}>
+          {siteName}
+        </motion.h1>
+      </div>
+      <div className="mt-9 h-1 w-56 mx-auto bg-white/10 overflow-hidden">
+        <motion.div
+          className="h-full bg-[#E01020]"
+          initial={{ x: "-100%" }}
+          animate={{ x: ["-100%", "120%"] }}
+          transition={{ duration: 1.05, repeat: Infinity, ease: [0.65, 0, 0.35, 1] }} />
+      </div>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: [0.25, 0.8, 0.25] }}
+        transition={{ duration: 1.2, repeat: Infinity }}
+        className="mt-5 text-white/28 text-xs tracking-[0.35em] uppercase">
+        Loading official links · fan voices · stage data
+      </motion.div>
+    </div>
+  </motion.div>;
+}
+
 // ─────────────────────────────────────────────
 // APP
 // ─────────────────────────────────────────────
@@ -1459,15 +1517,26 @@ export default function App() {
   const [adminOpen, setAdminOpen] = useState(false);
   const [legalOpen, setLegalOpen] = useState<"terms" | "privacy" | null>(null);
   const [siteContent, setSiteContent] = useState<SiteContent>({});
+  const [booting, setBooting] = useState(true);
 
   useEffect(() => {
     const next = getInitialLocale(navigator.languages, localStorage.getItem("monstiez-locale"));
     queueMicrotask(() => setLocale(next)); document.documentElement.lang = next;
-    void currentFanUser().then(setUser);
-    return observeFanUser(setUser);
+    let active = true;
+    const startedAt = Date.now();
+    void Promise.all([currentFanUser(), loadSiteContent()])
+      .then(([nextUser, nextContent]) => {
+        if (!active) return;
+        setUser(nextUser);
+        setSiteContent(nextContent);
+      })
+      .finally(() => {
+        const delay = Math.max(0, 1350 - (Date.now() - startedAt));
+        window.setTimeout(() => { if (active) setBooting(false); }, delay);
+      });
+    const unsubscribe = observeFanUser(value => { if (active) setUser(value); });
+    return () => { active = false; unsubscribe(); };
   }, []);
-
-  useEffect(() => { void loadSiteContent().then(setSiteContent).catch(() => setSiteContent({})); }, []);
 
   useEffect(() => {
     const siteName = contentText(siteContent.siteName, DEFAULT_SITE_CONTENT.siteName);
@@ -1500,6 +1569,7 @@ export default function App() {
 
   return (
     <div className="bg-black min-h-screen" style={{ fontFamily: "'Inter', sans-serif" }}>
+      {booting && <OpeningLoader siteName={contentText(siteContent.siteName, DEFAULT_SITE_CONTENT.siteName)} />}
       <Nav playing={playing} onToggle={toggle} user={user} locale={locale} siteName={contentText(siteContent.siteName, DEFAULT_SITE_CONTENT.siteName)} onLocale={changeLocale} onLogin={() => setAuthOpen(true)} onLogout={logout} onAdmin={() => setAdminOpen(true)} />
       <Hero playing={playing} onToggle={toggle} locale={locale} content={siteContent} />
       <AboutSection locale={locale} content={siteContent} />
