@@ -26,7 +26,10 @@ npm run build
 ## Supabase 設定
 
 1. 建立 Supabase 專案。
-2. 依序套用 `supabase/migrations/202608100001_monstiez_community.sql` 與 `supabase/migrations/202608100002_site_content_cms.sql`。
+2. 依序套用：
+   - `supabase/migrations/202608100001_monstiez_community.sql`
+   - `supabase/migrations/202608100002_site_content_cms.sql`
+   - `supabase/migrations/202608100003_inline_editing_content.sql`
 3. 部署 `supabase/functions/translate-comment`。
 4. 在 Supabase Auth 的 URL Configuration 設定：
    - Site URL：`https://babymonster.fans`
@@ -67,7 +70,7 @@ TRANSLATION_API_KEY
 
 - `monstiez`：發文、按讚、編輯／刪除自己的留言及檢舉。
 - `artist`：藍色驗證勾；角色由資料庫管理。
-- `admin`：紅色驗證勾；可審核與隱藏留言，也可開啟網站後台修改網站名稱、icon、首頁文字、成員圖片、近期活動、服務條款與隱私權政策。
+- `admin`：紅色驗證勾；可審核與隱藏留言，也可開啟前台編輯模式修改公開文字與圖片、管理近期活動、新增文字／圖片／混合板塊。
 
 使用者無法從前端更改角色。Supabase RLS 會在資料庫層再次驗證所有寫入。
 
@@ -79,7 +82,12 @@ set role = 'admin'
 where id = 'USER_UUID';
 ```
 
-登入 admin 帳號後，網站導覽列會出現齒輪按鈕。圖片欄位請使用授權素材、官方允許嵌入或你有權使用的 CDN 圖片 URL；不要直接使用未授權官方照片或熱連 Google 圖片。
+登入 admin 帳號後，網站導覽列會出現鉛筆與齒輪按鈕。鉛筆會開啟前台編輯模式，每個可編輯文字或圖片旁會出現小鉛筆；齒輪保留給活動管理與品牌設定。圖片欄位請使用授權素材、官方允許嵌入或你有權使用的 CDN 圖片 URL；不要直接使用未授權官方照片或熱連 Google 圖片。
+
+服務條款與隱私權政策是獨立靜態頁面：
+
+- `/terms.html`
+- `/privacy.html`
 
 ## 檢查
 

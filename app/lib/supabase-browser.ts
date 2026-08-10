@@ -1,7 +1,7 @@
 import { createClient, type Provider, type SupabaseClient, type User as AuthUser } from "@supabase/supabase-js";
 
 export type FanRole = "monstiez" | "admin" | "artist";
-export type FanUser = { id: string; nickname: string; email?: string; role: FanRole };
+export type FanUser = { id: string; nickname: string; email?: string; role: FanRole; needsNickname?: boolean };
 export type FanPost = {
   id: number; userId: string; nickname: string; role: FanRole; body: string; sourceLanguage: string;
   likes: number; comments: number; liked: boolean; canEdit: boolean; createdAt: string;
@@ -25,6 +25,8 @@ export type SiteContent = {
   events?: EditableEvent[];
   terms?: string;
   privacy?: string;
+  uiText?: Record<string, string>;
+  customSections?: Array<{ id: string; title?: string; body?: string; imageUrl?: string; kind: "text" | "image" | "mixed" }>;
 };
 
 let browserClient: SupabaseClient | null | undefined;
@@ -57,7 +59,12 @@ async function profileFor(authUser: AuthUser): Promise<FanUser> {
   const fallbackNickname = String(authUser.user_metadata?.nickname || authUser.user_metadata?.full_name || authUser.email?.split("@")[0] || "MONSTIEZ").slice(0, 24);
   if (!client) return { id: authUser.id, nickname: fallbackNickname, email: authUser.email, role: "monstiez" };
   const { data } = await client.from("profiles").select("nickname,role").eq("id", authUser.id).maybeSingle();
-  return { id: authUser.id, nickname: data?.nickname || fallbackNickname, email: authUser.email, role: data?.role || "monstiez" };
+  const provider = String(authUser.app_metadata?.provider || "");
+  const metadataNickname = String(authUser.user_metadata?.nickname || "").trim();
+  const emailPrefix = authUser.email?.split("@")[0];
+  const nickname = data?.nickname || fallbackNickname;
+  const needsNickname = provider !== "email" && !metadataNickname && (!data?.nickname || data.nickname === emailPrefix || data.nickname === fallbackNickname);
+  return { id: authUser.id, nickname, email: authUser.email, role: data?.role || "monstiez", needsNickname };
 }
 
 export async function currentFanUser() {
@@ -111,6 +118,22 @@ export async function signOutFan() {
   const client = supabaseClient();
   if (client) await client.auth.signOut();
   writeFanCookie(null);
+}
+
+export async function updateFanNickname(nickname: string) {
+  const client = supabaseClient();
+  if (!client) throw new Error("SUPABASE_NOT_CONFIGURED");
+  const clean = nickname.trim().slice(0, 24);
+  if (clean.length < 2) throw new Error("Nickname must be at least 2 characters.");
+  const { data: authData } = await client.auth.getUser();
+  if (!authData.user) throw new Error("NOT_SIGNED_IN");
+  const { error } = await client.from("profiles").update({ nickname: clean }).eq("id", authData.user.id);
+  if (error) throw error;
+  const { data: updatedAuth } = await client.auth.updateUser({ data: { nickname: clean } });
+  const user = updatedAuth.user ? await profileFor(updatedAuth.user) : await profileFor(authData.user);
+  const next = { ...user, nickname: clean, needsNickname: false };
+  writeFanCookie(next);
+  return next;
 }
 
 export async function listFanPosts(viewer: FanUser | null): Promise<FanPost[]> {

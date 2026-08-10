@@ -1,16 +1,16 @@
 "use client";
 
-import { FormEvent, useState, useEffect, useRef, useCallback } from "react";
+import { createContext, FormEvent, type CSSProperties, type ReactNode, useContext, useState, useEffect, useRef, useCallback } from "react";
 import { motion, useInView, useScroll, useTransform } from "motion/react";
 import {
   Play, Pause, Volume2, VolumeX, Heart, MessageCircle,
   ChevronDown, Menu, X, Calendar, MapPin, Music, Send, Disc3, Settings, Save,
 } from "lucide-react";
-import { getInitialLocale, localeLabels, memberBios, messages, supportedLocales, type Locale } from "./i18n";
+import { getInitialLocale, localeLabels, messages, supportedLocales, type Locale } from "./i18n";
 import {
   createFanPost, currentFanUser, deleteFanPost, editFanPost, emailAuth, listFanPosts,
   listAnnouncements, loadSiteContent, moderateFanPost, observeFanUser, reportFanPost,
-  saveSiteContent, signOutFan, socialAuth, toggleFanLike, translateFanPost,
+  saveSiteContent, signOutFan, socialAuth, toggleFanLike, translateFanPost, updateFanNickname,
   type EditableEvent, type FanPost as ApiPost, type FanUser as User, type SiteContent,
 } from "./lib/supabase-browser";
 
@@ -143,63 +143,9 @@ const EVENTS: EditableEvent[] = [
   },
 ];
 
-const DEFAULT_SITE_CONTENT: Required<Pick<SiteContent, "siteName" | "siteTagline" | "terms" | "privacy">> = {
+const DEFAULT_SITE_CONTENT: Required<Pick<SiteContent, "siteName" | "siteTagline">> = {
   siteName: "MONSTIEZ GLOBAL",
   siteTagline: "BABYMONSTER unofficial global fan community",
-  terms: `服務條款
-
-最後更新：2026-08-10
-
-歡迎使用 babymonster.fans。本網站是由粉絲建立的非官方全球粉絲社群，目的在於整理公開資訊、連結官方平台、提供粉絲交流空間。本網站並非 YG Entertainment、BABYMONSTER、其成員或任何權利人之官方網站、代理人或授權代表。
-
-使用本網站即表示你同意遵守本服務條款。若你不同意，請停止使用本網站。
-
-1. 帳號與社群行為
-你需對自己帳號下的所有活動負責。請勿冒充官方、藝人、工作人員或其他使用者。禁止發布騷擾、仇恨、威脅、違法、侵犯隱私、未經證實之私生活追蹤資訊、盜版下載連結、惡意程式或垃圾訊息。管理員得依社群安全與法律風險移除內容、限制功能或停用帳號。
-
-2. 使用者內容
-你保留自己留言與投稿的權利，但授權本網站在營運、展示、備份、審核、翻譯與改善社群體驗所需範圍內使用該內容。請只發布你有權分享的內容。你不得上傳或提交侵犯第三方著作權、商標權、肖像權、隱私權或其他權利的素材。
-
-3. 第三方內容與官方平台
-本網站可能嵌入或連結 Spotify、YouTube、Instagram、Supabase、Google、KakaoTalk 或其他第三方服務。第三方內容與登入流程受其各自條款與隱私政策約束。本網站不提供官方音樂、影片、照片或歌詞之下載，也不主張對 BABYMONSTER 名稱、成員姓名、音樂、影像、標誌或商標擁有權利。
-
-4. 活動與資訊
-活動、發行、行程、票務、成員出席及其他資訊可能變更。本網站會盡力標示來源與提醒使用者以官方公告為準，但不保證所有資訊即時、完整或無誤。
-
-5. 免責聲明
-本網站以「現況」提供。於法律允許範圍內，本網站不對服務不中斷、資料遺失、第三方服務異常、使用者內容或任何間接損害承擔責任。
-
-6. 條款更新
-我們可能因功能、法律或營運需求更新本條款。更新後繼續使用本網站，即表示你接受更新內容。`,
-  privacy: `隱私權政策
-
-最後更新：2026-08-10
-
-本政策說明 babymonster.fans 如何處理與保護使用者資訊。本網站是非官方粉絲社群，採用 GitHub Pages 提供靜態網站，並以 Supabase 提供登入、資料庫與社群功能。
-
-1. 我們收集的資訊
-當你註冊或登入時，我們可能處理你的電子郵件、暱稱、登入提供者、使用者 ID、角色權限與建立時間。當你使用留言板、按讚、檢舉或管理功能時，我們會儲存你提交的留言、語言、按讚紀錄、檢舉原因、公告或網站內容編輯紀錄。系統也可能由第三方服務處理基本技術資訊，例如 IP 位址、瀏覽器資訊與安全記錄。
-
-2. 使用目的
-我們使用資料以提供帳號登入、社群留言、按讚、翻譯、檢舉、管理員審核、網站內容管理、安全防濫用、錯誤排查與法律合規。管理員權限僅用於維護社群秩序與網站內容。
-
-3. 第三方服務
-本網站可能使用 Supabase、GitHub Pages、Google OAuth、Kakao OAuth、Spotify Embed、YouTube Embed、Instagram Embed 與翻譯服務。這些服務可能依其政策處理資料。嵌入內容可能讓第三方平台知道你的瀏覽器載入了該內容。
-
-4. Cookie 與本機儲存
-本網站與登入服務可能使用 cookie、localStorage 或類似技術維持登入狀態、記住語言偏好並保護服務安全。你可透過瀏覽器設定管理，但部分功能可能因此無法正常使用。
-
-5. 資料分享
-除提供服務所必要的第三方供應商、法律要求、保護使用者安全、調查濫用或取得你的同意外，我們不出售你的個人資料。
-
-6. 資料保存與刪除
-帳號資料與社群內容會在提供服務所需期間保存。你可聯絡網站管理者請求刪除或更正資料；部分資料可能因安全、備份、法律或爭議處理需要短期保留。
-
-7. 兒少與全球使用者
-若你所在司法管轄區要求監護人同意，請先取得同意再使用互動功能。請勿公開自己的住址、電話、學校、即時位置或其他敏感個資。
-
-8. 聯絡方式
-若對隱私或資料處理有疑問，請透過本網站公布的管理聯絡方式與站方聯繫。`,
 };
 
 function contentText(value: unknown, fallback: string) {
@@ -210,44 +156,62 @@ function contentUrl(value: unknown, fallback: string) {
   return typeof value === "string" && /^https?:\/\//.test(value.trim()) ? value.trim() : fallback;
 }
 
-const INITIAL_POSTS = [
-  {
-    id: 1, author: "MonsterFan_K", initials: "MK", bg: "#E01020",
-    time: "2 hours ago",
-    content: "AHYEON's rap in DRIP is absolutely devastating 🔥 The way she transitions from rap to vocal in the bridge — sheer genius. Three days on repeat and I'm not sorry.",
-    likes: 284, comments: 42, liked: false,
-  },
-  {
-    id: 2, author: "RukaVocalQueen", initials: "RV", bg: "#cc0000",
-    time: "4 hours ago",
-    content: "Just came back from HELLO MONSTER in Tokyo and I'm not okay 😭 Ruka's live high notes literally defied gravity. Best concert of my entire life without question.",
-    likes: 512, comments: 78, liked: false,
-  },
-  {
-    id: 3, author: "BabyMon_TH", initials: "BT", bg: "#b30000",
-    time: "6 hours ago",
-    content: "The Chiquita × Pharita Thai duo moment during the encore... I was crying in row 3 and feel no shame 🇹🇭❤️ So proud of our Thai monsters on the world stage.",
-    likes: 673, comments: 95, liked: false,
-  },
-  {
-    id: 4, author: "AsaDanceArmy", initials: "AD", bg: "#ff1a1a",
-    time: "1 day ago",
-    content: "Asa's choreography execution in LIKE THAT is criminally underrated. That calm precision while absolutely destroying every move — she is an artist in the truest sense.",
-    likes: 891, comments: 134, liked: false,
-  },
-  {
-    id: 5, author: "RamiAngel", initials: "RA", bg: "#990000",
-    time: "1 day ago",
-    content: "Nobody talks enough about how Rami carried the entire emotional weight of FOREVER. That song makes me cry every single time. Her voice reaches somewhere deep inside you.",
-    likes: 743, comments: 112, liked: false,
-  },
-];
+type InlineEditContextValue = {
+  editing: boolean;
+  text: (key: string, fallback?: string) => string;
+  image: (key: string) => string;
+  updateText: (key: string, value: string) => void;
+  updateImage: (key: string, value: string) => void;
+};
 
-const FALLBACK_API_POSTS: ApiPost[] = INITIAL_POSTS.map(post => ({
-  id: -post.id, userId: "demo", nickname: post.author, role: "monstiez", body: post.content,
-  sourceLanguage: "en", likes: post.likes, comments: post.comments,
-  liked: post.liked, canEdit: false, createdAt: post.time,
-}));
+const InlineEditContext = createContext<InlineEditContextValue>({
+  editing: false,
+  text: (_key, fallback = "") => fallback,
+  image: () => "",
+  updateText: () => {},
+  updateImage: () => {},
+});
+
+function EditPencil({ onClick, label }: { onClick: () => void; label: string }) {
+  return <button type="button" onClick={onClick}
+    className="inline-flex items-center justify-center w-7 h-7 rounded-full border border-red-500/45 bg-black/75 text-red-300 hover:text-white hover:border-red-300 align-middle ml-2"
+    aria-label={label}>✎</button>;
+}
+
+function EditableText({ k, fallback = "", as = "span", className, children }: {
+  k: string; fallback?: string; as?: "span" | "p" | "h1" | "h2" | "h3" | "div";
+  className?: string; children?: ReactNode;
+}) {
+  const editor = useContext(InlineEditContext);
+  const Tag = as;
+  const value = editor.text(k, fallback);
+  const visible = value || (editor.editing ? "點鉛筆新增文字" : "");
+  if (!visible && !children) return null;
+  return <Tag className={className}>
+    {children ?? visible}
+    {editor.editing && <EditPencil label={`Edit ${k}`} onClick={() => {
+      const next = window.prompt("編輯文字", value);
+      if (next !== null) editor.updateText(k, next);
+    }} />}
+  </Tag>;
+}
+
+function EditableImage({ k, alt, className, style }: { k: string; alt: string; className?: string; style?: CSSProperties }) {
+  const editor = useContext(InlineEditContext);
+  const url = editor.image(k);
+  if (!url && !editor.editing) return null;
+  return <div className="relative w-full h-full">
+    {url
+      ? <img src={url} alt={alt} className={className} style={style} />
+      : <div className={`${className || ""} grid place-items-center border border-dashed border-red-500/35 text-red-300/60 text-xs tracking-widest uppercase`}>新增圖片</div>}
+    {editor.editing && <div className="absolute top-3 right-3"><EditPencil label={`Edit image ${k}`} onClick={() => {
+      const next = window.prompt("貼上圖片 URL（請使用授權素材或官方允許嵌入的來源）", url);
+      if (next !== null) editor.updateImage(k, next);
+    }} /></div>}
+  </div>;
+}
+
+const EMPTY_POSTS: ApiPost[] = [];
 
 // ─────────────────────────────────────────────
 // HOOKS
@@ -328,9 +292,9 @@ function useAmbientMusic() {
 // NAV
 // ─────────────────────────────────────────────
 
-function Nav({ playing, onToggle, user, locale, siteName, onLocale, onLogin, onLogout, onAdmin }: {
+function Nav({ playing, onToggle, user, locale, siteName, onLocale, onLogin, onLogout, onAdmin, onEdit }: {
   playing: boolean; onToggle: () => void; user: User | null; locale: Locale; siteName: string;
-  onLocale: (locale: Locale) => void; onLogin: () => void; onLogout: () => void; onAdmin: () => void;
+  onLocale: (locale: Locale) => void; onLogin: () => void; onLogout: () => void; onAdmin: () => void; onEdit: () => void;
 }) {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
@@ -379,6 +343,7 @@ function Nav({ playing, onToggle, user, locale, siteName, onLocale, onLogin, onL
           {user
             ? <button onClick={onLogout} className="hidden sm:block text-white/50 hover:text-white text-xs tracking-widest uppercase">{user.nickname} · {messages[locale].logout}</button>
             : <button onClick={onLogin} className="hidden sm:block text-white/50 hover:text-white text-xs tracking-widest uppercase">{messages[locale].login}</button>}
+          {user?.role === "admin" && <button onClick={onEdit} className="text-red-400/80 hover:text-red-300" aria-label="Edit mode">✎</button>}
           {user?.role === "admin" && <button onClick={onAdmin} className="text-red-400/80 hover:text-red-300" aria-label="Admin dashboard"><Settings size={16} /></button>}
           <button onClick={onToggle}
             className="flex items-center gap-1.5 text-white/50 hover:text-white transition-colors duration-200">
@@ -407,6 +372,7 @@ function Nav({ playing, onToggle, user, locale, siteName, onLocale, onLogin, onL
             {user ? `${user.nickname} · ${t.logout}` : t.login}
           </button>
           {user?.role === "admin" && <button onClick={() => { setOpen(false); onAdmin(); }} className="min-h-11 text-left text-white/60 text-sm tracking-[0.2em] uppercase">Admin</button>}
+          {user?.role === "admin" && <button onClick={() => { setOpen(false); onEdit(); }} className="min-h-11 text-left text-white/60 text-sm tracking-[0.2em] uppercase">Edit mode</button>}
         </motion.div>
       )}
     </nav>
@@ -419,16 +385,13 @@ function Nav({ playing, onToggle, user, locale, siteName, onLocale, onLogin, onL
 
 function Hero({ playing, onToggle, locale, content }: { playing: boolean; onToggle: () => void; locale: Locale; content: SiteContent }) {
   const t = messages[locale];
-  const heroImage = contentUrl(content.heroImageUrl, "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=1920&h=1080&fit=crop&auto=format");
+  const heroImage = contentUrl(content.heroImageUrl, "");
   return (
     <section id="top" className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-black">
       {/* Concert bg */}
       <div className="absolute inset-0">
-        <img
-          src={heroImage}
-          alt="Concert stage"
-          className="w-full h-full object-cover opacity-20"
-        />
+        {heroImage && <img src={heroImage} alt="Hero visual" className="w-full h-full object-cover opacity-20" />}
+        {!heroImage && <EditableImage k="heroImageUrl" alt="Hero visual" className="w-full h-full object-cover opacity-20" />}
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black" />
         <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[900px] h-[400px] rounded-full blur-[130px]"
           style={{ background: "rgba(224,16,32,0.18)" }} />
@@ -447,7 +410,7 @@ function Hero({ playing, onToggle, locale, content }: { playing: boolean; onTogg
         <motion.p initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.3 }}
           className="text-white/35 text-xs tracking-[0.45em] uppercase mb-8">
-          {contentText(content.heroKicker, t.heroKicker)}
+          <EditableText k="heroKicker" fallback={contentText(content.heroKicker, "")} />
         </motion.p>
 
         {/* BABY — slides up from mask */}
@@ -475,7 +438,7 @@ function Hero({ playing, onToggle, locale, content }: { playing: boolean; onTogg
         <motion.p initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 1.1 }}
           className="text-white/50 text-sm md:text-base tracking-[0.35em] uppercase mt-8 mb-14">
-          {contentText(content.heroNote, t.heroNote)}
+          <EditableText k="heroNote" fallback={contentText(content.heroNote, "")} />
         </motion.p>
 
         {/* Stat row */}
@@ -537,9 +500,9 @@ function AboutSection({ locale, content }: { locale: Locale; content: SiteConten
             transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1], delay: 0.15 }}
             className="relative">
             <div className="aspect-[4/5] overflow-hidden rounded-sm relative bg-neutral-900">
-              <img
-                src={contentUrl(content.aboutImageUrl, "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=800&h=1000&fit=crop&auto=format")}
-                alt="BABYMONSTER group performance"
+              <EditableImage
+                k="aboutImageUrl"
+                alt="About visual"
                 className="w-full h-full object-cover"
                 style={{ filter: "grayscale(25%) contrast(1.12) brightness(0.8)" }}
               />
@@ -574,13 +537,13 @@ function AboutSection({ locale, content }: { locale: Locale; content: SiteConten
             <motion.p initial={{ opacity: 0, y: 28 }} animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.8, delay: 0.4 }}
               className="text-white/60 leading-relaxed text-sm md:text-base mb-5">
-              {contentText(content.storyLead, t.storyLead)}
+              <EditableText k="storyLead" fallback={contentText(content.storyLead, "")} />
             </motion.p>
 
             <motion.p initial={{ opacity: 0, y: 28 }} animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.8, delay: 0.52 }}
               className="text-white/40 leading-relaxed text-sm mb-12">
-              {contentText(content.storyBody, t.storyBody)}
+              <EditableText k="storyBody" fallback={contentText(content.storyBody, "")} />
             </motion.p>
 
             <motion.div initial={{ opacity: 0, y: 28 }} animate={isInView ? { opacity: 1, y: 0 } : {}}
@@ -610,7 +573,7 @@ function AboutSection({ locale, content }: { locale: Locale; content: SiteConten
 // MEMBER SPOTLIGHT (individual)
 // ─────────────────────────────────────────────
 
-function MemberSpotlight({ member, index, biography, photoUrl }: { member: typeof MEMBERS[0]; index: number; biography: string; photoUrl?: string }) {
+function MemberSpotlight({ member, index, photoUrl }: { member: typeof MEMBERS[0]; index: number; photoUrl?: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, amount: 0.08 });
   const isEven = index % 2 === 0;
@@ -642,8 +605,8 @@ function MemberSpotlight({ member, index, biography, photoUrl }: { member: typeo
           <motion.div style={{ scale: visualScale, opacity: visualOpacity }}
             className={!isEven ? "md:order-last" : ""}>
             <div className="aspect-[3/4] max-w-sm mx-auto relative overflow-hidden rounded-sm bg-neutral-900 group">
-              <img
-                src={contentUrl(photoUrl, `https://images.unsplash.com/${member.photo}?w=600&h=800&fit=crop&auto=format&q=90`)}
+              <EditableImage
+                k={`memberPhotos.${member.id}`}
                 alt={`${member.name}`}
                 className="w-full h-full object-cover transition-transform duration-[1.2s] group-hover:scale-105"
                 style={{ filter: "contrast(1.08) brightness(0.88)" }}
@@ -713,7 +676,7 @@ function MemberSpotlight({ member, index, biography, photoUrl }: { member: typeo
               animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.8, delay: 0.58 }}
               className="text-white/55 leading-relaxed text-sm md:text-base mb-8">
-              {biography}
+              <EditableText k={`member.${member.id}.bio`} fallback="" />
             </motion.p>
 
           </motion.div>
@@ -758,7 +721,7 @@ function MembersSection({ locale, content }: { locale: Locale; content: SiteCont
         </motion.p>
       </div>
 
-      {MEMBERS.map((m, i) => <MemberSpotlight key={m.id} member={m} index={i} biography={memberBios[locale][i]} photoUrl={content.memberPhotos?.[m.id]} />)}
+      {MEMBERS.map((m, i) => <MemberSpotlight key={m.id} member={m} index={i} photoUrl={content.memberPhotos?.[m.id]} />)}
     </section>
   );
 }
@@ -803,7 +766,7 @@ function AlbumCard({ album, index, isVisible, locale }: { album: typeof ALBUMS[0
         style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>
         {album.title}
       </div>
-      <div className="text-white/40 text-sm leading-relaxed">{messages[locale].streamsLead}</div>
+      <EditableText k={`album.${album.id}.lead`} fallback="" as="div" className="text-white/40 text-sm leading-relaxed" />
 
       {/* Track list */}
       {expanded && (
@@ -834,14 +797,14 @@ function MusicSection({ locale }: { locale: Locale }) {
         <div ref={ref} className="mb-20">
           <motion.span initial={{ opacity: 0 }} animate={isInView ? { opacity: 1 } : {}}
             className="text-xs tracking-[0.4em] uppercase" style={{ color: "#E01020" }}>
-            {t.streamsLabel}
+            <EditableText k="musicKicker" fallback={t.streamsLabel} />
           </motion.span>
           <div className="overflow-hidden mt-4">
             <motion.h2 initial={{ y: 80 }} animate={isInView ? { y: 0 } : {}}
               transition={{ duration: 0.9, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
               className="text-white font-black leading-none"
               style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: "clamp(3.5rem, 10vw, 9rem)" }}>
-              BABYMONSTER<br /><span style={{ color: "#E01020" }}>MUSIC</span>
+              <EditableText k="musicHeading" fallback="BABYMONSTER MUSIC" />
             </motion.h2>
           </div>
         </div>
@@ -856,10 +819,10 @@ function MusicSection({ locale }: { locale: Locale }) {
           </div>
           <div className="grid gap-4">
             <a href="https://www.youtube.com/@BABYMONSTER" target="_blank" rel="noreferrer" className="border border-white/8 rounded-sm p-6 flex flex-col justify-between hover:border-red-600/30 transition-colors">
-              <span className="text-white/35 text-xs tracking-[.3em] uppercase">{t.officialChannel}</span><strong className="text-white text-3xl" style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>YOUTUBE ↗</strong>
+              <span className="text-white/35 text-xs tracking-[.3em] uppercase"><EditableText k="youtubeLabel" fallback={t.officialChannel} /></span><strong className="text-white text-3xl" style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>YOUTUBE ↗</strong>
             </a>
             <a href="https://www.instagram.com/babymonster_ygofficial/" target="_blank" rel="noreferrer" className="border border-white/8 rounded-sm p-6 flex flex-col justify-between hover:border-red-600/30 transition-colors">
-              <span className="text-white/35 text-xs tracking-[.3em] uppercase">{t.officialProfile}</span><strong className="text-white text-3xl" style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>INSTAGRAM ↗</strong>
+              <span className="text-white/35 text-xs tracking-[.3em] uppercase"><EditableText k="instagramLabel" fallback={t.officialProfile} /></span><strong className="text-white text-3xl" style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>INSTAGRAM ↗</strong>
             </a>
           </div>
         </div>
@@ -941,7 +904,7 @@ function EventsSection({ locale, content }: { locale: Locale; content: SiteConte
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, amount: 0.15 });
   const t = messages[locale];
-  const events = Array.isArray(content.events) && content.events.length ? content.events : EVENTS;
+  const events = Array.isArray(content.events) ? content.events : [];
 
   return (
     <section id="events" className="bg-black py-24 md:py-44 border-t border-white/5">
@@ -949,14 +912,14 @@ function EventsSection({ locale, content }: { locale: Locale; content: SiteConte
         <div ref={ref} className="mb-20">
           <motion.span initial={{ opacity: 0 }} animate={isInView ? { opacity: 1 } : {}}
             className="text-xs tracking-[0.4em] uppercase" style={{ color: "#E01020" }}>
-            {t.eventsLabel}
+            <EditableText k="eventsKicker" fallback={t.eventsLabel} />
           </motion.span>
           <div className="overflow-hidden mt-4">
             <motion.h2 initial={{ y: 80 }} animate={isInView ? { y: 0 } : {}}
               transition={{ duration: 0.9, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
               className="text-white font-black leading-none"
               style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: "clamp(3.5rem, 10vw, 9rem)" }}>
-              BABYMONSTER<br /><span style={{ color: "#E01020" }}>{t.eventsLabel}</span>
+              <EditableText k="eventsHeading" fallback={`BABYMONSTER ${t.eventsLabel}`} />
             </motion.h2>
           </div>
         </div>
@@ -1057,12 +1020,12 @@ function PostCard({
 function CommunitySection({ user, locale, onLogin }: { user: User | null; locale: Locale; onLogin: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, amount: 0.12 });
-  const [posts, setPosts] = useState<ApiPost[]>(FALLBACK_API_POSTS);
+  const [posts, setPosts] = useState<ApiPost[]>(EMPTY_POSTS);
   const [body, setBody] = useState("");
   const t = messages[locale];
 
   const refresh = useCallback(() => {
-    listFanPosts(user).then(data => setPosts(data.length ? data : FALLBACK_API_POSTS)).catch(() => setPosts(FALLBACK_API_POSTS));
+    listFanPosts(user).then(data => setPosts(data)).catch(() => setPosts(EMPTY_POSTS));
   }, [user]);
 
   useEffect(() => { refresh(); const timer = window.setInterval(refresh, 10_000); return () => window.clearInterval(timer); }, [refresh]);
@@ -1088,20 +1051,20 @@ function CommunitySection({ user, locale, onLogin }: { user: User | null; locale
         <div ref={ref} className="mb-16">
           <motion.span initial={{ opacity: 0 }} animate={isInView ? { opacity: 1 } : {}}
             className="text-xs tracking-[0.4em] uppercase" style={{ color: "#E01020" }}>
-            {t.communityLabel}
+            <EditableText k="communityKicker" fallback={t.communityLabel} />
           </motion.span>
           <div className="overflow-hidden mt-4">
             <motion.h2 initial={{ y: 80 }} animate={isInView ? { y: 0 } : {}}
               transition={{ duration: 0.9, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
               className="text-white font-black leading-none"
               style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: "clamp(3.5rem, 10vw, 9rem)" }}>
-              MONSTIEZ<br /><span style={{ color: "#E01020" }}>{t.communityTitle}</span>
+              <EditableText k="communityHeading" fallback={`MONSTIEZ ${t.communityTitle}`} />
             </motion.h2>
           </div>
           <motion.p initial={{ opacity: 0, y: 16 }} animate={isInView ? { opacity: 1, y: 0 } : {}}
             transition={{ delay: 0.42 }}
             className="text-white/35 text-sm mt-5 tracking-wide">
-            {t.communityLead}
+            <EditableText k="communityLead" fallback={t.communityLead} />
           </motion.p>
         </div>
 
@@ -1137,9 +1100,10 @@ function CommunitySection({ user, locale, onLogin }: { user: User | null; locale
 }
 
 function FanVoices({ locale, user }: { locale: Locale; user: User | null }) {
-  const [posts, setPosts] = useState<ApiPost[]>(FALLBACK_API_POSTS);
+  const [posts, setPosts] = useState<ApiPost[]>(EMPTY_POSTS);
   useEffect(() => { void listFanPosts(user).then(rows => rows.length && setPosts(rows)).catch(() => {}); }, [user]);
   const loop = [...posts.slice(0, 6), ...posts.slice(0, 6)];
+  if (!loop.length) return null;
   return <section className="voices-section" aria-labelledby="fan-voices-title">
     <div className="max-w-7xl mx-auto px-6"><p className="text-xs tracking-[0.4em] uppercase text-[#E01020]" id="fan-voices-title">{messages[locale].fanVoices}</p></div>
     <div className="voices-viewport"><div className="voices-track">{loop.map((post, index) => <blockquote key={`${post.id}-${index}`}><p>“{post.body}”</p><footer>{post.nickname} · {post.sourceLanguage}</footer></blockquote>)}</div></div>
@@ -1150,7 +1114,8 @@ function Announcements({ locale }: { locale: Locale }) {
   const [items, setItems] = useState<Array<{ id: number; title: string; body: string; published_at: string }>>([]);
   const t = messages[locale];
   useEffect(() => { void listAnnouncements(locale).then(setItems).catch(() => setItems([])); }, [locale]);
-  const rows = items.length ? items : [{ id: -1, title: t.announcementFallbackTitle, body: t.announcementFallbackBody, published_at: "2026-08-10" }];
+  const rows = items;
+  if (!rows.length) return null;
   return <section className="announcement-section"><div className="max-w-7xl mx-auto px-6"><p className="text-xs tracking-[0.4em] uppercase text-[#E01020]">{t.announcements}</p><div className="announcement-list">{rows.map(item => <article key={item.id}><time>{item.published_at.slice(0, 10)}</time><h3>{item.title}</h3><p>{item.body}</p></article>)}</div></div></section>;
 }
 
@@ -1170,7 +1135,7 @@ function LegalModal({ title, body, onClose }: { title: string; body: string; onC
   </div>;
 }
 
-function Footer({ locale, content, onLegal }: { locale: Locale; content: SiteContent; onLegal: (kind: "terms" | "privacy") => void }) {
+function Footer({ locale, content }: { locale: Locale; content: SiteContent }) {
   const ref = useRef<HTMLElement>(null);
   const isInView = useInView(ref, { once: true, amount: 0.3 });
   const t = messages[locale];
@@ -1209,22 +1174,20 @@ function Footer({ locale, content, onLegal }: { locale: Locale; content: SiteCon
           <motion.div initial={{ opacity: 0, y: 20 }} animate={isInView ? { opacity: 1, y: 0 } : {}}
             transition={{ delay: 0.26 }}>
             <div className="text-white/45 text-xs tracking-[0.3em] uppercase mb-4">MONSTIEZ GLOBAL</div>
-            <p className="text-white/22 text-xs leading-relaxed">
-              {t.streamsLead}
-            </p>
+            <EditableText k="footerDescription" fallback="" as="p" className="text-white/22 text-xs leading-relaxed" />
           </motion.div>
         </div>
 
         <div className="border-t border-white/5 pt-8 flex items-center justify-between">
           <span className="text-white/18 text-xs">© 2026 babymonster.fans</span>
           <div className="flex flex-wrap items-center justify-end gap-4">
-            <button onClick={() => onLegal("terms")} className="text-white/28 hover:text-white text-xs tracking-widest">服務條款</button>
-            <button onClick={() => onLegal("privacy")} className="text-white/28 hover:text-white text-xs tracking-widest">隱私權政策</button>
+            <a href="/terms.html" className="text-white/28 hover:text-white text-xs tracking-widest">服務條款</a>
+            <a href="/privacy.html" className="text-white/28 hover:text-white text-xs tracking-widest">隱私權政策</a>
             <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "#E01020" }} />
-            <span className="text-white/18 text-xs tracking-widest">MONSTERS FOREVER</span>
+            <EditableText k="footerSignal" fallback="MONSTERS FOREVER" as="span" className="text-white/18 text-xs tracking-widest" />
           </div>
         </div>
-        <p className="mt-8 pt-6 border-t border-white/5 text-white/25 text-xs leading-relaxed">{t.warning}</p>
+        <EditableText k="footerLegalNote" fallback={t.warning} as="p" className="mt-8 pt-6 border-t border-white/5 text-white/25 text-xs leading-relaxed" />
       </div>
     </footer>
   );
@@ -1276,7 +1239,7 @@ function AudioPlayerBar({ playing, onToggle, locale }: { playing: boolean; onTog
   );
 }
 
-function OpeningLoader({ siteName }: { siteName: string }) {
+function OpeningLoader() {
   return <motion.div
     initial={{ opacity: 1 }}
     exit={{ opacity: 0, transition: { duration: 0.65, ease: [0.16, 1, 0.3, 1] } }}
@@ -1313,7 +1276,7 @@ function OpeningLoader({ siteName }: { siteName: string }) {
           transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
           className="text-white font-black leading-[0.82]"
           style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: "clamp(3.8rem, 14vw, 12rem)" }}>
-          {siteName}
+          BABYMONSTER
         </motion.h1>
       </div>
       <div className="mt-9 h-1 w-56 mx-auto bg-white/10 overflow-hidden">
@@ -1343,10 +1306,8 @@ function AdminPanel({ content, onSaved, onClose }: { content: SiteContent; onSav
     ...content,
     siteName: contentText(content.siteName, DEFAULT_SITE_CONTENT.siteName),
     siteTagline: contentText(content.siteTagline, DEFAULT_SITE_CONTENT.siteTagline),
-    terms: contentText(content.terms, DEFAULT_SITE_CONTENT.terms),
-    privacy: contentText(content.privacy, DEFAULT_SITE_CONTENT.privacy),
     memberPhotos: { ...(content.memberPhotos || {}) },
-    events: Array.isArray(content.events) && content.events.length ? content.events : EVENTS,
+    events: Array.isArray(content.events) ? content.events : [],
   }));
   const [feedback, setFeedback] = useState("");
 
@@ -1391,7 +1352,7 @@ function AdminPanel({ content, onSaved, onClose }: { content: SiteContent; onSav
 
   const inputClass = "mt-2 w-full bg-black border border-white/15 p-3 text-white/75 text-sm focus:outline-none focus:border-red-600/60";
   const labelClass = "block text-white/45 text-xs tracking-wider";
-  const events = draft.events || EVENTS;
+  const events = draft.events || [];
 
   return <div className="fixed inset-0 z-[105] bg-black/88 grid place-items-center p-4" role="dialog" aria-modal="true" aria-label="Admin dashboard">
     <form onSubmit={submit} className="w-full max-w-5xl max-h-[92vh] overflow-auto bg-[#090909] border border-white/15 p-6 md:p-8 shadow-2xl">
@@ -1455,19 +1416,67 @@ function AdminPanel({ content, onSaved, onClose }: { content: SiteContent; onSav
           </div>
         </section>
 
-        <section className="border-t border-white/8 pt-6">
-          <h3 className="text-white font-bold mb-4">服務條款與隱私權</h3>
-          <div className="grid md:grid-cols-2 gap-4">
-            <label className={labelClass}>服務條款<textarea rows={12} value={draft.terms || ""} onChange={e => update("terms", e.target.value)} className={inputClass} /></label>
-            <label className={labelClass}>隱私權政策<textarea rows={12} value={draft.privacy || ""} onChange={e => update("privacy", e.target.value)} className={inputClass} /></label>
-          </div>
-        </section>
       </div>
 
       <div className="sticky bottom-0 mt-8 -mx-6 md:-mx-8 -mb-6 md:-mb-8 border-t border-white/10 bg-[#090909]/95 backdrop-blur px-6 md:px-8 py-4 flex flex-wrap items-center justify-between gap-3">
         <p className="text-white/35 text-xs">{feedback || "只有 Supabase role=admin 的帳號能儲存。"}</p>
         <button type="submit" className="inline-flex items-center gap-2 px-5 py-3 bg-[#E01020] text-white text-xs tracking-[0.2em] uppercase"><Save size={14} />儲存變更</button>
       </div>
+    </form>
+  </div>;
+}
+
+function EditToolbar({ dirty, onSave, onAddSection, onOpenAdmin, onStop }: {
+  dirty: boolean; onSave: () => void; onAddSection: (kind: "text" | "image" | "mixed") => void; onOpenAdmin: () => void; onStop: () => void;
+}) {
+  return <div className="fixed left-1/2 -translate-x-1/2 bottom-[calc(4.25rem+env(safe-area-inset-bottom))] z-[120] flex flex-wrap items-center justify-center gap-2 rounded-full border border-white/12 bg-black/90 px-4 py-3 shadow-2xl backdrop-blur">
+    <span className="text-red-300 text-xs tracking-[0.25em] uppercase">Edit mode</span>
+    <button onClick={onSave} className="px-3 py-2 rounded-full bg-[#E01020] text-white text-xs disabled:opacity-40" disabled={!dirty}>儲存{dirty ? " *" : ""}</button>
+    <button onClick={() => onAddSection("text")} className="px-3 py-2 rounded-full border border-white/15 text-white/60 text-xs">新增文字</button>
+    <button onClick={() => onAddSection("image")} className="px-3 py-2 rounded-full border border-white/15 text-white/60 text-xs">新增圖片</button>
+    <button onClick={() => onAddSection("mixed")} className="px-3 py-2 rounded-full border border-white/15 text-white/60 text-xs">新增板塊</button>
+    <button onClick={onOpenAdmin} className="px-3 py-2 rounded-full border border-white/15 text-white/60 text-xs">活動管理</button>
+    <button onClick={onStop} className="px-3 py-2 rounded-full border border-white/15 text-white/60 text-xs">關閉</button>
+  </div>;
+}
+
+function CustomSections({ sections }: { sections: NonNullable<SiteContent["customSections"]> }) {
+  if (!sections.length) return null;
+  return <section className="bg-black py-24 md:py-36 border-t border-white/5">
+    <div className="max-w-7xl mx-auto px-6 grid gap-20">
+      {sections.map(section => <article key={section.id} className="grid md:grid-cols-2 gap-10 items-center">
+        {(section.kind === "image" || section.kind === "mixed") && <div className="aspect-[16/10] overflow-hidden bg-neutral-950 border border-white/8">
+          <EditableImage k={`customSections.${section.id}.imageUrl`} alt={section.title || "Custom section image"} className="w-full h-full object-cover" />
+        </div>}
+        {(section.kind === "text" || section.kind === "mixed") && <div>
+          <EditableText k={`customSections.${section.id}.title`} fallback={section.title || ""} as="h2" className="text-white font-black text-5xl md:text-7xl leading-none mb-5" />
+          <EditableText k={`customSections.${section.id}.body`} fallback={section.body || ""} as="p" className="text-white/55 text-sm md:text-base leading-relaxed whitespace-pre-wrap" />
+        </div>}
+      </article>)}
+    </div>
+  </section>;
+}
+
+function NicknameModal({ locale, onSaved }: { locale: Locale; onSaved: (user: User) => void }) {
+  const [feedback, setFeedback] = useState("");
+  const t = messages[locale];
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const nickname = String(new FormData(event.currentTarget).get("nickname") || "");
+    try {
+      const user = await updateFanNickname(nickname);
+      onSaved(user);
+    } catch (error) {
+      setFeedback(error instanceof Error ? error.message : t.genericError);
+    }
+  }
+  return <div className="fixed inset-0 z-[115] bg-black/90 grid place-items-center p-5" role="dialog" aria-modal="true" aria-label={t.nickname}>
+    <form onSubmit={submit} className="w-full max-w-md bg-[#090909] border border-white/15 p-7 shadow-2xl">
+      <h2 className="text-white font-black text-4xl mb-3" style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>MONSTIEZ NAME</h2>
+      <p className="text-white/45 text-sm leading-relaxed mb-6">社群登入完成後，請設定公開顯示的粉絲暱稱。這會顯示在留言板上。</p>
+      <label className="text-white/45 text-xs">{t.nickname}<input name="nickname" required minLength={2} maxLength={24} className="block w-full mt-2 p-3 bg-black border border-white/15 text-white focus:outline-none focus:border-red-600/60" /></label>
+      <button type="submit" className="mt-5 w-full p-4 bg-[#E01020] text-white text-xs tracking-[.2em] uppercase">儲存暱稱</button>
+      {feedback && <p className="text-red-400 text-xs mt-4">{feedback}</p>}
     </form>
   </div>;
 }
@@ -1515,9 +1524,10 @@ export default function App() {
   const [authOpen, setAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState<"login" | "register">("login");
   const [adminOpen, setAdminOpen] = useState(false);
-  const [legalOpen, setLegalOpen] = useState<"terms" | "privacy" | null>(null);
   const [siteContent, setSiteContent] = useState<SiteContent>({});
   const [booting, setBooting] = useState(true);
+  const [editMode, setEditMode] = useState(false);
+  const [dirty, setDirty] = useState(false);
 
   useEffect(() => {
     const next = getInitialLocale(navigator.languages, localStorage.getItem("monstiez-locale"));
@@ -1558,6 +1568,43 @@ export default function App() {
 
   function changeLocale(next: Locale) { setLocale(next); localStorage.setItem("monstiez-locale", next); document.documentElement.lang = next; }
   async function logout() { await signOutFan(); setUser(null); }
+  function updateSiteContent(next: SiteContent) { setSiteContent(next); setDirty(true); }
+  function updateText(key: string, value: string) {
+    updateSiteContent({ ...siteContent, uiText: { ...(siteContent.uiText || {}), [key]: value } });
+  }
+  function updateImage(key: string, value: string) {
+    if (key.startsWith("memberPhotos.")) {
+      const memberId = key.split(".")[1];
+      updateSiteContent({ ...siteContent, memberPhotos: { ...(siteContent.memberPhotos || {}), [memberId]: value } });
+      return;
+    }
+    if (key.startsWith("customSections.")) {
+      const [, id, field] = key.split(".");
+      updateSiteContent({ ...siteContent, customSections: (siteContent.customSections || []).map(section => section.id === id ? { ...section, [field]: value } : section) });
+      return;
+    }
+    updateSiteContent({ ...siteContent, [key]: value });
+  }
+  function readText(key: string, fallback = "") {
+    return contentText(siteContent.uiText?.[key], fallback);
+  }
+  function readImage(key: string) {
+    if (key.startsWith("memberPhotos.")) return contentUrl(siteContent.memberPhotos?.[key.split(".")[1]], "");
+    if (key.startsWith("customSections.")) {
+      const [, id, field] = key.split(".");
+      const section = (siteContent.customSections || []).find(item => item.id === id) as Record<string, unknown> | undefined;
+      return contentUrl(section?.[field], "");
+    }
+    return contentUrl(siteContent[key as keyof SiteContent], "");
+  }
+  function addSection(kind: "text" | "image" | "mixed") {
+    const id = `section-${Date.now().toString(36)}`;
+    updateSiteContent({ ...siteContent, customSections: [...(siteContent.customSections || []), { id, kind, title: "", body: "", imageUrl: "" }] });
+  }
+  async function saveEdits() {
+    await saveSiteContent(siteContent);
+    setDirty(false);
+  }
 
   useEffect(() => {
     // Hide scrollbar
@@ -1568,24 +1615,28 @@ export default function App() {
   }, []);
 
   return (
+    <InlineEditContext.Provider value={{ editing: editMode, text: readText, image: readImage, updateText, updateImage }}>
     <div className="bg-black min-h-screen" style={{ fontFamily: "'Inter', sans-serif" }}>
-      {booting && <OpeningLoader siteName={contentText(siteContent.siteName, DEFAULT_SITE_CONTENT.siteName)} />}
-      <Nav playing={playing} onToggle={toggle} user={user} locale={locale} siteName={contentText(siteContent.siteName, DEFAULT_SITE_CONTENT.siteName)} onLocale={changeLocale} onLogin={() => setAuthOpen(true)} onLogout={logout} onAdmin={() => setAdminOpen(true)} />
+      {booting && <OpeningLoader />}
+      <Nav playing={playing} onToggle={toggle} user={user} locale={locale} siteName={contentText(siteContent.siteName, DEFAULT_SITE_CONTENT.siteName)} onLocale={changeLocale} onLogin={() => setAuthOpen(true)} onLogout={logout} onAdmin={() => setAdminOpen(true)} onEdit={() => setEditMode(true)} />
       <Hero playing={playing} onToggle={toggle} locale={locale} content={siteContent} />
       <AboutSection locale={locale} content={siteContent} />
       <MembersSection locale={locale} content={siteContent} />
       <MusicSection locale={locale} />
       <EventsSection locale={locale} content={siteContent} />
+      <CustomSections sections={siteContent.customSections || []} />
       <CommunitySection user={user} locale={locale} onLogin={() => setAuthOpen(true)} />
       <FanVoices locale={locale} user={user} />
       <Announcements locale={locale} />
-      <Footer locale={locale} content={siteContent} onLegal={setLegalOpen} />
+      <Footer locale={locale} content={siteContent} />
       <AudioPlayerBar playing={playing} onToggle={toggle} locale={locale} />
       {authOpen && <AuthModal locale={locale} mode={authMode} onMode={setAuthMode} onClose={() => setAuthOpen(false)} onAuthenticated={setUser} />}
       {adminOpen && user?.role === "admin" && <AdminPanel content={siteContent} onSaved={setSiteContent} onClose={() => setAdminOpen(false)} />}
-      {legalOpen && <LegalModal title={legalOpen === "terms" ? "服務條款" : "隱私權政策"} body={contentText(siteContent[legalOpen], DEFAULT_SITE_CONTENT[legalOpen])} onClose={() => setLegalOpen(null)} />}
+      {editMode && user?.role === "admin" && <EditToolbar dirty={dirty} onSave={() => void saveEdits()} onAddSection={addSection} onOpenAdmin={() => setAdminOpen(true)} onStop={() => setEditMode(false)} />}
+      {user?.needsNickname && <NicknameModal locale={locale} onSaved={setUser} />}
       {/* Spacer for fixed audio bar */}
       <div className="h-[calc(3.5rem+env(safe-area-inset-bottom))]" />
     </div>
+    </InlineEditContext.Provider>
   );
 }
