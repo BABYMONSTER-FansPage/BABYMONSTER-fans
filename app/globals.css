@@ -155,6 +155,31 @@ button { color: inherit; }
 .voices-track blockquote footer { color: var(--acid); font-size: 11px; letter-spacing: .08em; }
 @keyframes voices-marquee { to { transform: translateX(calc(-50% - 8px)); } }
 
+.album-marquee-viewport {
+  overflow: hidden;
+  margin-inline: calc(50% - 50vw);
+  padding-inline: max(24px, calc((100vw - 80rem) / 2));
+  mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
+}
+.album-marquee-track {
+  width: max-content;
+  display: flex;
+  gap: 2rem;
+  animation: album-marquee linear infinite;
+  will-change: transform;
+}
+.album-marquee-viewport:hover .album-marquee-track,
+.album-marquee-viewport:focus-within .album-marquee-track {
+  animation-play-state: paused;
+}
+.album-marquee-item {
+  flex: 0 0 calc((min(80rem, 100vw - 48px) - 4rem) / 3);
+  min-width: 260px;
+}
+@keyframes album-marquee {
+  to { transform: translateX(calc(-50% - 1rem)); }
+}
+
 .announcement-section { padding: 90px 0; border-top: 1px solid #292929; }
 .announcement-list { display: grid; gap: 0; }
 .announcement-list article { display: grid; grid-template-columns: 150px .8fr 1.6fr; gap: 30px; padding: 25px 0; border-top: 1px solid #343434; align-items: start; }
@@ -207,6 +232,7 @@ button { color: inherit; }
   .member-visual { position: relative; top: 0; margin-top: 0; width: 100%; height: 52vh; }
   .member-copy { padding: 0; }
   .announcement-list article { grid-template-columns: 1fr; gap: 8px; }
+  .album-marquee-item { flex-basis: min(78vw, 340px); }
 }
 
 @media (max-width: 560px) {

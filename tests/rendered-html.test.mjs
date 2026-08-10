@@ -52,6 +52,9 @@ test("bundles six static languages and translates fan posts only", async () => {
   assert.match(relaxedMigration, /drop constraint if exists site_content_key_check/);
   assert.match(spotifyFunction, /x-client-info/);
   assert.match(spotifyFunction, /access-control-allow-methods/);
+  assert.match(spotifyFunction, /\/albums\/\$\{item\.id\}\?market=US/);
+  assert.match(spotifyFunction, /trackNames/);
+  assert.doesNotMatch(spotifyFunction, /\$\{item\.total_tracks\} tracks/);
   assert.match(translateFunction, /x-client-info/);
   assert.match(privacy, /Google 登入與 Google 使用者資料/);
   assert.match(privacy, /不會要求、讀取或儲存你的 Gmail/);

@@ -780,7 +780,7 @@ function AlbumCard({ album, index, isVisible, locale }: { album: SpotifyRelease;
       initial={{ opacity: 0, y: 60 }}
       animate={isVisible ? { opacity: 1, y: 0 } : {}}
       transition={{ duration: 0.85, delay: 0.2 + index * 0.13, ease: [0.16, 1, 0.3, 1] }}
-      className="group cursor-pointer"
+      className="group cursor-pointer h-full"
       onClick={() => setExpanded(!expanded)}>
       <div className="relative aspect-square overflow-hidden rounded-sm mb-5 bg-neutral-900">
         {album.imageUrl && <img src={album.imageUrl} alt={album.title} className="w-full h-full object-cover transition-all duration-[1200ms] group-hover:scale-105" style={{ filter: "contrast(1.08) brightness(0.78)" }} />}
@@ -858,8 +858,12 @@ function MusicSection({ locale, content }: { locale: Locale; content: SiteConten
           </div>
         </div>
 
-        {albums.length > 0 && <div className="grid md:grid-cols-3 gap-8">
-          {albums.map((a, i) => <AlbumCard key={a.id || a.title} album={a} index={i} isVisible={isInView} locale={locale} />)}
+        {albums.length > 0 && <div className="album-marquee-viewport" aria-label="BABYMONSTER releases">
+          <div className="album-marquee-track" style={{ animationDuration: `${Math.max(30, albums.length * 8)}s` }}>
+            {[...albums, ...albums].map((a, i) => <div key={`${a.id || a.title}-${i}`} className="album-marquee-item">
+              <AlbumCard album={a} index={i % albums.length} isVisible={isInView} locale={locale} />
+            </div>)}
+          </div>
         </div>}
         {albums.length === 0 && spotifyStatus && <div className="border border-white/8 bg-white/[0.018] p-6 text-white/45 text-sm leading-relaxed">
           <p className="text-white/65 mb-2">Spotify 專輯資料暫時沒有載入。</p>
@@ -1395,6 +1399,7 @@ function AdminPanel({ content, onSaved, onClose }: { content: SiteContent; onSav
     siteName: contentText(content.siteName, DEFAULT_SITE_CONTENT.siteName),
     siteTagline: contentText(content.siteTagline, DEFAULT_SITE_CONTENT.siteTagline),
     memberPhotos: { ...(content.memberPhotos || {}) },
+    uiText: { ...(content.uiText || {}) },
     events: Array.isArray(content.events) ? content.events : [],
     albums: Array.isArray(content.albums) ? content.albums : [],
   }));
@@ -1406,6 +1411,10 @@ function AdminPanel({ content, onSaved, onClose }: { content: SiteContent; onSav
 
   function updateMemberPhoto(memberId: string, value: string) {
     setDraft(current => ({ ...current, memberPhotos: { ...(current.memberPhotos || {}), [memberId]: value } }));
+  }
+
+  function updateUiText(key: string, value: string) {
+    setDraft(current => ({ ...current, uiText: { ...(current.uiText || {}), [key]: value } }));
   }
 
   function updateEvent(index: number, key: keyof EditableEvent, value: string) {
@@ -1450,6 +1459,26 @@ function AdminPanel({ content, onSaved, onClose }: { content: SiteContent; onSav
     setDraft(current => ({ ...current, albums: (current.albums || []).filter((_, albumIndex) => albumIndex !== index) }));
   }
 
+  async function importSpotifyAlbums() {
+    setFeedback("Fetching Spotify releases...");
+    try {
+      const result = await fetchSpotifyReleaseStatus();
+      if (!result.releases.length) {
+        setFeedback(`Spotify 沒有回傳專輯。狀態：${result.error || "NO_SPOTIFY_RELEASES"}`);
+        return;
+      }
+      setDraft(current => {
+        const existing = current.albums || [];
+        const existingIds = new Set(existing.map(album => album.id || album.spotifyUrl || album.title));
+        const additions = result.releases.filter(album => !existingIds.has(album.id || album.spotifyUrl || album.title));
+        return { ...current, albums: [...existing, ...additions] };
+      });
+      setFeedback(`已匯入 Spotify 專輯，可編輯後儲存。${result.error ? `狀態：${result.error}` : ""}`);
+    } catch (error) {
+      setFeedback(error instanceof Error ? error.message : "Spotify releases could not be imported.");
+    }
+  }
+
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setFeedback("Saving...");
@@ -1466,6 +1495,7 @@ function AdminPanel({ content, onSaved, onClose }: { content: SiteContent; onSav
   const labelClass = "block text-white/45 text-xs tracking-wider";
   const events = draft.events || [];
   const albums = draft.albums || [];
+  const uiText = draft.uiText || {};
 
   return <div className="fixed inset-0 z-[105] bg-black/88 grid place-items-center p-4" role="dialog" aria-modal="true" aria-label="Admin dashboard">
     <form onSubmit={submit} className="w-full max-w-5xl max-h-[92vh] overflow-auto bg-[#090909] border border-white/15 p-6 md:p-8 shadow-2xl">
@@ -1497,6 +1527,7 @@ function AdminPanel({ content, onSaved, onClose }: { content: SiteContent; onSav
             <label className={labelClass}>介紹圖片 URL<input value={draft.aboutImageUrl || ""} onChange={e => update("aboutImageUrl", e.target.value)} placeholder="https://..." className={inputClass} /></label>
             <label className={labelClass}>介紹短文<textarea rows={4} value={draft.storyLead || ""} onChange={e => update("storyLead", e.target.value)} className={inputClass} /></label>
             <label className={`${labelClass} md:col-span-2`}>完整介紹<textarea rows={5} value={draft.storyBody || ""} onChange={e => update("storyBody", e.target.value)} className={inputClass} /></label>
+            <label className={`${labelClass} md:col-span-2`}>團體詳細介紹（彈窗）<textarea rows={6} value={uiText.groupDetail || ""} onChange={e => updateUiText("groupDetail", e.target.value)} className={inputClass} /></label>
           </div>
         </section>
 
@@ -1505,6 +1536,19 @@ function AdminPanel({ content, onSaved, onClose }: { content: SiteContent; onSav
           <p className="text-white/35 text-xs leading-relaxed mb-4">建議使用官方允許 embed 的內容、授權素材、自己拍攝或粉絲授權圖片。不要直接抓未授權官方照或 Google 圖片。</p>
           <div className="grid md:grid-cols-2 gap-4">
             {MEMBERS.map(member => <label key={member.id} className={labelClass}>{member.name}<input value={draft.memberPhotos?.[member.id] || ""} onChange={e => updateMemberPhoto(member.id, e.target.value)} placeholder="https://..." className={inputClass} /></label>)}
+          </div>
+        </section>
+
+        <section className="border-t border-white/8 pt-6">
+          <h3 className="text-white font-bold mb-4">團員介紹與詳細介紹</h3>
+          <div className="grid gap-4">
+            {MEMBERS.map(member => <div key={member.id} className="border border-white/8 p-4">
+              <h4 className="text-white/70 font-bold mb-3">{member.name}</h4>
+              <div className="grid md:grid-cols-2 gap-3">
+                <label className={labelClass}>頁面短介紹<textarea rows={4} value={uiText[`member.${member.id}.bio`] || ""} onChange={e => updateUiText(`member.${member.id}.bio`, e.target.value)} className={inputClass} /></label>
+                <label className={labelClass}>詳細介紹（彈窗）<textarea rows={4} value={uiText[`member.${member.id}.detail`] || ""} onChange={e => updateUiText(`member.${member.id}.detail`, e.target.value)} className={inputClass} /></label>
+              </div>
+            </div>)}
           </div>
         </section>
 
@@ -1532,7 +1576,10 @@ function AdminPanel({ content, onSaved, onClose }: { content: SiteContent; onSav
         <section className="border-t border-white/8 pt-6">
           <div className="flex items-center justify-between gap-4 mb-4">
             <h3 className="text-white font-bold">專輯／單曲管理</h3>
-            <button type="button" onClick={addAlbum} className="px-3 py-2 border border-white/15 text-white/60 text-xs hover:text-white">新增專輯</button>
+            <div className="flex flex-wrap gap-2 justify-end">
+              <button type="button" onClick={() => void importSpotifyAlbums()} className="px-3 py-2 border border-red-500/35 text-red-300/80 text-xs hover:text-red-200">匯入 Spotify</button>
+              <button type="button" onClick={addAlbum} className="px-3 py-2 border border-white/15 text-white/60 text-xs hover:text-white">新增專輯</button>
+            </div>
           </div>
           <p className="text-white/35 text-xs leading-relaxed mb-4">
             Spotify 自動抓取需要部署 Edge Function 並設定 secrets。手動新增時，封面請使用 Spotify 回傳圖片、官方允許 embed 的圖片，或你已取得授權的圖片，並附 Spotify 連結。

@@ -16,6 +16,10 @@ type SpotifyAlbum = {
   total_tracks?: number;
 };
 
+type SpotifyAlbumDetail = {
+  tracks?: { items?: Array<{ name?: string }> };
+};
+
 Deno.serve(async request => {
   const requestOrigin = request.headers.get("origin") || "";
   const corsOrigin = allowedOrigins.has(requestOrigin) || /^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(requestOrigin) ? requestOrigin : "https://babymonster.fans";
@@ -51,14 +55,31 @@ Deno.serve(async request => {
     if (!albumsResponse.ok) throw new Error(`SPOTIFY_RELEASES_FAILED_${albumsResponse.status}`);
 
     const seen = new Set<string>();
-    const releases = (albums.items || [])
+    const uniqueAlbums = (albums.items || [])
       .filter((item: SpotifyAlbum) => {
         const key = item.name.toLowerCase();
         if (seen.has(key)) return false;
         seen.add(key);
         return true;
-      })
-      .map((item: SpotifyAlbum) => ({
+      });
+
+    const releases = await Promise.all(uniqueAlbums.map(async (item: SpotifyAlbum) => {
+      let trackNames: string[] = [];
+      try {
+        const albumDetailResponse = await fetch(`https://api.spotify.com/v1/albums/${item.id}?market=US`, {
+          headers: { authorization: `Bearer ${token.access_token}` },
+        });
+        const albumDetail = await albumDetailResponse.json() as SpotifyAlbumDetail;
+        if (albumDetailResponse.ok) {
+          trackNames = (albumDetail.tracks?.items || [])
+            .map(track => String(track.name || "").trim())
+            .filter(Boolean);
+        }
+      } catch {
+        trackNames = [];
+      }
+
+      return {
         id: item.id,
         title: item.name,
         year: item.release_date?.slice(0, 4) || "",
@@ -66,8 +87,9 @@ Deno.serve(async request => {
         releaseDate: item.release_date || "",
         imageUrl: item.images?.[0]?.url || "",
         spotifyUrl: item.external_urls?.spotify || "",
-        tracks: item.total_tracks ? [`${item.total_tracks} tracks`] : [],
-      }));
+        tracks: trackNames.length ? trackNames : [],
+      };
+    }));
 
     return Response.json({ releases }, { headers: { ...cors, "cache-control": "public, max-age=3600" } });
   } catch (error) {
