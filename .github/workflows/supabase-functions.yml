@@ -1,0 +1,43 @@
+name: Deploy Supabase Functions
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "supabase/functions/**"
+      - ".github/workflows/supabase-functions.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+      SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
+      SPOTIFY_CLIENT_SECRET: ${{ secrets.SPOTIFY_CLIENT_SECRET }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Check required secrets
+        run: |
+          test -n "$SUPABASE_ACCESS_TOKEN"
+          test -n "$SUPABASE_PROJECT_REF"
+          test -n "$SPOTIFY_CLIENT_ID"
+          test -n "$SPOTIFY_CLIENT_SECRET"
+
+      - name: Set Spotify secrets in Supabase
+        run: supabase secrets set SPOTIFY_CLIENT_ID="$SPOTIFY_CLIENT_ID" SPOTIFY_CLIENT_SECRET="$SPOTIFY_CLIENT_SECRET" --project-ref "$SUPABASE_PROJECT_REF"
+
+      - name: Deploy Spotify releases function
+        run: supabase functions deploy spotify-releases --project-ref "$SUPABASE_PROJECT_REF"
+
+      - name: Deploy comment translation function
+        run: supabase functions deploy translate-comment --project-ref "$SUPABASE_PROJECT_REF"
