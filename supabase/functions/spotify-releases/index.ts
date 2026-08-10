@@ -1,4 +1,10 @@
 const BABYMONSTER_SPOTIFY_ARTIST_ID = "1SIocsqdEefUTE6XKGUiVS";
+const allowedOrigins = new Set([
+  "https://babymonster.fans",
+  "https://www.babymonster.fans",
+  "https://m.babymonster.fans",
+  "https://babymonster-fanspage.github.io",
+]);
 
 type SpotifyAlbum = {
   id: string;
@@ -12,7 +18,7 @@ type SpotifyAlbum = {
 
 Deno.serve(async request => {
   const requestOrigin = request.headers.get("origin") || "";
-  const corsOrigin = requestOrigin === "https://babymonster.fans" || /^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(requestOrigin) ? requestOrigin : "https://babymonster.fans";
+  const corsOrigin = allowedOrigins.has(requestOrigin) || /^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(requestOrigin) ? requestOrigin : "https://babymonster.fans";
   const cors = { "access-control-allow-origin": corsOrigin, "vary": "origin", "access-control-allow-headers": "authorization, apikey, content-type" };
   if (request.method === "OPTIONS") return new Response("ok", { headers: cors });
 
@@ -21,19 +27,23 @@ Deno.serve(async request => {
   if (!clientId || !clientSecret) return Response.json({ releases: [], error: "SPOTIFY_SECRETS_MISSING" }, { headers: cors });
 
   try {
+    const encodedCredentials = btoa(`${clientId}:${clientSecret}`);
     const tokenResponse = await fetch("https://accounts.spotify.com/api/token", {
       method: "POST",
-      headers: { "content-type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({ grant_type: "client_credentials", client_id: clientId, client_secret: clientSecret }),
+      headers: {
+        "authorization": `Basic ${encodedCredentials}`,
+        "content-type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({ grant_type: "client_credentials" }),
     });
     const token = await tokenResponse.json();
-    if (!tokenResponse.ok || !token.access_token) throw new Error("SPOTIFY_TOKEN_FAILED");
+    if (!tokenResponse.ok || !token.access_token) throw new Error(`SPOTIFY_TOKEN_FAILED_${tokenResponse.status}`);
 
     const albumsResponse = await fetch(`https://api.spotify.com/v1/artists/${BABYMONSTER_SPOTIFY_ARTIST_ID}/albums?include_groups=album,single&limit=12`, {
       headers: { authorization: `Bearer ${token.access_token}` },
     });
     const albums = await albumsResponse.json();
-    if (!albumsResponse.ok) throw new Error("SPOTIFY_RELEASES_FAILED");
+    if (!albumsResponse.ok) throw new Error(`SPOTIFY_RELEASES_FAILED_${albumsResponse.status}`);
 
     const seen = new Set<string>();
     const releases = (albums.items || [])
