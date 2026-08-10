@@ -1664,6 +1664,7 @@ export default function App() {
   const [booting, setBooting] = useState(true);
   const [editMode, setEditMode] = useState(false);
   const [dirty, setDirty] = useState(false);
+  const [editFeedback, setEditFeedback] = useState("");
 
   useEffect(() => {
     const next = getInitialLocale(navigator.languages, localStorage.getItem("monstiez-locale"));
@@ -1738,8 +1739,17 @@ export default function App() {
     updateSiteContent({ ...siteContent, customSections: [...(siteContent.customSections || []), { id, kind, title: "", body: "", imageUrl: "" }] });
   }
   async function saveEdits() {
-    await saveSiteContent(siteContent);
-    setDirty(false);
+    setEditFeedback("Saving...");
+    try {
+      await saveSiteContent(siteContent);
+      setDirty(false);
+      setEditFeedback("Saved.");
+      window.setTimeout(() => setEditFeedback(""), 1800);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Site content could not be saved.";
+      setEditFeedback(message);
+      window.alert(`儲存失敗：${message}`);
+    }
   }
 
   useEffect(() => {
@@ -1770,6 +1780,7 @@ export default function App() {
       {authOpen && <AuthModal locale={locale} mode={authMode} onMode={setAuthMode} onClose={() => setAuthOpen(false)} onAuthenticated={setUser} />}
       {adminOpen && user?.role === "admin" && <AdminPanel content={siteContent} onSaved={setSiteContent} onClose={() => setAdminOpen(false)} />}
       {editMode && user?.role === "admin" && <EditToolbar dirty={dirty} onSave={() => void saveEdits()} onAddSection={addSection} onOpenAdmin={() => setAdminOpen(true)} onStop={() => setEditMode(false)} />}
+      {editMode && editFeedback && <div className="fixed left-1/2 -translate-x-1/2 bottom-[calc(8.25rem+env(safe-area-inset-bottom))] z-[121] rounded-full border border-white/12 bg-black/90 px-4 py-2 text-white/55 text-xs shadow-2xl">{editFeedback}</div>}
       {user?.needsNickname && <NicknameModal locale={locale} onSaved={setUser} />}
       {/* Spacer for fixed audio bar */}
       <div className="h-[calc(3.5rem+env(safe-area-inset-bottom))]" />

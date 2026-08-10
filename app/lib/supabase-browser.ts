@@ -254,7 +254,10 @@ export async function loadSiteContent(): Promise<SiteContent> {
 export async function saveSiteContent(content: SiteContent) {
   const client = supabaseClient();
   if (!client) throw new Error("SUPABASE_NOT_CONFIGURED");
-  const rows = Object.entries(content).map(([key, value]) => ({ key, value }));
+  const rows = Object.entries(content)
+    .filter(([, value]) => value !== undefined)
+    .map(([key, value]) => ({ key, value }));
+  if (!rows.length) return;
   const { error } = await client.from("site_content").upsert(rows, { onConflict: "key" });
   if (error) throw error;
 }

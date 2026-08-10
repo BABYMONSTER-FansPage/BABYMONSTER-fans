@@ -19,7 +19,12 @@ type SpotifyAlbum = {
 Deno.serve(async request => {
   const requestOrigin = request.headers.get("origin") || "";
   const corsOrigin = allowedOrigins.has(requestOrigin) || /^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(requestOrigin) ? requestOrigin : "https://babymonster.fans";
-  const cors = { "access-control-allow-origin": corsOrigin, "vary": "origin", "access-control-allow-headers": "authorization, apikey, content-type" };
+  const cors = {
+    "access-control-allow-origin": corsOrigin,
+    "access-control-allow-methods": "POST, OPTIONS",
+    "access-control-allow-headers": "authorization, x-client-info, apikey, content-type",
+    "vary": "origin",
+  };
   if (request.method === "OPTIONS") return new Response("ok", { headers: cors });
 
   const clientId = Deno.env.get("SPOTIFY_CLIENT_ID");

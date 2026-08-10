@@ -2,11 +2,22 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const allowed = new Set(["zh-TW", "zh-CN", "th", "en", "ko", "ja"]);
 const languageMap: Record<string, string> = { "zh-TW": "zt", "zh-CN": "zh", th: "th", en: "en", ko: "ko", ja: "ja" };
+const allowedOrigins = new Set([
+  "https://babymonster.fans",
+  "https://www.babymonster.fans",
+  "https://m.babymonster.fans",
+  "https://babymonster-fanspage.github.io",
+]);
 
 Deno.serve(async request => {
   const requestOrigin = request.headers.get("origin") || "";
-  const corsOrigin = requestOrigin === "https://babymonster.fans" || /^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(requestOrigin) ? requestOrigin : "https://babymonster.fans";
-  const cors = { "access-control-allow-origin": corsOrigin, "vary": "origin", "access-control-allow-headers": "authorization, apikey, content-type" };
+  const corsOrigin = allowedOrigins.has(requestOrigin) || /^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(requestOrigin) ? requestOrigin : "https://babymonster.fans";
+  const cors = {
+    "access-control-allow-origin": corsOrigin,
+    "access-control-allow-methods": "POST, OPTIONS",
+    "access-control-allow-headers": "authorization, x-client-info, apikey, content-type",
+    "vary": "origin",
+  };
   if (request.method === "OPTIONS") return new Response("ok", { headers: cors });
   try {
     const { postId, target } = await request.json();
