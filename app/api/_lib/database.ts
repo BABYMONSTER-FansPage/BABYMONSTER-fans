@@ -1,6 +1,7 @@
 import { env } from "cloudflare:workers";
 
-export type SessionUser = { id: number; nickname: string; email?: string };
+export type UserRole = "monstiez" | "admin" | "artist";
+export type SessionUser = { id: number; nickname: string; email?: string; role: UserRole };
 
 function db() {
   const binding = (env as unknown as { DB?: D1Database }).DB;
@@ -19,6 +20,7 @@ export async function ensureDatabase() {
       password_salt TEXT,
       provider TEXT,
       provider_id TEXT,
+      role TEXT NOT NULL DEFAULT 'monstiez' CHECK(role IN ('monstiez','admin','artist')),
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     )`),
     d1.prepare("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_provider_identity ON users(provider, provider_id) WHERE provider_id IS NOT NULL"),
@@ -33,6 +35,9 @@ export async function ensureDatabase() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       body TEXT NOT NULL CHECK(length(body) BETWEEN 2 AND 500),
+      source_language TEXT NOT NULL DEFAULT 'zh-TW',
+      status TEXT NOT NULL DEFAULT 'published' CHECK(status IN ('published','hidden','pending')),
+      updated_at TEXT,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     )`),
     d1.prepare("CREATE INDEX IF NOT EXISTS idx_posts_created_at ON posts(created_at DESC)"),
@@ -42,7 +47,49 @@ export async function ensureDatabase() {
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       PRIMARY KEY(post_id, user_id)
     )`),
+    d1.prepare(`CREATE TABLE IF NOT EXISTS post_translations (
+      post_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+      target_language TEXT NOT NULL,
+      translated_body TEXT NOT NULL,
+      provider TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY(post_id, target_language)
+    )`),
+    d1.prepare(`CREATE TABLE IF NOT EXISTS reports (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      post_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+      reporter_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      reason TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'open' CHECK(status IN ('open','resolved','dismissed')),
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(post_id, reporter_id)
+    )`),
+    d1.prepare("CREATE INDEX IF NOT EXISTS idx_reports_status ON reports(status, created_at DESC)"),
+    d1.prepare(`CREATE TABLE IF NOT EXISTS announcements (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      body TEXT NOT NULL,
+      locale TEXT NOT NULL DEFAULT 'zh-TW',
+      published_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      starts_at TEXT,
+      ends_at TEXT,
+      pinned INTEGER NOT NULL DEFAULT 0,
+      created_by INTEGER REFERENCES users(id) ON DELETE SET NULL
+    )`),
+    d1.prepare("CREATE INDEX IF NOT EXISTS idx_announcements_active ON announcements(locale, pinned DESC, published_at DESC)"),
   ]);
+  await ensureColumn(d1, "users", "role", "TEXT NOT NULL DEFAULT 'monstiez'");
+  await ensureColumn(d1, "posts", "source_language", "TEXT NOT NULL DEFAULT 'zh-TW'");
+  await ensureColumn(d1, "posts", "status", "TEXT NOT NULL DEFAULT 'published'");
+  await ensureColumn(d1, "posts", "updated_at", "TEXT");
+}
+
+async function ensureColumn(d1: D1Database, table: string, column: string, definition: string) {
+  const info = await d1.prepare(`PRAGMA table_info(${table})`).all<{ name: string }>();
+  if (!info.results.some(item => item.name === column)) {
+    try { await d1.prepare(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`).run(); }
+    catch (error) { if (!String(error).toLowerCase().includes("duplicate column")) throw error; }
+  }
 }
 
 function bytesToBase64(bytes: Uint8Array) {
@@ -104,7 +151,7 @@ export async function getSessionUser(request: Request): Promise<SessionUser | nu
   const token = readCookie(request, "monstiez_session");
   if (!token) return null;
   await ensureDatabase();
-  const row = await db().prepare(`SELECT users.id, users.nickname, users.email
+  const row = await db().prepare(`SELECT users.id, users.nickname, users.email, users.role
     FROM sessions JOIN users ON users.id = sessions.user_id
     WHERE sessions.token_hash = ? AND sessions.expires_at > CURRENT_TIMESTAMP`).bind(await digest(token)).first<SessionUser>();
   return row || null;
@@ -117,10 +164,10 @@ export async function deleteSession(request: Request) {
 
 export async function findOrCreateOAuthUser(provider: string, providerId: string, email: string | null, nickname: string) {
   await ensureDatabase();
-  const existing = await db().prepare("SELECT id, nickname, email FROM users WHERE provider = ? AND provider_id = ?").bind(provider, providerId).first<SessionUser>();
+  const existing = await db().prepare("SELECT id, nickname, email, role FROM users WHERE provider = ? AND provider_id = ?").bind(provider, providerId).first<SessionUser>();
   if (existing) return existing;
   const result = await db().prepare("INSERT INTO users(email, nickname, provider, provider_id) VALUES(?, ?, ?, ?)").bind(email, nickname.slice(0, 24), provider, providerId).run();
-  return { id: Number(result.meta.last_row_id), nickname: nickname.slice(0, 24), email: email || undefined };
+  return { id: Number(result.meta.last_row_id), nickname: nickname.slice(0, 24), email: email || undefined, role: "monstiez" as const };
 }
 
 export { db };

@@ -1,46 +1,87 @@
-# MONSTIEZ TAIWAN
+# MONSTIEZ GLOBAL
 
-非官方 BABYMONSTER 粉絲交流網站。包含官方 Spotify 播放器、YouTube／Instagram 連結、官方資料整理、近期活動、會員註冊、社群登入流程、留言與按讚。
+`https://babymonster.fans` 的非官方 BABYMONSTER 全球粉絲交流網站。前端以 GitHub Pages 純靜態發布；Supabase 提供帳號、資料庫、RLS 權限與留言翻譯 Edge Function，因此不需要自架伺服器。
 
-## 版權原則
+## 本機啟動
 
-- 不重新上傳音樂、MV、完整歌詞或官方照片。
-- 音樂與影片使用官方平台的嵌入／連結，流量回到權利人的官方帳號。
-- 成員與活動資料以 YG Entertainment、BABYMONSTER 官方網站為準。
-- 本站明確標示為非官方粉絲站，不使用官方標誌假冒官方服務。
-- 使用者不得張貼盜版連結、個資、私生內容或未授權商業素材。
-
-## 本機執行
-
-需要 Node.js 22.13 以上。
+需要 Node.js 22.13 以上版本。
 
 ```bash
 npm ci
 npm run dev
 ```
 
-網站使用 Cloudflare D1 儲存會員、登入工作階段、留言與按讚。開發服務會提供本機 D1 環境。
+建立 GitHub Pages 版本：
 
-## 社群登入設定
-
-複製 `.env.example` 為 `.env`，並向 Google、Kakao Developers、微信開放平台申請 OAuth 應用。回呼網址格式：
-
-```text
-https://你的網域/api/auth/oauth/callback?provider=google
-https://你的網域/api/auth/oauth/callback?provider=kakao
-https://你的網域/api/auth/oauth/callback?provider=wechat
+```bash
+npm run build
 ```
 
-請勿把任何 Client Secret 提交到 GitHub。正式環境的金鑰應放在部署平台的加密環境變數中。
+輸出位於 `dist-pages/`。
 
-## 部署說明
+## 六種內建語言
 
-這不是純靜態頁面：會員、留言、按讚與 OAuth 回呼都需要伺服器與 D1，因此 GitHub Pages 無法單獨承載完整功能。GitHub 可作為原始碼儲存庫，再由支援 Cloudflare Worker／D1 的部署平台發布。
+固定網站內容內建繁體中文、簡體中文、泰文、英文、韓文及日文，不呼叫翻譯 API。只有粉絲留言會呼叫 `translate-comment` Edge Function；翻譯失敗時顯示原文，結果快取於 `post_translations`。
 
-## 資料來源
+## Supabase 設定
 
-- [YG Entertainment — BABYMONSTER](https://ygfamily.com/ko/artists/babymonster/profile)
-- [BABYMONSTER Japan Official](https://yg-babymonster-official.jp/)
-- [Spotify Official Artist](https://open.spotify.com/artist/1SIocsqdEefUTE6XKGUiVS)
-- [YouTube Official Artist Channel](https://www.youtube.com/@BABYMONSTER)
-- [Instagram Official](https://www.instagram.com/babymonster_ygofficial/)
+1. 建立 Supabase 專案。
+2. 套用 `supabase/migrations/202608100001_monstiez_community.sql`。
+3. 部署 `supabase/functions/translate-comment`。
+4. 在 Supabase Auth 的 URL Configuration 設定：
+   - Site URL：`https://babymonster.fans`
+   - Redirect URL：`https://babymonster.fans/**`
+   - 開發用 Redirect URL：`http://localhost:5173/**`
+5. 啟用 Email、Google 與 Kakao 登入。
+
+前端只需要可公開的設定：
+
+```text
+VITE_SUPABASE_URL=https://your-project-ref.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
+```
+
+publishable key 會出現在瀏覽器中，這是預期行為；資料權限由 migration 內的 RLS policies 保護。禁止將 service role key 放入 `VITE_` 變數或 GitHub 原始碼。
+
+翻譯服務金鑰只設定在 Supabase Edge Function secrets：
+
+```text
+TRANSLATION_API_URL
+TRANSLATION_API_KEY
+```
+
+可使用自架 LibreTranslate。未設定時留言仍正常顯示原文。
+
+## GitHub Pages
+
+`.github/workflows/pages.yml` 會在 `main` 分支更新後建置並發布。請在 GitHub repository：
+
+1. Settings → Pages → Source 選擇 GitHub Actions。
+2. Settings → Secrets and variables → Actions → Variables，加入 repository variables：`VITE_SUPABASE_URL` 與 `VITE_SUPABASE_PUBLISHABLE_KEY`。
+3. Pages 的 Custom domain 設為 `babymonster.fans`。
+4. 在網域 DNS 依 GitHub Pages 畫面提供的 A/AAAA 或 ALIAS/ANAME 記錄設定 apex domain，確認 HTTPS 後啟用 Enforce HTTPS。
+
+`public/CNAME` 已包含 `babymonster.fans`，但仍需在 GitHub Pages 設定頁完成網域驗證。
+
+## 帳號與權限
+
+- `monstiez`：發文、按讚、編輯／刪除自己的留言及檢舉。
+- `artist`：藍色驗證勾；角色由資料庫管理。
+- `admin`：紅色驗證勾；可審核與隱藏留言。
+
+使用者無法從前端更改角色。Supabase RLS 會在資料庫層再次驗證所有寫入。
+
+## 檢查
+
+```bash
+npm run lint
+npm run build
+node --test tests/*.test.mjs
+```
+
+## 版權原則
+
+- 不重新上傳音樂、MV、完整歌詞或官方素材。
+- Spotify 使用官方嵌入；YouTube 與 Instagram 連回官方帳號。
+- 背景音樂為瀏覽器即時產生的原創占位音，不包含藝人音源。
+- 本站不冒充官方、不販售官方素材，使用者不得發布盜版、個資或私生內容。

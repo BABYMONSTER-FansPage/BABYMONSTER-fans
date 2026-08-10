@@ -1,105 +1,1273 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useState, useEffect, useRef, useCallback } from "react";
+import { motion, useInView, useScroll, useTransform } from "motion/react";
+import {
+  Play, Pause, Volume2, VolumeX, Heart, MessageCircle,
+  ChevronDown, Menu, X, Calendar, MapPin, Music, Send, Disc3,
+} from "lucide-react";
+import { getInitialLocale, localeLabels, memberBios, messages, supportedLocales, type Locale } from "./i18n";
+import {
+  createFanPost, currentFanUser, deleteFanPost, editFanPost, emailAuth, listFanPosts,
+  listAnnouncements, moderateFanPost, observeFanUser, reportFanPost, signOutFan, socialAuth,
+  toggleFanLike, translateFanPost, type FanPost as ApiPost, type FanUser as User,
+} from "./lib/supabase-browser";
 
-type User = { id: number; nickname: string; email?: string };
-type Post = { id: number; nickname: string; body: string; likes: number; comments: number; liked?: boolean; createdAt: string };
+// ─────────────────────────────────────────────
+// PRE-COMPUTED CONSTANTS
+// ─────────────────────────────────────────────
 
-const members = [
-  ["01", "RUKA", "2002.03.20", "日本", "舞台上以俐落節奏與沉著魅力展現多面表演力。"],
-  ["02", "PHARITA", "2005.08.26", "泰國", "清亮音色與優雅台風，為歌曲帶來鮮明層次。"],
-  ["03", "ASA", "2006.04.17", "日本", "節奏感鮮明，能在饒舌、舞蹈與創作表現間自在切換。"],
-  ["04", "AHYEON", "2007.04.11", "韓國", "具爆發力的高音、饒舌與舞台掌控力，是全方位表演者。"],
-  ["05", "RAMI", "2007.10.17", "韓國", "音色深厚且富情感，擅長用細膩層次推進歌曲氛圍。"],
-  ["06", "RORA", "2008.08.14", "韓國", "溫暖而穩定的歌聲，兼具清新氣質與成熟表達。"],
-  ["07", "CHIQUITA", "2009.02.17", "泰國", "充滿能量的舞台反應與辨識度，展現無畏的年輕魅力。"],
+const HERO_PARTICLES = Array.from({ length: 18 }, (_, i) => ({
+  id: i,
+  left: `${5 + ((i * 5.7) % 88)}%`,
+  top: `${8 + ((i * 6.3) % 82)}%`,
+  dur: 3.4 + ((i * 0.37) % 2.8),
+  delay: (i * 0.29) % 4.5,
+  size: i % 3 === 0 ? 3 : 1.5,
+}));
+
+const WAVEFORM = Array.from({ length: 24 }, (_, i) => 5 + ((i * 7 + 3) % 17));
+
+// ─────────────────────────────────────────────
+// DATA
+// ─────────────────────────────────────────────
+
+const MEMBERS = [
+  {
+    id: "ruka", num: "01", name: "RUKA", hangul: "루카",
+    birth: "2002 · Mar 20", nationality: "Japan", flag: "🇯🇵",
+    position: "Main Vocalist",
+    description: "The eldest of BABYMONSTER, Ruka commands the stage with powerhouse vocals and an effortless grace honed through years of rigorous training. Her emotional depth and unwavering presence define the group's vocal identity.",
+    traits: ["Main Vocalist", "Eldest Member", "Stage Commander"],
+    photo: "photo-1531746020798-e6953c6e8e04",
+    accent: "#E01020",
+  },
+  {
+    id: "pharita", num: "02", name: "PHARITA", hangul: "파리타",
+    birth: "2005 · Aug 26", nationality: "Thailand", flag: "🇹🇭",
+    position: "Vocalist · Rapper",
+    description: "Fierce, fearless, and relentlessly captivating — Pharita brings Thailand's pride to every stage. Her dual mastery of rap and melody makes her one of the most versatile forces in the group.",
+    traits: ["Versatile Performer", "High Energy", "Thai Pioneer"],
+    photo: "photo-1536766768598-e09213fdcf22",
+    accent: "#ff2d2d",
+  },
+  {
+    id: "asa", num: "03", name: "ASA", hangul: "아사",
+    birth: "2006 · Apr 17", nationality: "Japan", flag: "🇯🇵",
+    position: "Vocalist · Main Dancer",
+    description: "Where precision meets artistry — Asa's dance mastery is a study in technique and emotion. Every gesture intentional, every movement a brushstroke. She is the visual pulse of BABYMONSTER.",
+    traits: ["Main Dancer", "Precision Artist", "Visual Icon"],
+    photo: "photo-1508214751196-bcfd4ca60f91",
+    accent: "#cc1a1a",
+  },
+  {
+    id: "ahyeon", num: "04", name: "AHYEON", hangul: "아현",
+    birth: "2007 · Apr 11", nationality: "Korea", flag: "🇰🇷",
+    position: "Main Rapper · Vocalist",
+    description: "Before the official debut, Ahyeon went viral worldwide — proof that true talent cannot be contained. Her rap flows with razor precision while her vocals carry a haunting melodic quality unlike anything in K-pop.",
+    traits: ["Main Rapper", "Global Viral", "Genre-Defying"],
+    photo: "photo-1524504388940-b1c1722653e1",
+    accent: "#E01020",
+  },
+  {
+    id: "rami", num: "05", name: "RAMI", hangul: "라미",
+    birth: "2007 · Oct 17", nationality: "Korea", flag: "🇰🇷",
+    position: "Vocalist",
+    description: "Rami's voice carries a warmth and emotional sincerity that transcends age. When she sings, you feel every word. Her genuine connection with fans has made her one of the most cherished members.",
+    traits: ["Pure Vocalist", "Fan Favorite", "Genuine Heart"],
+    photo: "photo-1544005313-94ddf0286df2",
+    accent: "#ff4040",
+  },
+  {
+    id: "rora", num: "06", name: "RORA", hangul: "로라",
+    birth: "2008 · Aug 14", nationality: "Korea", flag: "🇰🇷",
+    position: "Performer",
+    description: "Rora brings a warm and expressive vocal color to the group.",
+    traits: ["Vocal Color", "Warm Tone", "Performer"],
+    photo: "photo-1489424731084-a5d8b219a5bb",
+    accent: "#b30000",
+  },
+  {
+    id: "chiquita", num: "07", name: "CHIQUITA", hangul: "치키타",
+    birth: "2009 · Feb 17", nationality: "Thailand", flag: "🇹🇭",
+    position: "Performer",
+    description: "Chiquita brings bright vocal color and explosive stage energy.",
+    traits: ["Bright Energy", "Stage Presence", "Performer"],
+    photo: "photo-1438761681033-6461ffad8d80",
+    accent: "#cc0000",
+  },
 ];
 
-const fallbackPosts: Post[] = [
-  { id: 1, nickname: "TaipeiMonstiez", body: "第一次聽到〈DRIP〉現場版的編曲，整個氣氛完全被拉滿！大家最期待下次巡演哪一站？", likes: 128, comments: 16, createdAt: "社群精選" },
-  { id: 2, nickname: "AsaOnBeat", body: "推薦新粉從官方頻道的成員介紹與 LIVE PERFORMANCE 開始看，很快就能感受到七位成員各自的魅力。", likes: 92, comments: 8, createdAt: "新粉指南" },
+const ALBUMS = [
+  {
+    id: 1, title: "DRIP", year: "2024", type: "1st Mini Album",
+    tracks: ["DRIP", "LIKE THAT", "FOREVER", "SHEESH", "BATTER UP"],
+    description: "The definitive debut album. Seven monsters, one world-shaking statement.",
+    photo: "photo-1598387992571-f30bed6c6a93",
+  },
+  {
+    id: 2, title: "SHEESH", year: "2024", type: "Digital Single",
+    tracks: ["SHEESH"],
+    description: "A sonic declaration of confidence. Seven voices, one undeniable statement.",
+    photo: "photo-1540039155733-5bb30b53aa14",
+  },
+  {
+    id: 3, title: "BATTER UP", year: "2023", type: "Pre-Release Single",
+    tracks: ["BATTER UP"],
+    description: "The world's first meeting with BABYMONSTER. Nothing was ever the same after.",
+    photo: "photo-1501386761578-eac5c94b800a",
+  },
 ];
 
-export default function FanPage() {
-  const [user, setUser] = useState<User | null>(null);
-  const [posts, setPosts] = useState<Post[]>(fallbackPosts);
-  const [authOpen, setAuthOpen] = useState(false);
-  const [authMode, setAuthMode] = useState<"login" | "register">("login");
-  const [message, setMessage] = useState("");
-  const [feedback, setFeedback] = useState("");
+const EVENTS = [
+  {
+    id: 1, title: "BABYMONSTER", sub: "OFFICIAL SCHEDULE",
+    dates: "2026–2027", locations: "Worldwide",
+    type: "Official", status: "upcoming", desc: "Official schedules and tour notices.",
+  },
+  {
+    id: 2, title: "SPOTIFY · YOUTUBE", sub: "OFFICIAL RELEASES",
+    dates: "ON DEMAND", locations: "Official platforms",
+    type: "Media", status: "upcoming", desc: "Music, performances, and behind-the-scenes content.",
+  },
+  {
+    id: 3, title: "YG ENTERTAINMENT", sub: "OFFICIAL NEWS",
+    dates: "LATEST", locations: "YG official channels",
+    type: "News", status: "upcoming", desc: "Verify changing schedules with the organizer.",
+  },
+  {
+    id: 4, title: "MONSTIEZ", sub: "GLOBAL COMMUNITY",
+    dates: "ALWAYS ON", locations: "babymonster.fans",
+    type: "Community", status: "upcoming", desc: "Fan conversations from around the world.",
+  },
+];
 
-  useEffect(() => {
-    fetch("/api/auth/me").then(r => r.ok ? r.json() : null).then(data => data?.user && setUser(data.user)).catch(() => {});
-    fetch("/api/posts").then(r => r.ok ? r.json() : null).then(data => data?.posts?.length && setPosts(data.posts)).catch(() => {});
+const INITIAL_POSTS = [
+  {
+    id: 1, author: "MonsterFan_K", initials: "MK", bg: "#E01020",
+    time: "2 hours ago",
+    content: "AHYEON's rap in DRIP is absolutely devastating 🔥 The way she transitions from rap to vocal in the bridge — sheer genius. Three days on repeat and I'm not sorry.",
+    likes: 284, comments: 42, liked: false,
+  },
+  {
+    id: 2, author: "RukaVocalQueen", initials: "RV", bg: "#cc0000",
+    time: "4 hours ago",
+    content: "Just came back from HELLO MONSTER in Tokyo and I'm not okay 😭 Ruka's live high notes literally defied gravity. Best concert of my entire life without question.",
+    likes: 512, comments: 78, liked: false,
+  },
+  {
+    id: 3, author: "BabyMon_TH", initials: "BT", bg: "#b30000",
+    time: "6 hours ago",
+    content: "The Chiquita × Pharita Thai duo moment during the encore... I was crying in row 3 and feel no shame 🇹🇭❤️ So proud of our Thai monsters on the world stage.",
+    likes: 673, comments: 95, liked: false,
+  },
+  {
+    id: 4, author: "AsaDanceArmy", initials: "AD", bg: "#ff1a1a",
+    time: "1 day ago",
+    content: "Asa's choreography execution in LIKE THAT is criminally underrated. That calm precision while absolutely destroying every move — she is an artist in the truest sense.",
+    likes: 891, comments: 134, liked: false,
+  },
+  {
+    id: 5, author: "RamiAngel", initials: "RA", bg: "#990000",
+    time: "1 day ago",
+    content: "Nobody talks enough about how Rami carried the entire emotional weight of FOREVER. That song makes me cry every single time. Her voice reaches somewhere deep inside you.",
+    likes: 743, comments: 112, liked: false,
+  },
+];
+
+const FALLBACK_API_POSTS: ApiPost[] = INITIAL_POSTS.map(post => ({
+  id: -post.id, userId: "demo", nickname: post.author, role: "monstiez", body: post.content,
+  sourceLanguage: "en", likes: post.likes, comments: post.comments,
+  liked: post.liked, canEdit: false, createdAt: post.time,
+}));
+
+// ─────────────────────────────────────────────
+// HOOKS
+// ─────────────────────────────────────────────
+
+function useAmbientMusic() {
+  const [playing, setPlaying] = useState(false);
+  const [started, setStarted] = useState(false);
+  const ctxRef = useRef<AudioContext | null>(null);
+  const gainRef = useRef<GainNode | null>(null);
+
+  const start = useCallback(() => {
+    if (ctxRef.current) return;
+    try {
+      const ctx = new AudioContext();
+      ctxRef.current = ctx;
+
+      const master = ctx.createGain();
+      master.gain.setValueAtTime(0, ctx.currentTime);
+      master.gain.linearRampToValueAtTime(0.22, ctx.currentTime + 3);
+      master.connect(ctx.destination);
+      gainRef.current = master;
+
+      // Atmospheric Am chord with subtle vibrato
+      const layers = [
+        { freq: 110, gain: 0.18, type: "sawtooth" as OscillatorType },
+        { freq: 220, gain: 0.09, type: "sine" as OscillatorType },
+        { freq: 261.63, gain: 0.06, type: "sine" as OscillatorType },
+        { freq: 329.63, gain: 0.05, type: "sine" as OscillatorType },
+        { freq: 440, gain: 0.04, type: "sine" as OscillatorType },
+        { freq: 523.25, gain: 0.02, type: "sine" as OscillatorType },
+      ];
+
+      layers.forEach(({ freq, gain: gv, type }, li) => {
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        g.gain.value = gv;
+        osc.type = type;
+        osc.frequency.value = freq;
+        const lfo = ctx.createOscillator();
+        const lfoG = ctx.createGain();
+        lfo.frequency.value = 0.25 + li * 0.07;
+        lfoG.gain.value = 1.2;
+        lfo.connect(lfoG);
+        lfoG.connect(osc.frequency);
+        lfo.start();
+        osc.connect(g);
+        g.connect(master);
+        osc.start();
+      });
+
+      setPlaying(true);
+      setStarted(true);
+    } catch {
+      /* audio not supported */
+    }
   }, []);
 
-  async function submitAuth(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  const toggle = useCallback(() => {
+    if (!started) { start(); return; }
+    if (!gainRef.current || !ctxRef.current) return;
+    const { currentTime } = ctxRef.current;
+    if (playing) {
+      gainRef.current.gain.linearRampToValueAtTime(0, currentTime + 0.8);
+      setTimeout(() => setPlaying(false), 850);
+    } else {
+      gainRef.current.gain.linearRampToValueAtTime(0.22, currentTime + 1.2);
+      setPlaying(true);
+    }
+  }, [playing, started, start]);
+
+  useEffect(() => () => { if (ctxRef.current && ctxRef.current.state !== "closed") void ctxRef.current.close(); }, []);
+
+  return { playing, toggle };
+}
+
+// ─────────────────────────────────────────────
+// NAV
+// ─────────────────────────────────────────────
+
+function Nav({ playing, onToggle, user, locale, onLocale, onLogin, onLogout }: {
+  playing: boolean; onToggle: () => void; user: User | null; locale: Locale;
+  onLocale: (locale: Locale) => void; onLogin: () => void; onLogout: () => void;
+}) {
+  const [scrolled, setScrolled] = useState(false);
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    const fn = () => setScrolled(window.scrollY > 60);
+    window.addEventListener("scroll", fn, { passive: true });
+    return () => window.removeEventListener("scroll", fn);
+  }, []);
+
+  const t = messages[locale];
+  const links = [
+    { id: "members", label: t.nav[1] }, { id: "music", label: t.nav[2] },
+    { id: "events", label: t.nav[3] }, { id: "community", label: t.nav[4] },
+  ];
+
+  return (
+    <nav
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+        scrolled ? "border-b border-white/5" : ""
+      }`}
+      style={{ background: scrolled ? "rgba(5,5,5,0.92)" : "transparent", backdropFilter: scrolled ? "blur(20px)" : "none" }}
+    >
+      <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+        <a href="#top" className="font-black text-xl tracking-[0.12em] text-white" style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>
+          BABY<span style={{ color: "#E01020" }}>MONSTER</span>
+        </a>
+
+        <div className="hidden md:flex items-center gap-8">
+          {links.map(link => (
+            <a key={link.id} href={`#${link.id}`}
+              className="text-white/60 hover:text-white text-xs tracking-[0.25em] uppercase transition-colors duration-200">
+              {link.label}
+            </a>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-4">
+          <select value={locale} onChange={event => onLocale(event.target.value as Locale)}
+            aria-label={messages[locale].language}
+            className="bg-black/60 border border-white/15 rounded-full px-3 py-1.5 text-white/60 text-xs focus:outline-none focus:border-red-600/50">
+            {supportedLocales.map(code => <option key={code} value={code}>{localeLabels[code]}</option>)}
+          </select>
+          {user
+            ? <button onClick={onLogout} className="hidden sm:block text-white/50 hover:text-white text-xs tracking-widest uppercase">{user.nickname} · {messages[locale].logout}</button>
+            : <button onClick={onLogin} className="hidden sm:block text-white/50 hover:text-white text-xs tracking-widest uppercase">{messages[locale].login}</button>}
+          <button onClick={onToggle}
+            className="flex items-center gap-1.5 text-white/50 hover:text-white transition-colors duration-200">
+            {playing ? <Volume2 size={15} /> : <VolumeX size={15} />}
+            <span className="hidden md:inline text-xs tracking-widest uppercase">
+              {playing ? t.soundOn : t.soundOff}
+            </span>
+          </button>
+          <button className="md:hidden text-white/70 hover:text-white" onClick={() => setOpen(!open)}>
+            {open ? <X size={20} /> : <Menu size={20} />}
+          </button>
+        </div>
+      </div>
+
+      {open && (
+        <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+          className="md:hidden border-t border-white/8 px-6 py-5 flex flex-col gap-4"
+          style={{ background: "rgba(5,5,5,0.97)" }}>
+          {links.map(link => (
+            <a key={link.id} href={`#${link.id}`} onClick={() => setOpen(false)}
+              className="text-white/60 hover:text-white text-sm tracking-[0.25em] uppercase">
+              {link.label}
+            </a>
+          ))}
+          <button onClick={() => { setOpen(false); if (user) onLogout(); else onLogin(); }} className="min-h-11 text-left text-red-400 text-sm tracking-[0.2em] uppercase">
+            {user ? `${user.nickname} · ${t.logout}` : t.login}
+          </button>
+        </motion.div>
+      )}
+    </nav>
+  );
+}
+
+// ─────────────────────────────────────────────
+// HERO
+// ─────────────────────────────────────────────
+
+function Hero({ playing, onToggle, locale }: { playing: boolean; onToggle: () => void; locale: Locale }) {
+  const t = messages[locale];
+  return (
+    <section id="top" className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-black">
+      {/* Concert bg */}
+      <div className="absolute inset-0">
+        <img
+          src="https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=1920&h=1080&fit=crop&auto=format"
+          alt="Concert stage"
+          className="w-full h-full object-cover opacity-20"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black" />
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[900px] h-[400px] rounded-full blur-[130px]"
+          style={{ background: "rgba(224,16,32,0.18)" }} />
+      </div>
+
+      {/* Floating particles */}
+      {HERO_PARTICLES.map(p => (
+        <motion.div key={p.id} className="absolute rounded-full pointer-events-none"
+          style={{ left: p.left, top: p.top, width: p.size, height: p.size, background: "#E01020" }}
+          animate={{ y: [0, -18, 0], opacity: [0.2, 0.9, 0.2], scale: [1, 1.6, 1] }}
+          transition={{ duration: p.dur, repeat: Infinity, delay: p.delay, ease: "easeInOut" }} />
+      ))}
+
+      {/* Main content */}
+      <div className="relative z-10 text-center px-4">
+        <motion.p initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.3 }}
+          className="text-white/35 text-xs tracking-[0.45em] uppercase mb-8">
+          {t.heroKicker}
+        </motion.p>
+
+        {/* BABY — slides up from mask */}
+        <div className="overflow-hidden leading-none">
+          <motion.div initial={{ y: "110%" }} animate={{ y: 0 }}
+            transition={{ duration: 1, delay: 0.45, ease: [0.16, 1, 0.3, 1] }}>
+            <span className="font-black text-white block leading-[0.88]"
+              style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: "clamp(4.5rem, 18vw, 16rem)" }}>
+              BABY
+            </span>
+          </motion.div>
+        </div>
+
+        {/* MONSTER — slides up with offset */}
+        <div className="overflow-hidden leading-none -mt-2">
+          <motion.div initial={{ y: "110%" }} animate={{ y: 0 }}
+            transition={{ duration: 1, delay: 0.62, ease: [0.16, 1, 0.3, 1] }}>
+            <span className="font-black block leading-[0.88]"
+              style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: "clamp(4.5rem, 18vw, 16rem)", color: "#E01020" }}>
+              MONSTER
+            </span>
+          </motion.div>
+        </div>
+
+        <motion.p initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 1.1 }}
+          className="text-white/50 text-sm md:text-base tracking-[0.35em] uppercase mt-8 mb-14">
+          {t.heroNote}
+        </motion.p>
+
+        {/* Stat row */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 1.35 }}
+          className="flex items-center justify-center gap-10 md:gap-20 mb-16">
+          {[{ v: "7", l: t.membersLabel }, { v: "3", l: t.nationalities }, { v: "2024", l: t.debut }].map(({ v, l }) => (
+            <div key={l} className="text-center">
+              <div className="font-black text-white text-4xl md:text-5xl leading-none"
+                style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>{v}</div>
+              <div className="text-white/35 text-xs tracking-widest uppercase mt-1.5">{l}</div>
+            </div>
+          ))}
+        </motion.div>
+
+        {/* Sound toggle */}
+        <motion.button initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+          transition={{ delay: 1.8 }} onClick={onToggle}
+          className="flex items-center gap-2 mx-auto px-7 py-3 border border-white/15 rounded-full text-white/55 hover:text-white hover:border-white/35 transition-all duration-300 text-xs tracking-[0.2em] uppercase">
+          {playing ? <Volume2 size={13} /> : <VolumeX size={13} />}
+          {playing ? t.soundOn : t.soundOff}
+        </motion.button>
+      </div>
+
+      {/* Scroll indicator */}
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+        transition={{ delay: 2.4 }}
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2">
+        <span className="text-white/25 text-xl" aria-hidden="true">↓</span>
+        <motion.div animate={{ y: [0, 7, 0] }} transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}>
+          <ChevronDown size={15} className="text-white/25" />
+        </motion.div>
+      </motion.div>
+    </section>
+  );
+}
+
+// ─────────────────────────────────────────────
+// ABOUT
+// ─────────────────────────────────────────────
+
+function AboutSection({ locale }: { locale: Locale }) {
+  const ref = useRef<HTMLElement>(null);
+  const isInView = useInView(ref, { once: true, amount: 0.15 });
+  const t = messages[locale];
+
+  return (
+    <section ref={ref} className="py-32 md:py-44 bg-black relative overflow-hidden">
+      <motion.div initial={{ scaleX: 0 }} animate={isInView ? { scaleX: 1 } : {}}
+        transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1] }}
+        className="absolute top-0 left-0 right-0 h-px origin-left"
+        style={{ background: "#E01020" }} />
+
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="grid md:grid-cols-2 gap-16 md:gap-24 items-center">
+          {/* Image */}
+          <motion.div initial={{ opacity: 0, scale: 0.93, x: -40 }}
+            animate={isInView ? { opacity: 1, scale: 1, x: 0 } : {}}
+            transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1], delay: 0.15 }}
+            className="relative">
+            <div className="aspect-[4/5] overflow-hidden rounded-sm relative bg-neutral-900">
+              <img
+                src="https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=800&h=1000&fit=crop&auto=format"
+                alt="BABYMONSTER group performance"
+                className="w-full h-full object-cover"
+                style={{ filter: "grayscale(25%) contrast(1.12) brightness(0.8)" }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-tr from-red-950/60 via-transparent to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/50" />
+              {/* Red corner square */}
+              <div className="absolute bottom-5 right-5 border border-red-600/50 w-12 h-12" />
+            </div>
+            <motion.div initial={{ scale: 0 }} animate={isInView ? { scale: 1 } : {}}
+              transition={{ duration: 0.5, delay: 0.6 }}
+              className="absolute -top-4 -right-4 w-8 h-8 rounded-full"
+              style={{ background: "#E01020" }} />
+          </motion.div>
+
+          {/* Text */}
+          <div>
+            <motion.span initial={{ opacity: 0, x: 20 }} animate={isInView ? { opacity: 1, x: 0 } : {}}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="text-xs tracking-[0.4em] uppercase font-medium" style={{ color: "#E01020" }}>
+              {t.storyLabel}
+            </motion.span>
+
+            <div className="overflow-hidden mt-4 mb-8">
+              <motion.h2 initial={{ y: 80 }} animate={isInView ? { y: 0 } : {}}
+                transition={{ duration: 0.9, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                className="text-white font-black leading-none"
+                style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: "clamp(3.5rem, 8vw, 7rem)" }}>
+                BABY<br /><span style={{ color: "#E01020" }}>MONSTER</span>
+              </motion.h2>
+            </div>
+
+            <motion.p initial={{ opacity: 0, y: 28 }} animate={isInView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.8, delay: 0.4 }}
+              className="text-white/60 leading-relaxed text-sm md:text-base mb-5">
+              {t.storyLead}
+            </motion.p>
+
+            <motion.p initial={{ opacity: 0, y: 28 }} animate={isInView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.8, delay: 0.52 }}
+              className="text-white/40 leading-relaxed text-sm mb-12">
+              {t.storyBody}
+            </motion.p>
+
+            <motion.div initial={{ opacity: 0, y: 28 }} animate={isInView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.8, delay: 0.66 }}
+              className="grid grid-cols-4 gap-4">
+              {[
+                { v: "2024.04", l: t.debut },
+                { v: "YG", l: t.agency },
+                { v: "7", l: t.membersLabel },
+                { v: "3", l: t.nationalities },
+              ].map(({ v, l }) => (
+                <div key={l} className="border-l-2 pl-3" style={{ borderColor: "#E01020" }}>
+                  <div className="text-white font-black text-xl md:text-2xl leading-tight"
+                    style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>{v}</div>
+                  <div className="text-white/35 text-xs tracking-wider uppercase mt-1">{l}</div>
+                </div>
+              ))}
+            </motion.div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─────────────────────────────────────────────
+// MEMBER SPOTLIGHT (individual)
+// ─────────────────────────────────────────────
+
+function MemberSpotlight({ member, index, biography }: { member: typeof MEMBERS[0]; index: number; biography: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const isInView = useInView(ref, { once: true, amount: 0.08 });
+  const isEven = index % 2 === 0;
+  const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
+  const visualScale = useTransform(scrollYProgress, [0, 0.28, 0.72, 1], [0.82, 1, 1.04, 1.12]);
+  const visualOpacity = useTransform(scrollYProgress, [0, 0.16, 0.8, 1], [0, 1, 1, 0]);
+  const copyY = useTransform(scrollYProgress, [0, 0.3, 0.7, 1], [110, 0, 0, -90]);
+  const copyOpacity = useTransform(scrollYProgress, [0, 0.2, 0.82, 1], [0, 1, 1, 0]);
+  const progressX = useTransform(scrollYProgress, [0.12, 0.88], [0, 1]);
+
+  return (
+    <div ref={ref} className="cinematic-member min-h-[145vh] md:min-h-[175vh] relative overflow-clip border-t border-white/5">
+      <motion.div className="sticky top-16 z-20 h-[2px] origin-left bg-[#E01020]" style={{ scaleX: progressX }} />
+      {/* Number watermark */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none overflow-hidden" aria-hidden>
+        <span className="font-black text-white/[0.025] leading-none"
+          style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: "clamp(10rem, 28vw, 26rem)" }}>
+          {member.num}
+        </span>
+      </div>
+
+      {/* Ambient glow */}
+      <div className={`absolute top-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full blur-[160px] pointer-events-none ${isEven ? "-right-48" : "-left-48"}`}
+        style={{ background: `${member.accent}12` }} />
+
+      <div className="cinematic-frame sticky top-0 min-h-screen max-w-7xl mx-auto px-5 sm:px-6 w-full flex items-center py-20">
+        <div className={`grid md:grid-cols-2 gap-12 md:gap-20 items-center ${!isEven ? "md:[grid-template-areas:'info_photo']" : ""}`}>
+          {/* Portrait */}
+          <motion.div style={{ scale: visualScale, opacity: visualOpacity }}
+            className={!isEven ? "md:order-last" : ""}>
+            <div className="aspect-[3/4] max-w-sm mx-auto relative overflow-hidden rounded-sm bg-neutral-900 group">
+              <img
+                src={`https://images.unsplash.com/${member.photo}?w=600&h=800&fit=crop&auto=format&q=90`}
+                alt={`${member.name}`}
+                className="w-full h-full object-cover transition-transform duration-[1.2s] group-hover:scale-105"
+                style={{ filter: "contrast(1.08) brightness(0.88)" }}
+              />
+              {/* Red color grade overlay */}
+              <div className="absolute inset-0 opacity-45 mix-blend-multiply"
+                style={{ background: `linear-gradient(145deg, ${member.accent}55 0%, transparent 55%)` }} />
+              <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/60" />
+
+              {/* Bottom info */}
+              <div className="absolute bottom-0 left-0 right-0 p-6">
+                <div className="text-white/60 text-xs tracking-[0.3em] uppercase mb-1">{member.flag} {member.nationality}</div>
+                <div className="text-white font-black text-4xl leading-none"
+                  style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>{member.name}</div>
+              </div>
+
+              {/* Corner accent */}
+              <motion.div initial={{ scaleX: 0, originX: 0 }}
+                animate={isInView ? { scaleX: 1 } : {}}
+                transition={{ duration: 0.6, delay: 0.7 }}
+                className="absolute top-0 left-0 h-0.5 w-12"
+                style={{ background: member.accent }} />
+              <motion.div initial={{ scaleY: 0, originY: 0 }}
+                animate={isInView ? { scaleY: 1 } : {}}
+                transition={{ duration: 0.6, delay: 0.7 }}
+                className="absolute top-0 left-0 w-0.5 h-12"
+                style={{ background: member.accent }} />
+            </div>
+          </motion.div>
+
+          {/* Info */}
+          <motion.div style={{ y: copyY, opacity: copyOpacity }}>
+            {/* Index + divider */}
+            <motion.div initial={{ opacity: 0, y: 16 }}
+              animate={isInView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="flex items-center gap-3 mb-6">
+              <span className="font-black text-sm" style={{ fontFamily: "'Barlow Condensed', sans-serif", color: member.accent }}>
+                {member.num}
+              </span>
+              <div className="h-px flex-1 bg-white/10" />
+              <span className="text-white/25 text-xs tracking-widest uppercase">{member.nationality}</span>
+            </motion.div>
+
+            {/* Name reveal */}
+            <div className="overflow-hidden mb-3">
+              <motion.h2 initial={{ y: "105%" }} animate={isInView ? { y: 0 } : {}}
+                transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1], delay: 0.22 }}
+                className="text-white font-black leading-[0.88]"
+                style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: "clamp(3.2rem, 8vw, 7.5rem)" }}>
+                {member.name}
+              </motion.h2>
+            </div>
+
+            {/* Hangul + birth */}
+            <motion.div initial={{ opacity: 0, x: -20 }}
+              animate={isInView ? { opacity: 1, x: 0 } : {}}
+              transition={{ duration: 0.6, delay: 0.38 }}
+              className="flex items-center gap-4 mb-7">
+              <span className="text-white/30 text-xl">{member.hangul}</span>
+              <span className="w-1 h-1 rounded-full" style={{ background: member.accent }} />
+              <span className="text-white/40 text-sm tracking-wider">{member.birth}</span>
+            </motion.div>
+
+            {/* Description */}
+            <motion.p initial={{ opacity: 0, y: 24 }}
+              animate={isInView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.8, delay: 0.58 }}
+              className="text-white/55 leading-relaxed text-sm md:text-base mb-8">
+              {biography}
+            </motion.p>
+
+          </motion.div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MembersSection({ locale }: { locale: Locale }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const isInView = useInView(ref, { once: true, amount: 0.2 });
+  const t = messages[locale];
+
+  return (
+    <section id="members" className="bg-black">
+      <div ref={ref} className="py-24 md:py-32 text-center relative overflow-hidden">
+        <motion.div initial={{ scaleX: 0 }} animate={isInView ? { scaleX: 1 } : {}}
+          transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1] }}
+          className="absolute top-0 left-0 right-0 h-px origin-left"
+          style={{ background: "#E01020" }} />
+
+        <motion.span initial={{ opacity: 0 }} animate={isInView ? { opacity: 1 } : {}}
+          transition={{ delay: 0.3 }}
+          className="text-xs tracking-[0.4em] uppercase" style={{ color: "#E01020" }}>
+          {t.membersLabel}
+        </motion.span>
+
+        <div className="overflow-hidden mt-4">
+          <motion.h2 initial={{ y: 90 }} animate={isInView ? { y: 0 } : {}}
+            transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1], delay: 0.18 }}
+            className="text-white font-black leading-none"
+            style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: "clamp(4rem, 12vw, 11rem)" }}>
+            BABY<br /><span style={{ color: "#E01020" }}>MONSTER</span>
+          </motion.h2>
+        </div>
+
+        <motion.p initial={{ opacity: 0, y: 16 }} animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ delay: 0.5 }}
+          className="text-white/35 text-sm tracking-widest mt-6">
+          {t.membersLead}
+        </motion.p>
+      </div>
+
+      {MEMBERS.map((m, i) => <MemberSpotlight key={m.id} member={m} index={i} biography={memberBios[locale][i]} />)}
+    </section>
+  );
+}
+
+// ─────────────────────────────────────────────
+// ALBUM CARD
+// ─────────────────────────────────────────────
+
+function AlbumCard({ album, index, isVisible, locale }: { album: typeof ALBUMS[0]; index: number; isVisible: boolean; locale: Locale }) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 60 }}
+      animate={isVisible ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.85, delay: 0.2 + index * 0.13, ease: [0.16, 1, 0.3, 1] }}
+      className="group cursor-pointer"
+      onClick={() => setExpanded(!expanded)}>
+      <div className="relative aspect-square overflow-hidden rounded-sm mb-5 bg-neutral-900">
+        <img
+          src={`https://images.unsplash.com/${album.photo}?w=600&h=600&fit=crop&auto=format`}
+          alt={album.title}
+          className="w-full h-full object-cover transition-all duration-[1200ms] group-hover:scale-105"
+          style={{ filter: "grayscale(20%) contrast(1.12) brightness(0.72)" }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+        <div className="absolute inset-0 border border-transparent group-hover:border-red-600/40 transition-colors duration-300 rounded-sm" />
+
+        {/* Play/expand icon */}
+        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+          <div className="w-16 h-16 rounded-full flex items-center justify-center"
+            style={{ background: "rgba(224,16,32,0.88)" }}>
+            <Disc3 size={28} className="text-white" />
+          </div>
+        </div>
+
+        <div className="absolute top-4 right-4 text-white/45 text-xs tracking-widest">{album.year}</div>
+      </div>
+
+      <div className="text-xs tracking-[0.3em] uppercase mb-1" style={{ color: "#E01020" }}>{messages[locale].streamsLabel}</div>
+      <div className="text-white font-black text-3xl leading-none mb-2 transition-colors duration-300 group-hover:text-red-400"
+        style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>
+        {album.title}
+      </div>
+      <div className="text-white/40 text-sm leading-relaxed">{messages[locale].streamsLead}</div>
+
+      {/* Track list */}
+      {expanded && (
+        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}
+          className="mt-5 border-t border-white/8 pt-4 overflow-hidden">
+          {album.tracks.map((t, ti) => (
+            <div key={t} className="flex items-center gap-3 py-2 text-white/45 hover:text-white transition-colors duration-200 group/t">
+              <span className="text-xs text-white/20 w-4 text-right shrink-0">{ti + 1}</span>
+              <Music size={11} style={{ color: "#E01020", opacity: 0.6 }} />
+              <span className="text-sm tracking-wide flex-1">{t}</span>
+              <Play size={11} className="text-red-600 opacity-0 group-hover/t:opacity-100 transition-opacity shrink-0" />
+            </div>
+          ))}
+        </motion.div>
+      )}
+    </motion.div>
+  );
+}
+
+function MusicSection({ locale }: { locale: Locale }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const isInView = useInView(ref, { once: true, amount: 0.15 });
+  const t = messages[locale];
+
+  return (
+    <section id="music" className="bg-black py-24 md:py-44 border-t border-white/5">
+      <div className="max-w-7xl mx-auto px-6">
+        <div ref={ref} className="mb-20">
+          <motion.span initial={{ opacity: 0 }} animate={isInView ? { opacity: 1 } : {}}
+            className="text-xs tracking-[0.4em] uppercase" style={{ color: "#E01020" }}>
+            {t.streamsLabel}
+          </motion.span>
+          <div className="overflow-hidden mt-4">
+            <motion.h2 initial={{ y: 80 }} animate={isInView ? { y: 0 } : {}}
+              transition={{ duration: 0.9, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+              className="text-white font-black leading-none"
+              style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: "clamp(3.5rem, 10vw, 9rem)" }}>
+              BABYMONSTER<br /><span style={{ color: "#E01020" }}>MUSIC</span>
+            </motion.h2>
+          </div>
+        </div>
+
+        <div className="grid md:grid-cols-3 gap-8">
+          {ALBUMS.map((a, i) => <AlbumCard key={a.id} album={a} index={i} isVisible={isInView} locale={locale} />)}
+        </div>
+
+        <div className="grid md:grid-cols-[1.4fr_.6fr] gap-8 mt-16">
+          <div className="border border-white/8 rounded-sm p-3" style={{ background: "rgba(255,255,255,0.018)" }}>
+            <iframe title="BABYMONSTER on Spotify" className="w-full rounded-sm" src="https://open.spotify.com/embed/artist/1SIocsqdEefUTE6XKGUiVS?utm_source=generator&theme=0" height="352" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy" />
+          </div>
+          <div className="grid gap-4">
+            <a href="https://www.youtube.com/@BABYMONSTER" target="_blank" rel="noreferrer" className="border border-white/8 rounded-sm p-6 flex flex-col justify-between hover:border-red-600/30 transition-colors">
+              <span className="text-white/35 text-xs tracking-[.3em] uppercase">{t.officialChannel}</span><strong className="text-white text-3xl" style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>YOUTUBE ↗</strong>
+            </a>
+            <a href="https://www.instagram.com/babymonster_ygofficial/" target="_blank" rel="noreferrer" className="border border-white/8 rounded-sm p-6 flex flex-col justify-between hover:border-red-600/30 transition-colors">
+              <span className="text-white/35 text-xs tracking-[.3em] uppercase">{t.officialProfile}</span><strong className="text-white text-3xl" style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>INSTAGRAM ↗</strong>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─────────────────────────────────────────────
+// EVENT CARD
+// ─────────────────────────────────────────────
+
+function EventCard({ event, index, locale }: { event: typeof EVENTS[0]; index: number; locale: Locale }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const isInView = useInView(ref, { once: true, amount: 0.2 });
+  const isLeft = index % 2 === 0;
+  const t = messages[locale];
+  const localizedTitle = [
+    `BABYMONSTER — ${t.eventsLabel}`,
+    `SPOTIFY · YOUTUBE — ${t.streamsLabel}`,
+    `YG — ${t.latestNews}`,
+    `MONSTIEZ — ${t.communityLabel}`,
+  ][index];
+
+  return (
+    <div ref={ref} className={`relative pl-12 md:pl-0 ${isLeft ? "md:pr-[52%]" : "md:pl-[52%]"}`}>
+      {/* Timeline dot */}
+      <motion.div initial={{ scale: 0 }} animate={isInView ? { scale: 1 } : {}}
+        transition={{ duration: 0.4, delay: 0.1 }}
+        className="absolute left-0 md:left-1/2 top-8 -translate-x-1/2">
+        <div className={`w-3 h-3 rounded-full ${event.status === "upcoming" ? "" : "bg-white/20"}`}
+          style={event.status === "upcoming" ? { background: "#E01020" } : {}} />
+        {event.status === "upcoming" && (
+          <div className="absolute inset-0 rounded-full animate-ping opacity-40" style={{ background: "#E01020" }} />
+        )}
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 38, x: isLeft ? -24 : 24 }}
+        animate={isInView ? { opacity: 1, y: 0, x: 0 } : {}}
+        transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1], delay: 0.15 }}
+        className={`border border-white/8 rounded-sm p-6 hover:border-red-600/25 transition-colors duration-300 group ${isLeft ? "md:mr-8" : "md:ml-8"}`}
+        style={{ background: "rgba(255,255,255,0.018)" }}>
+        <div className="flex items-start justify-between gap-4 mb-3">
+          <span className={`text-xs tracking-[0.3em] uppercase px-2 py-0.5 rounded ${
+            event.status === "upcoming"
+              ? "text-red-400 border border-red-800/30"
+              : "text-white/30 bg-white/5"
+          }`}
+            style={event.status === "upcoming" ? { background: "rgba(224,16,32,0.1)" } : {}}>
+            {event.status === "upcoming" ? messages[locale].latestNews : messages[locale].verifyOfficial}
+          </span>
+          <span className="text-white/25 text-xs tracking-wider">{messages[locale].eventsLabel}</span>
+        </div>
+
+        <h3 className="text-white font-black text-2xl md:text-3xl leading-tight mb-1 group-hover:text-red-400 transition-colors duration-300"
+          style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>
+          {localizedTitle}
+        </h3>
+        <p className="text-white/35 text-xs tracking-widest uppercase mb-4">{t.verifyOfficial}</p>
+        <p className="text-white/50 text-sm mb-5">{messages[locale].eventsLead}</p>
+
+        <div className="flex flex-wrap gap-5 text-xs text-white/35">
+          <span className="flex items-center gap-1.5">
+            <Calendar size={11} style={{ color: "rgba(224,16,32,0.6)" }} />
+            {event.dates}
+          </span>
+          <span className="flex items-center gap-1.5">
+            <MapPin size={11} style={{ color: "rgba(224,16,32,0.6)" }} />
+            {event.locations}
+          </span>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+function EventsSection({ locale }: { locale: Locale }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const isInView = useInView(ref, { once: true, amount: 0.15 });
+  const t = messages[locale];
+
+  return (
+    <section id="events" className="bg-black py-24 md:py-44 border-t border-white/5">
+      <div className="max-w-7xl mx-auto px-6">
+        <div ref={ref} className="mb-20">
+          <motion.span initial={{ opacity: 0 }} animate={isInView ? { opacity: 1 } : {}}
+            className="text-xs tracking-[0.4em] uppercase" style={{ color: "#E01020" }}>
+            {t.eventsLabel}
+          </motion.span>
+          <div className="overflow-hidden mt-4">
+            <motion.h2 initial={{ y: 80 }} animate={isInView ? { y: 0 } : {}}
+              transition={{ duration: 0.9, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+              className="text-white font-black leading-none"
+              style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: "clamp(3.5rem, 10vw, 9rem)" }}>
+              BABYMONSTER<br /><span style={{ color: "#E01020" }}>{t.eventsLabel}</span>
+            </motion.h2>
+          </div>
+        </div>
+
+        <div className="relative">
+          {/* Timeline line */}
+          <div className="absolute left-4 md:left-1/2 top-0 bottom-0 w-px bg-white/8" />
+          <div className="space-y-14">
+            {EVENTS.map((e, i) => <EventCard key={e.id} event={e} index={i} locale={locale} />)}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─────────────────────────────────────────────
+// POST CARD
+// ─────────────────────────────────────────────
+
+function PostCard({
+  post, index, onLike, onRefresh, user, locale,
+}: {
+  post: ApiPost; index: number; onLike: (post: ApiPost) => void; onRefresh: () => void;
+  user: User | null; locale: Locale;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const isInView = useInView(ref, { once: true, amount: 0.1 });
+  const [copy, setCopy] = useState(post.body);
+  const [showOriginal, setShowOriginal] = useState(false);
+  const t = messages[locale];
+
+  useEffect(() => {
+    let active = true;
+    if (post.sourceLanguage === locale || post.id < 0) { queueMicrotask(() => { if (active) setCopy(post.body); }); return () => { active = false; }; }
+    translateFanPost(post.id, locale, post.body)
+      .then(text => { if (active) setCopy(text); })
+      .catch(() => { if (active) setCopy(post.body); });
+    return () => { active = false; };
+  }, [post.id, post.body, post.sourceLanguage, locale]);
+
+  async function editPost() {
+    const body = window.prompt(t.edit, post.body)?.trim();
+    if (!body || body === post.body) return;
+    try { await editFanPost(post.id, body); onRefresh(); } catch { /* RLS keeps unauthorized edits out */ }
+  }
+  async function removePost() {
+    if (window.confirm(`${t.remove}?`)) try { await deleteFanPost(post.id); onRefresh(); } catch { /* RLS keeps unauthorized deletes out */ }
+  }
+  async function reportPost() { try { await reportFanPost(post.id); } catch { /* retain post when reporting is unavailable */ } }
+  async function moderatePost() {
+    try { await moderateFanPost(post.id); onRefresh(); } catch { /* RLS verifies admin role */ }
+  }
+
+  return (
+    <motion.div ref={ref}
+      initial={{ opacity: 0, y: 28 }}
+      animate={isInView ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.65, delay: index < 4 ? index * 0.08 : 0, ease: [0.16, 1, 0.3, 1] }}
+      className="border border-white/8 rounded-sm p-6 hover:border-white/15 transition-colors duration-300"
+      style={{ background: "rgba(255,255,255,0.015)" }}>
+      <div className="flex items-start gap-4">
+        <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
+          style={{ background: ["#E01020", "#cc0000", "#b30000", "#ff2d2d"][Math.abs(post.id) % 4] }}>
+          {post.nickname.slice(0, 2).toUpperCase()}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-white font-medium text-sm">{post.nickname}{post.role !== "monstiez" && <span className={`ml-2 ${post.role === "admin" ? "text-red-400" : "text-blue-400"}`} title={post.role === "admin" ? t.roleAdmin : t.roleArtist}>✓<span className="sr-only">{post.role === "admin" ? t.roleAdmin : t.roleArtist}</span></span>}</span>
+            <span className="text-white/22 text-xs">{post.createdAt} · {post.sourceLanguage}</span>
+          </div>
+          <p className="text-white/62 text-sm leading-relaxed">{copy}</p>
+          {post.sourceLanguage !== locale && <button onClick={() => setShowOriginal(value => !value)} className="mt-2 text-red-400/70 text-xs hover:text-red-300">{showOriginal ? t.hideOriginal : t.original}</button>}
+          {showOriginal && <p className="mt-2 pl-3 border-l border-white/15 text-white/35 text-xs leading-relaxed">{post.body}</p>}
+          <div className="flex flex-wrap items-center gap-5 mt-4">
+            <button onClick={() => onLike(post)}
+              className={`flex items-center gap-1.5 text-xs transition-colors duration-200 ${
+                post.liked ? "text-red-500" : "text-white/28 hover:text-white/60"
+              }`}>
+              <Heart size={13} fill={post.liked ? "currentColor" : "none"} />
+              {post.likes}
+            </button>
+            <button className="flex items-center gap-1.5 text-xs text-white/28 hover:text-white/55 transition-colors duration-200">
+              <MessageCircle size={13} />
+              {post.comments}
+            </button>
+            {post.canEdit && <button onClick={editPost} className="text-white/28 hover:text-white/60 text-xs">{t.edit}</button>}
+            {post.canEdit && <button onClick={removePost} className="text-white/28 hover:text-red-400 text-xs">{t.remove}</button>}
+            {user && post.id > 0 && <button onClick={reportPost} className="text-white/28 hover:text-white/60 text-xs">{t.report}</button>}
+            {user?.role === "admin" && <button onClick={moderatePost} className="text-red-400/70 hover:text-red-300 text-xs">{t.moderate}</button>}
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+function CommunitySection({ user, locale, onLogin }: { user: User | null; locale: Locale; onLogin: () => void }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const isInView = useInView(ref, { once: true, amount: 0.12 });
+  const [posts, setPosts] = useState<ApiPost[]>(FALLBACK_API_POSTS);
+  const [body, setBody] = useState("");
+  const t = messages[locale];
+
+  const refresh = useCallback(() => {
+    listFanPosts(user).then(data => setPosts(data.length ? data : FALLBACK_API_POSTS)).catch(() => setPosts(FALLBACK_API_POSTS));
+  }, [user]);
+
+  useEffect(() => { refresh(); const timer = window.setInterval(refresh, 10_000); return () => window.clearInterval(timer); }, [refresh]);
+
+  const handleLike = async (post: ApiPost) => {
+    if (!user) { onLogin(); return; }
+    if (post.id < 0) return;
+    try {
+      await toggleFanLike(post.id, post.liked);
+      setPosts(items => items.map(item => item.id === post.id ? { ...item, likes: item.likes + (item.liked ? -1 : 1), liked: !item.liked } : item));
+    } catch { /* keep existing count when offline */ }
+  };
+
+  const submit = async () => {
+    if (!user) { onLogin(); return; }
+    if (!body.trim()) return;
+    try { await createFanPost(body.trim(), locale); setBody(""); refresh(); } catch { /* input remains available for retry */ }
+  };
+
+  return (
+    <section id="community" className="bg-black py-24 md:py-44 border-t border-white/5">
+      <div className="max-w-3xl mx-auto px-6">
+        <div ref={ref} className="mb-16">
+          <motion.span initial={{ opacity: 0 }} animate={isInView ? { opacity: 1 } : {}}
+            className="text-xs tracking-[0.4em] uppercase" style={{ color: "#E01020" }}>
+            {t.communityLabel}
+          </motion.span>
+          <div className="overflow-hidden mt-4">
+            <motion.h2 initial={{ y: 80 }} animate={isInView ? { y: 0 } : {}}
+              transition={{ duration: 0.9, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+              className="text-white font-black leading-none"
+              style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: "clamp(3.5rem, 10vw, 9rem)" }}>
+              MONSTIEZ<br /><span style={{ color: "#E01020" }}>{t.communityTitle}</span>
+            </motion.h2>
+          </div>
+          <motion.p initial={{ opacity: 0, y: 16 }} animate={isInView ? { opacity: 1, y: 0 } : {}}
+            transition={{ delay: 0.42 }}
+            className="text-white/35 text-sm mt-5 tracking-wide">
+            {t.communityLead}
+          </motion.p>
+        </div>
+
+        {/* Post form */}
+        <motion.div initial={{ opacity: 0, y: 28 }} animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ delay: 0.52, duration: 0.7 }}
+          className="mb-10 border border-white/10 rounded-sm p-6 hover:border-red-600/20 transition-colors duration-300"
+          style={{ background: "rgba(255,255,255,0.02)" }}>
+          <textarea value={body} onChange={e => setBody(e.target.value)} rows={3}
+            placeholder={user ? `${user.nickname}，${t.composeUser}` : t.composeGuest}
+            disabled={!user}
+            className="w-full bg-transparent text-white/75 text-sm placeholder-white/18 resize-none focus:outline-none py-2"
+            onKeyDown={e => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) void submit(); }} />
+          <div className="flex items-center justify-between mt-4 pt-4 border-t border-white/6">
+            <span className="text-white/18 text-xs">{user ? "⌘ / Ctrl + Enter" : t.signInToJoin}</span>
+            <button onClick={() => void submit()} disabled={Boolean(user) && !body.trim()}
+              className="flex items-center gap-2 px-5 py-2 text-white text-xs tracking-widest uppercase font-medium transition-colors duration-200 rounded-sm disabled:opacity-30 disabled:cursor-not-allowed"
+              style={{ background: "#E01020" }}
+              onMouseEnter={e => { if (body.trim()) (e.currentTarget as HTMLButtonElement).style.background = "#c00e1c"; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "#E01020"; }}>
+              <Send size={12} /> {user ? t.publish : t.login}
+            </button>
+          </div>
+        </motion.div>
+
+        {/* Posts */}
+        <div className="space-y-4">
+          {posts.map((p, i) => <PostCard key={p.id} post={p} index={i} onLike={handleLike} onRefresh={refresh} user={user} locale={locale} />)}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function FanVoices({ locale, user }: { locale: Locale; user: User | null }) {
+  const [posts, setPosts] = useState<ApiPost[]>(FALLBACK_API_POSTS);
+  useEffect(() => { void listFanPosts(user).then(rows => rows.length && setPosts(rows)).catch(() => {}); }, [user]);
+  const loop = [...posts.slice(0, 6), ...posts.slice(0, 6)];
+  return <section className="voices-section" aria-labelledby="fan-voices-title">
+    <div className="max-w-7xl mx-auto px-6"><p className="text-xs tracking-[0.4em] uppercase text-[#E01020]" id="fan-voices-title">{messages[locale].fanVoices}</p></div>
+    <div className="voices-viewport"><div className="voices-track">{loop.map((post, index) => <blockquote key={`${post.id}-${index}`}><p>“{post.body}”</p><footer>{post.nickname} · {post.sourceLanguage}</footer></blockquote>)}</div></div>
+  </section>;
+}
+
+function Announcements({ locale }: { locale: Locale }) {
+  const [items, setItems] = useState<Array<{ id: number; title: string; body: string; published_at: string }>>([]);
+  const t = messages[locale];
+  useEffect(() => { void listAnnouncements(locale).then(setItems).catch(() => setItems([])); }, [locale]);
+  const rows = items.length ? items : [{ id: -1, title: t.announcementFallbackTitle, body: t.announcementFallbackBody, published_at: "2026-08-10" }];
+  return <section className="announcement-section"><div className="max-w-7xl mx-auto px-6"><p className="text-xs tracking-[0.4em] uppercase text-[#E01020]">{t.announcements}</p><div className="announcement-list">{rows.map(item => <article key={item.id}><time>{item.published_at.slice(0, 10)}</time><h3>{item.title}</h3><p>{item.body}</p></article>)}</div></div></section>;
+}
+
+// ─────────────────────────────────────────────
+// FOOTER
+// ─────────────────────────────────────────────
+
+function Footer({ locale }: { locale: Locale }) {
+  const ref = useRef<HTMLElement>(null);
+  const isInView = useInView(ref, { once: true, amount: 0.3 });
+  const t = messages[locale];
+  const links = [{ id: "members", label: t.nav[1] }, { id: "music", label: t.nav[2] }, { id: "events", label: t.nav[3] }, { id: "community", label: t.nav[4] }];
+
+  return (
+    <footer ref={ref} className="bg-black border-t border-white/8 py-16">
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="grid md:grid-cols-3 gap-12 mb-12">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={isInView ? { opacity: 1, y: 0 } : {}}
+            transition={{ delay: 0.1 }}>
+            <div className="text-white font-black text-2xl mb-3 tracking-wider"
+              style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>
+              BABY<span style={{ color: "#E01020" }}>MONSTER</span>
+            </div>
+            <p className="text-white/28 text-xs leading-relaxed">
+              {t.heroKicker}<br />
+              {t.heroNote}
+            </p>
+          </motion.div>
+
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={isInView ? { opacity: 1, y: 0 } : {}}
+            transition={{ delay: 0.18 }}>
+            <div className="text-white/45 text-xs tracking-[0.3em] uppercase mb-4">{t.language}</div>
+            <div className="space-y-2">
+              {links.map(item => (
+                <a key={item.id} href={`#${item.id}`}
+                  className="block text-white/28 hover:text-white text-sm transition-colors duration-200">
+                  {item.label}
+                </a>
+              ))}
+            </div>
+          </motion.div>
+
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={isInView ? { opacity: 1, y: 0 } : {}}
+            transition={{ delay: 0.26 }}>
+            <div className="text-white/45 text-xs tracking-[0.3em] uppercase mb-4">MONSTIEZ GLOBAL</div>
+            <p className="text-white/22 text-xs leading-relaxed">
+              {t.streamsLead}
+            </p>
+          </motion.div>
+        </div>
+
+        <div className="border-t border-white/5 pt-8 flex items-center justify-between">
+          <span className="text-white/18 text-xs">© 2026 babymonster.fans</span>
+          <div className="flex items-center gap-2">
+            <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "#E01020" }} />
+            <span className="text-white/18 text-xs tracking-widest">MONSTERS FOREVER</span>
+          </div>
+        </div>
+        <p className="mt-8 pt-6 border-t border-white/5 text-white/25 text-xs leading-relaxed">{t.warning}</p>
+      </div>
+    </footer>
+  );
+}
+
+// ─────────────────────────────────────────────
+// AUDIO PLAYER BAR
+// ─────────────────────────────────────────────
+
+function AudioPlayerBar({ playing, onToggle, locale }: { playing: boolean; onToggle: () => void; locale: Locale }) {
+  const t = messages[locale];
+  return (
+    <motion.div initial={{ y: 72 }} animate={{ y: 0 }}
+      transition={{ delay: 2.8, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+      className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/8 pb-[env(safe-area-inset-bottom)]"
+      style={{ background: "rgba(4,4,4,0.96)", backdropFilter: "blur(24px)" }}>
+      <div className="max-w-7xl mx-auto px-6 h-14 flex items-center gap-4">
+        <button onClick={onToggle}
+          className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-opacity duration-200 hover:opacity-80"
+          style={{ background: "#E01020" }}>
+          {playing
+            ? <Pause size={13} className="text-white" />
+            : <Play size={13} className="text-white ml-0.5" />}
+        </button>
+
+        {/* Waveform */}
+        <div className="flex items-center gap-px h-7">
+          {WAVEFORM.map((maxH, i) => (
+            <motion.div key={i}
+              className="w-[2px] rounded-full transition-colors duration-300"
+              style={{ backgroundColor: playing ? "#E01020" : "rgba(255,255,255,0.15)" }}
+              animate={playing ? { height: ["4px", `${maxH}px`, "4px"] } : { height: "4px" }}
+              transition={playing
+                ? { duration: 0.42 + (i % 5) * 0.09, repeat: Infinity, delay: i * 0.028, ease: "easeInOut" }
+                : { duration: 0.3 }} />
+          ))}
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <div className="text-white text-xs font-medium truncate">BABYMONSTER — DRIP</div>
+          <div className="text-white/28 text-xs truncate">{playing ? t.soundOn : t.soundOff}</div>
+        </div>
+
+        {playing
+          ? <Volume2 size={14} className="text-white/35 shrink-0" />
+          : <VolumeX size={14} className="text-white/25 shrink-0" />}
+      </div>
+    </motion.div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// APP
+// ─────────────────────────────────────────────
+
+function AuthModal({ locale, mode, onMode, onClose, onAuthenticated }: {
+  locale: Locale; mode: "login" | "register"; onMode: (mode: "login" | "register") => void;
+  onClose: () => void; onAuthenticated: (user: User) => void;
+}) {
+  const [feedback, setFeedback] = useState("");
+  const t = messages[locale];
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault(); setFeedback("");
+    const payload = Object.fromEntries(new FormData(event.currentTarget).entries());
+    try {
+      const user = await emailAuth(mode, String(payload.email || ""), String(payload.password || ""), String(payload.nickname || ""));
+      if (user) { onAuthenticated(user); onClose(); }
+      else setFeedback(t.successLogin);
+    } catch (error) { setFeedback(error instanceof Error && error.message !== "SUPABASE_NOT_CONFIGURED" ? error.message : t.genericError); }
+  }
+  async function oauth(provider: "google" | "kakao") {
     setFeedback("");
-    const form = new FormData(event.currentTarget);
-    const payload = Object.fromEntries(form.entries());
-    const response = await fetch(`/api/auth/${authMode}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(payload) });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) return setFeedback(data.error || "目前無法完成，請稍後再試。");
-    setUser(data.user); setFeedback("登入成功！");
-    setTimeout(() => setAuthOpen(false), 500);
+    try { await socialAuth(provider); } catch (error) { setFeedback(error instanceof Error ? error.message : t.genericError); }
   }
+  return <div className="fixed inset-0 z-[100] bg-black/85 grid place-items-center p-5" role="dialog" aria-modal="true" aria-label={t.login}>
+    <div className="w-full max-w-lg max-h-[92vh] overflow-auto bg-[#090909] border border-white/15 p-7 shadow-2xl">
+      <div className="flex items-center justify-between"><h2 className="text-white font-black text-4xl" style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>JOIN <span className="text-[#E01020]">MONSTIEZ</span></h2><button onClick={onClose} className="text-white/50 hover:text-white text-2xl" aria-label={t.close}>×</button></div>
+      <div className="grid grid-cols-2 border-b border-white/10 my-6"><button onClick={() => onMode("login")} className={`py-3 text-sm ${mode === "login" ? "text-white border-b-2 border-red-600" : "text-white/35"}`}>{t.loginTab}</button><button onClick={() => onMode("register")} className={`py-3 text-sm ${mode === "register" ? "text-white border-b-2 border-red-600" : "text-white/35"}`}>{t.registerTab}</button></div>
+      <div className="grid grid-cols-2 gap-2"><button onClick={() => void oauth("google")} className="min-h-11 border border-white/15 p-3 text-center text-white/60 text-xs">Google</button><button onClick={() => void oauth("kakao")} className="min-h-11 border border-white/15 p-3 text-center text-white/60 text-xs">KakaoTalk</button></div>
+      <div className="text-center text-white/25 text-xs my-5">— {t.orEmail} —</div>
+      <form onSubmit={submit} className="grid gap-4">
+        {mode === "register" && <label className="text-white/45 text-xs">{t.nickname}<input name="nickname" required minLength={2} maxLength={24} className="block w-full mt-2 p-3 bg-black border border-white/15 text-white focus:outline-none focus:border-red-600/60" /></label>}
+        <label className="text-white/45 text-xs">{t.email}<input name="email" type="email" required className="block w-full mt-2 p-3 bg-black border border-white/15 text-white focus:outline-none focus:border-red-600/60" /></label>
+        <label className="text-white/45 text-xs">{t.password}<input name="password" type="password" required minLength={10} className="block w-full mt-2 p-3 bg-black border border-white/15 text-white focus:outline-none focus:border-red-600/60" /></label>
+        <button type="submit" className="p-4 bg-[#E01020] text-white text-xs tracking-[.2em] uppercase">{mode === "register" ? t.createAccount : t.loginBoard}</button>
+      </form>
+      {feedback && <p className="text-red-400 text-xs mt-4">{feedback}</p>}
+    </div>
+  </div>;
+}
 
-  async function submitPost() {
-    if (!user) { setAuthOpen(true); return; }
-    if (message.trim().length < 2) return;
-    const response = await fetch("/api/posts", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ body: message }) });
-    const data = await response.json().catch(() => ({}));
-    if (response.ok) { setPosts(p => [data.post, ...p]); setMessage(""); }
-  }
+export default function App() {
+  const { playing, toggle } = useAmbientMusic();
+  const [user, setUser] = useState<User | null>(null);
+  const [locale, setLocale] = useState<Locale>("zh-TW");
+  const [authOpen, setAuthOpen] = useState(false);
+  const [authMode, setAuthMode] = useState<"login" | "register">("login");
 
-  async function like(post: Post) {
-    if (!user) { setAuthOpen(true); return; }
-    const response = await fetch(`/api/posts/${post.id}/like`, { method: "POST" });
-    const data = await response.json().catch(() => ({}));
-    if (response.ok) setPosts(items => items.map(item => item.id === post.id ? { ...item, likes: data.likes, liked: data.liked } : item));
-  }
+  useEffect(() => {
+    const next = getInitialLocale(navigator.languages, localStorage.getItem("monstiez-locale"));
+    queueMicrotask(() => setLocale(next)); document.documentElement.lang = next;
+    void currentFanUser().then(setUser);
+    return observeFanUser(setUser);
+  }, []);
 
-  async function logout() {
-    await fetch("/api/auth/logout", { method: "POST" }); setUser(null);
-  }
+  function changeLocale(next: Locale) { setLocale(next); localStorage.setItem("monstiez-locale", next); document.documentElement.lang = next; }
+  async function logout() { await signOutFan(); setUser(null); }
 
-  return <main className="shell">
-    <nav className="nav"><div className="wrap nav-inner">
-      <a href="#top" className="brand">BABY<b>MONSTER</b> / FANS</a>
-      <div className="nav-links"><a href="#story">介紹</a><a href="#members">成員</a><a href="#listen">影音</a><a href="#events">活動</a><a href="#community">交流</a></div>
-      <div className="nav-actions">{user ? <><button className="mini-button" onClick={() => document.querySelector("#community")?.scrollIntoView()}>Hi, {user.nickname}</button><button className="mini-button" onClick={logout}>登出</button></> : <button className="mini-button" onClick={() => setAuthOpen(true)}>粉絲登入 ↗</button>}</div>
-    </div></nav>
+  useEffect(() => {
+    // Hide scrollbar
+    const style = document.createElement("style");
+    style.textContent = `::-webkit-scrollbar{display:none}body{scrollbar-width:none;-ms-overflow-style:none}`;
+    document.head.appendChild(style);
+    return () => document.head.removeChild(style);
+  }, []);
 
-    <section className="hero" id="top"><div className="hero-grid"/><div className="wrap hero-content">
-      <div className="hero-kicker"><span>Unofficial fan community · Taiwan</span><span>Ruka · Pharita · Asa · Ahyeon · Rami · Rora · Chiquita</span></div>
-      <h1 className="hero-title">Baby<span>Monster</span></h1>
-      <div className="hero-bottom"><p className="hero-note">本網站為非官方、非營利粉絲交流站，與 YG Entertainment 或 BABYMONSTER 無隸屬關係。所有音樂與影片均由官方平台提供嵌入。</p><div className="hero-cta"><a className="primary" href="#listen">立即收聽官方音樂 ▶</a><a className="ghost" href="#community">加入 MONSTIEZ 交流</a></div></div>
-    </div></section>
-    <div className="ticker"><div className="ticker-track">SEVEN VOICES · ONE MONSTER ENERGY · MONSTIEZ TOGETHER · OFFICIAL LINKS ONLY · SEVEN VOICES · ONE MONSTER ENERGY · MONSTIEZ TOGETHER · OFFICIAL LINKS ONLY · </div></div>
-
-    <section className="section" id="story"><div className="wrap">
-      <p className="eyebrow">01 — Their story</p><h2 className="section-title">Born to be<br/>all-rounders.</h2>
-      <div className="intro-grid"><div><div className="fact"><span>正式出道</span><strong>2024.04.01</strong></div><div className="fact"><span>所屬公司</span><strong>YG Entertainment</strong></div><div className="fact"><span>成員國籍</span><strong>韓國 · 泰國 · 日本</strong></div><div className="fact"><span>官方粉絲名</span><strong>MONSTIEZ</strong></div></div><div><div className="intro-copy">七位成員把 <em>vocal、rap、dance</em> 與強烈舞台能量凝聚成 BABYMONSTER。</div><p className="small-copy">BABYMONSTER 是 YG Entertainment 推出的七人女子團體，由 RUKA、PHARITA、ASA、AHYEON、RAMI、RORA、CHIQUITA 組成。團名結合舞台外的年輕魅力與舞台上的強大實力。她們於 2024 年以首張迷你專輯《BABYMONS7ER》正式出道，之後以《DRIP》等作品拓展全球活動。本站介紹以官方公開資料為準，不自行杜撰私生活、緋聞或未證實行程。</p></div></div>
-    </div></section>
-
-    <section className="section" id="members"><div className="wrap"><p className="eyebrow">02 — The seven</p><h2 className="section-title">Meet the<br/>monsters.</h2><p className="section-lead">以下生日與國籍依 BABYMONSTER 官方資料整理；官方未固定公布傳統「主唱／主舞／門面」等完整定位，因此本站不擅自貼標籤。</p>
-      <div className="members-grid">{members.map((m) => <article className="member" key={m[1]}><span className="member-no">{m[0]}</span><span className="member-letter">{String(m[1])[0]}</span><div className="member-data"><b>{m[3]} · {m[2]}</b><h3>{m[1]}</h3><p>{m[4]}</p></div></article>)}</div>
-      <div className="member-notes"><div className="note-card"><strong>VOCAL</strong>從細膩音色到爆發高音，歌曲以多樣聲線堆疊出戲劇張力。</div><div className="note-card"><strong>RAP</strong>以多語言與節奏變化呈現 YG 標誌性的嘻哈能量。</div><div className="note-card"><strong>PERFORMANCE</strong>七人隊形、精準舞蹈與充滿自信的舞台表情，是現場魅力核心。</div></div>
-    </div></section>
-
-    <section className="section" id="listen"><div className="wrap"><p className="eyebrow">03 — Official streams</p><h2 className="section-title">Press play.<br/>Stay official.</h2><p className="section-lead">直接使用 Spotify 與 YouTube 官方播放器，不重新上傳、不提供下載，也不複製完整歌詞。</p>
-      <div className="listen-grid"><div className="embed-card"><iframe title="BABYMONSTER on Spotify" src="https://open.spotify.com/embed/artist/1SIocsqdEefUTE6XKGUiVS?utm_source=generator&theme=0" height="352" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"/></div><div className="social-stack"><div className="social-card"><div><strong>YouTube</strong><p>觀看 MV、舞台、舞蹈與幕後內容；播放量直接回到官方頻道。</p></div><a className="arrow-link" href="https://www.youtube.com/@BABYMONSTER" target="_blank" rel="noreferrer">前往官方頻道 ↗</a></div><div className="social-card"><div><strong>Instagram</strong><p>追蹤官方照片、Reels 與活動動態，不在本站重製貼文。</p></div><a className="arrow-link" href="https://www.instagram.com/babymonster_ygofficial/" target="_blank" rel="noreferrer">@babymonster_ygofficial ↗</a></div></div></div>
-    </div></section>
-
-    <section className="section" id="events"><div className="wrap"><p className="eyebrow">04 — Latest activities</p><h2 className="section-title">Where the<br/>energy lands.</h2><p className="section-lead">近期公開行程以官方日本站於 2026 年 7 月公布的「2026–27 BABYMONSTER WORLD TOUR [춤 (CHOOM)] IN JAPAN」資訊為基礎；票務、時間與成員出席請在出發前再次確認官方公告。</p>
-      <div className="events"><article className="event"><div className="datebox"><b>28</b><span>JUL · 2026</span></div><div><h3>WORLD TOUR [춤 (CHOOM)]</h3><p>日本場次巡演資訊持續更新中</p></div><p>Marine Messe Fukuoka A Hall · Fukuoka</p><a className="pill" href="https://yg-babymonster-official.jp/" target="_blank" rel="noreferrer">官方確認 ↗</a></article><article className="event"><div className="datebox"><b>26</b><span>2026–27</span></div><div><h3>CHOOM IN JAPAN</h3><p>大阪、福岡等場次與售票公告</p></div><p>Japan · 詳細場館依官方站公告</p><a className="pill" href="https://yg-babymonster-official.jp/news/" target="_blank" rel="noreferrer">最新消息 ↗</a></article><article className="event"><div className="datebox"><b>NOW</b><span>ALWAYS ON</span></div><div><h3>OFFICIAL RELEASES</h3><p>新作品、表演影片與公告</p></div><p>Spotify · YouTube · Instagram</p><a className="pill" href="#listen">前往收聽</a></article></div>
-    </div></section>
-
-    <section className="section" id="community"><div className="wrap"><p className="eyebrow">05 — Fan community</p><h2 className="section-title">Your voice<br/>joins the crowd.</h2><div className="community-layout"><aside className="community-side"><h3>MONSTIEZ 留言板</h3><p>分享觀後感、應援靈感與新粉指南。請勿散播私生資訊、未證實消息、盜版連結、完整歌詞或未授權商業素材；尊重成員與其他粉絲。</p>{!user && <button className="primary" onClick={() => setAuthOpen(true)}>登入後參與交流</button>}</aside><div><div className="notice">社群守則：友善交流、不冒充官方、不公開個資、不提供盜版下載。留言內容由發文者負責，站方保留移除侵權或騷擾內容的權利。</div><div className="post-compose"><textarea aria-label="留言內容" value={message} onChange={e => setMessage(e.target.value)} placeholder={user ? `嗨 ${user.nickname}，想和 MONSTIEZ 分享什麼？` : "登入後即可發表留言…"} disabled={!user}/><div className="compose-footer"><span>{message.length}/500</span><button className="primary" onClick={submitPost}>發表留言 ↑</button></div></div>{posts.map(post => <article className="post" key={post.id}><div className="post-head"><div className="avatar">{post.nickname.slice(0,2).toUpperCase()}</div><div className="post-meta"><strong>{post.nickname}</strong><span>{post.createdAt}</span></div></div><p className="post-body">{post.body}</p><div className="post-actions"><button className={`action ${post.liked ? "active" : ""}`} onClick={() => like(post)}>♥ {post.likes}</button><button className="action">◌ {post.comments} 則回覆</button></div></article>)}</div></div></div></section>
-
-    <footer className="footer"><div className="wrap"><div className="footer-top"><div className="footer-logo">MONSTIEZ.</div><div><a className="arrow-link" href="https://ygfamily.com/ko/artists/babymonster/profile" target="_blank" rel="noreferrer">YG 官方藝人頁 ↗</a></div></div><p>非官方粉絲站。BABYMONSTER、成員姓名、音樂、影像、標誌及相關商標權利歸各權利人所有。本站不販售官方素材，不主張任何商標所有權；嵌入內容由 Spotify、YouTube、Instagram 依其服務條款提供。活動資訊可能變動，請以主辦方最終公告為準。</p></div></footer>
-
-    {authOpen && <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label="粉絲登入"><div className="modal"><div className="modal-top"><h2>JOIN MONSTIEZ</h2><button className="close" aria-label="關閉" onClick={() => setAuthOpen(false)}>×</button></div><div className="tabs"><button className={authMode === "login" ? "active" : ""} onClick={() => {setAuthMode("login");setFeedback("")}}>登入</button><button className={authMode === "register" ? "active" : ""} onClick={() => {setAuthMode("register");setFeedback("")}}>電子郵件註冊</button></div><div className="oauth"><a href="/api/auth/oauth?provider=google">Google</a><a href="/api/auth/oauth?provider=wechat">WeChat</a><a href="/api/auth/oauth?provider=kakao">KakaoTalk</a></div><div className="divider">或使用電子郵件</div><form className="form" onSubmit={submitAuth}>{authMode === "register" && <label>粉絲暱稱<input name="nickname" required minLength={2} maxLength={24} autoComplete="nickname"/></label>}<label>電子郵件<input name="email" type="email" required autoComplete="email"/></label><label>密碼<input name="password" type="password" required minLength={10} autoComplete={authMode === "register" ? "new-password" : "current-password"}/></label><button className="primary" type="submit">{authMode === "register" ? "建立粉絲帳號" : "登入留言板"}</button></form>{feedback && <p className={feedback.includes("成功") ? "success" : "error"}>{feedback}</p>}<p className="small-copy">密碼至少 10 個字元，將以加鹽雜湊儲存。社群登入需由站長在部署平台設定各服務的 OAuth 金鑰後啟用。</p></div></div>}
-  </main>;
+  return (
+    <div className="bg-black min-h-screen" style={{ fontFamily: "'Inter', sans-serif" }}>
+      <Nav playing={playing} onToggle={toggle} user={user} locale={locale} onLocale={changeLocale} onLogin={() => setAuthOpen(true)} onLogout={logout} />
+      <Hero playing={playing} onToggle={toggle} locale={locale} />
+      <AboutSection locale={locale} />
+      <MembersSection locale={locale} />
+      <MusicSection locale={locale} />
+      <EventsSection locale={locale} />
+      <CommunitySection user={user} locale={locale} onLogin={() => setAuthOpen(true)} />
+      <FanVoices locale={locale} user={user} />
+      <Announcements locale={locale} />
+      <Footer locale={locale} />
+      <AudioPlayerBar playing={playing} onToggle={toggle} locale={locale} />
+      {authOpen && <AuthModal locale={locale} mode={authMode} onMode={setAuthMode} onClose={() => setAuthOpen(false)} onAuthenticated={setUser} />}
+      {/* Spacer for fixed audio bar */}
+      <div className="h-[calc(3.5rem+env(safe-area-inset-bottom))]" />
+    </div>
+  );
 }

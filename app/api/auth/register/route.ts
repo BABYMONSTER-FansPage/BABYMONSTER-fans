@@ -10,7 +10,7 @@ export async function POST(request: Request) {
     await ensureDatabase();
     const passwordData = await hashPassword(password);
     const result = await db().prepare("INSERT INTO users(email, nickname, password_hash, password_salt, provider) VALUES(?, ?, ?, ?, 'email')").bind(cleanEmail, cleanNickname, passwordData.hash, passwordData.salt).run();
-    const user = { id: Number(result.meta.last_row_id), nickname: cleanNickname, email: cleanEmail };
+    const user = { id: Number(result.meta.last_row_id), nickname: cleanNickname, email: cleanEmail, role: "monstiez" as const };
     const response = NextResponse.json({ user }, { status: 201 });
     response.headers.set("set-cookie", sessionCookie(await createSession(user.id), request));
     return response;
