@@ -226,6 +226,14 @@ export async function fetchSpotifyReleases(): Promise<SpotifyRelease[]> {
   return Array.isArray(data?.releases) ? data.releases : [];
 }
 
+export async function fetchSpotifyReleaseStatus(): Promise<{ releases: SpotifyRelease[]; error?: string }> {
+  const client = supabaseClient();
+  if (!client) return { releases: [], error: "SUPABASE_NOT_CONFIGURED" };
+  const { data, error } = await client.functions.invoke("spotify-releases");
+  if (error) return { releases: [], error: error.message };
+  return { releases: Array.isArray(data?.releases) ? data.releases : [], error: data?.error };
+}
+
 export async function listAnnouncements(locale: string) {
   const client = supabaseClient();
   if (!client) return [];

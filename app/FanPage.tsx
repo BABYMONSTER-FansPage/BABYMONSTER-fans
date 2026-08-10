@@ -9,7 +9,7 @@ import {
 import { getInitialLocale, localeLabels, messages, supportedLocales, type Locale } from "./i18n";
 import {
   createFanPost, currentFanUser, deleteFanPost, editFanPost, emailAuth, listFanPosts,
-  fetchSpotifyReleases, listAnnouncements, loadSiteContent, moderateFanPost, observeFanUser, reportFanPost,
+  fetchSpotifyReleaseStatus, listAnnouncements, loadSiteContent, moderateFanPost, observeFanUser, reportFanPost,
   saveSiteContent, signOutFan, socialAuth, toggleFanLike, translateFanPost, updateFanNickname,
   type EditableEvent, type FanPost as ApiPost, type FanUser as User, type SiteContent, type SpotifyRelease,
 } from "./lib/supabase-browser";
@@ -793,11 +793,15 @@ function MusicSection({ locale, content }: { locale: Locale; content: SiteConten
   const isInView = useInView(ref, { once: true, amount: 0.15 });
   const t = messages[locale];
   const [spotifyAlbums, setSpotifyAlbums] = useState<SpotifyRelease[]>([]);
+  const [spotifyStatus, setSpotifyStatus] = useState("");
+  const editor = useContext(InlineEditContext);
   const albums = Array.isArray(content.albums) && content.albums.length ? content.albums : spotifyAlbums;
 
   useEffect(() => {
     if (Array.isArray(content.albums) && content.albums.length) return;
-    void fetchSpotifyReleases().then(setSpotifyAlbums).catch(() => setSpotifyAlbums([]));
+    void fetchSpotifyReleaseStatus()
+      .then(result => { setSpotifyAlbums(result.releases); setSpotifyStatus(result.error || (result.releases.length ? "" : "NO_SPOTIFY_RELEASES")); })
+      .catch(error => { setSpotifyAlbums([]); setSpotifyStatus(error instanceof Error ? error.message : "SPOTIFY_UNAVAILABLE"); });
   }, [content.albums]);
 
   return (
@@ -820,6 +824,9 @@ function MusicSection({ locale, content }: { locale: Locale; content: SiteConten
 
         {albums.length > 0 && <div className="grid md:grid-cols-3 gap-8">
           {albums.map((a, i) => <AlbumCard key={a.id || a.title} album={a} index={i} isVisible={isInView} locale={locale} />)}
+        </div>}
+        {editor.editing && albums.length === 0 && <div className="border border-red-600/25 bg-red-950/10 p-6 text-red-200/70 text-sm leading-relaxed">
+          Spotify 專輯尚未載入。狀態：{spotifyStatus || "loading"}。請確認已部署 Supabase Edge Function `spotify-releases`，並設定 `SPOTIFY_CLIENT_ID` / `SPOTIFY_CLIENT_SECRET`；或在齒輪後台手動新增專輯。
         </div>}
 
         <div className="grid md:grid-cols-[1.4fr_.6fr] gap-8 mt-16">
@@ -1351,6 +1358,7 @@ function AdminPanel({ content, onSaved, onClose }: { content: SiteContent; onSav
     siteTagline: contentText(content.siteTagline, DEFAULT_SITE_CONTENT.siteTagline),
     memberPhotos: { ...(content.memberPhotos || {}) },
     events: Array.isArray(content.events) ? content.events : [],
+    albums: Array.isArray(content.albums) ? content.albums : [],
   }));
   const [feedback, setFeedback] = useState("");
 
@@ -1381,6 +1389,29 @@ function AdminPanel({ content, onSaved, onClose }: { content: SiteContent; onSav
     setDraft(current => ({ ...current, events: (current.events || EVENTS).filter((_, eventIndex) => eventIndex !== index) }));
   }
 
+  function updateAlbum(index: number, key: keyof SpotifyRelease, value: string) {
+    setDraft(current => {
+      const albums = [...(current.albums || [])];
+      const existing = albums[index] || { id: `manual-${index}`, title: "", year: "", type: "Album", imageUrl: "", spotifyUrl: "", tracks: [] };
+      albums[index] = {
+        ...existing,
+        [key]: key === "tracks" ? value.split(",").map(item => item.trim()).filter(Boolean) : value,
+      } as SpotifyRelease;
+      return { ...current, albums };
+    });
+  }
+
+  function addAlbum() {
+    setDraft(current => ({
+      ...current,
+      albums: [...(current.albums || []), { id: `manual-${Date.now().toString(36)}`, title: "", year: "", type: "Album", imageUrl: "", spotifyUrl: "", tracks: [] }],
+    }));
+  }
+
+  function removeAlbum(index: number) {
+    setDraft(current => ({ ...current, albums: (current.albums || []).filter((_, albumIndex) => albumIndex !== index) }));
+  }
+
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setFeedback("Saving...");
@@ -1396,6 +1427,7 @@ function AdminPanel({ content, onSaved, onClose }: { content: SiteContent; onSav
   const inputClass = "mt-2 w-full bg-black border border-white/15 p-3 text-white/75 text-sm focus:outline-none focus:border-red-600/60";
   const labelClass = "block text-white/45 text-xs tracking-wider";
   const events = draft.events || [];
+  const albums = draft.albums || [];
 
   return <div className="fixed inset-0 z-[105] bg-black/88 grid place-items-center p-4" role="dialog" aria-modal="true" aria-label="Admin dashboard">
     <form onSubmit={submit} className="w-full max-w-5xl max-h-[92vh] overflow-auto bg-[#090909] border border-white/15 p-6 md:p-8 shadow-2xl">
@@ -1455,6 +1487,29 @@ function AdminPanel({ content, onSaved, onClose }: { content: SiteContent; onSav
                 <label className={`${labelClass} md:col-span-2`}>說明<textarea rows={3} value={event.desc} onChange={e => updateEvent(index, "desc", e.target.value)} className={inputClass} /></label>
               </div>
               <button type="button" onClick={() => removeEvent(index)} className="mt-3 text-red-400/70 hover:text-red-300 text-xs">刪除這筆活動</button>
+            </div>)}
+          </div>
+        </section>
+
+        <section className="border-t border-white/8 pt-6">
+          <div className="flex items-center justify-between gap-4 mb-4">
+            <h3 className="text-white font-bold">專輯／單曲管理</h3>
+            <button type="button" onClick={addAlbum} className="px-3 py-2 border border-white/15 text-white/60 text-xs hover:text-white">新增專輯</button>
+          </div>
+          <p className="text-white/35 text-xs leading-relaxed mb-4">
+            Spotify 自動抓取需要部署 Edge Function 並設定 secrets。手動新增時，封面請使用 Spotify 回傳圖片、官方允許 embed 的圖片，或你已取得授權的圖片，並附 Spotify 連結。
+          </p>
+          <div className="grid gap-4">
+            {albums.map((album, index) => <div key={album.id || index} className="border border-white/8 p-4">
+              <div className="grid md:grid-cols-2 gap-3">
+                <label className={labelClass}>標題<input value={album.title || ""} onChange={e => updateAlbum(index, "title", e.target.value)} className={inputClass} /></label>
+                <label className={labelClass}>年份<input value={album.year || ""} onChange={e => updateAlbum(index, "year", e.target.value)} className={inputClass} /></label>
+                <label className={labelClass}>類型<input value={album.type || ""} onChange={e => updateAlbum(index, "type", e.target.value)} placeholder="Album / Single / EP" className={inputClass} /></label>
+                <label className={labelClass}>Spotify 連結<input value={album.spotifyUrl || ""} onChange={e => updateAlbum(index, "spotifyUrl", e.target.value)} placeholder="https://open.spotify.com/..." className={inputClass} /></label>
+                <label className={`${labelClass} md:col-span-2`}>封面圖片 URL<input value={album.imageUrl || ""} onChange={e => updateAlbum(index, "imageUrl", e.target.value)} placeholder="https://i.scdn.co/..." className={inputClass} /></label>
+                <label className={`${labelClass} md:col-span-2`}>曲目，以逗號分隔<input value={(album.tracks || []).join(", ")} onChange={e => updateAlbum(index, "tracks", e.target.value)} className={inputClass} /></label>
+              </div>
+              <button type="button" onClick={() => removeAlbum(index)} className="mt-3 text-red-400/70 hover:text-red-300 text-xs">刪除這張專輯</button>
             </div>)}
           </div>
         </section>

@@ -16,7 +16,7 @@ test("builds a GitHub Pages entry for babymonster.fans", async () => {
 });
 
 test("bundles six static languages and translates fan posts only", async () => {
-  const [page, i18n, client, css, envExample, migration, cmsMigration] = await Promise.all([
+  const [page, i18n, client, css, envExample, migration, cmsMigration, albumMigration] = await Promise.all([
     readFile(new URL("../app/FanPage.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/i18n.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/lib/supabase-browser.ts", import.meta.url), "utf8"),
@@ -24,12 +24,14 @@ test("bundles six static languages and translates fan posts only", async () => {
     readFile(new URL("../.env.example", import.meta.url), "utf8"),
     readFile(new URL("../supabase/migrations/202608100001_monstiez_community.sql", import.meta.url), "utf8"),
     readFile(new URL("../supabase/migrations/202608100003_inline_editing_content.sql", import.meta.url), "utf8"),
+    readFile(new URL("../supabase/migrations/202608100005_site_content_albums.sql", import.meta.url), "utf8"),
   ]);
   assert.match(i18n, /"zh-TW"/); assert.match(i18n, /"zh-CN"/);
   assert.match(i18n, /\bth:/); assert.match(i18n, /\ben:/); assert.match(i18n, /\bko:/); assert.match(i18n, /\bja:/);
   assert.match(page, /InlineEditContext/);
   assert.match(page, /customSections/);
-  assert.match(page, /fetchSpotifyReleases/);
+  assert.match(page, /fetchSpotifyReleaseStatus/);
+  assert.match(page, /專輯尚未載入/);
   assert.match(page, /AllPostsModal/);
   assert.match(page, /updateFanNickname/);
   assert.match(page, /useScroll/); assert.match(page, /useTransform/);
@@ -40,4 +42,5 @@ test("bundles six static languages and translates fan posts only", async () => {
   assert.match(migration, /enable row level security/);
   assert.match(cmsMigration, /uiText/);
   assert.match(cmsMigration, /customSections/);
+  assert.match(albumMigration, /'albums'/);
 });

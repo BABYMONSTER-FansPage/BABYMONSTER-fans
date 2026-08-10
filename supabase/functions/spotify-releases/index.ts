@@ -18,7 +18,7 @@ Deno.serve(async request => {
 
   const clientId = Deno.env.get("SPOTIFY_CLIENT_ID");
   const clientSecret = Deno.env.get("SPOTIFY_CLIENT_SECRET");
-  if (!clientId || !clientSecret) return Response.json({ releases: [] }, { headers: cors });
+  if (!clientId || !clientSecret) return Response.json({ releases: [], error: "SPOTIFY_SECRETS_MISSING" }, { headers: cors });
 
   try {
     const tokenResponse = await fetch("https://accounts.spotify.com/api/token", {
@@ -29,7 +29,7 @@ Deno.serve(async request => {
     const token = await tokenResponse.json();
     if (!tokenResponse.ok || !token.access_token) throw new Error("SPOTIFY_TOKEN_FAILED");
 
-    const albumsResponse = await fetch(`https://api.spotify.com/v1/artists/${BABYMONSTER_SPOTIFY_ARTIST_ID}/albums?include_groups=album,single&market=US&limit=12`, {
+    const albumsResponse = await fetch(`https://api.spotify.com/v1/artists/${BABYMONSTER_SPOTIFY_ARTIST_ID}/albums?include_groups=album,single&limit=12`, {
       headers: { authorization: `Bearer ${token.access_token}` },
     });
     const albums = await albumsResponse.json();
@@ -55,7 +55,7 @@ Deno.serve(async request => {
       }));
 
     return Response.json({ releases }, { headers: { ...cors, "cache-control": "public, max-age=3600" } });
-  } catch {
-    return Response.json({ releases: [] }, { status: 200, headers: cors });
+  } catch (error) {
+    return Response.json({ releases: [], error: error instanceof Error ? error.message : "SPOTIFY_UNAVAILABLE" }, { status: 200, headers: cors });
   }
 });
