@@ -51,6 +51,13 @@ test("bundles six static languages and translates fan posts only", async () => {
   assert.match(i18n, /\bth:/); assert.match(i18n, /\ben:/); assert.match(i18n, /\bko:/); assert.match(i18n, /\bja:/);
   assert.match(page, /InlineEditContext/);
   assert.match(page, /customSections/);
+  assert.match(client, /instagramPosts\?: string\[\]/);
+  assert.match(page, /InstagramSignalSection/);
+  assert.match(page, /instagram\.com\/embed\.js/);
+  assert.match(page, /data-instgrm-permalink/);
+  assert.match(page, /normalizeInstagramPosts/);
+  assert.match(page, /新增 IG URL/);
+  assert.match(i18n, /instagramFeedTitle/);
   assert.match(page, /OFFICIAL_BRAND_NAME = "Monstiez"/);
   assert.match(page, /SITE_BROWSER_TITLE = "Monstiez｜BABYMONSTER Fans Club"/);
   assert.match(page, /FIXED_FAVICON_URL = "\/favicon\.svg"/);

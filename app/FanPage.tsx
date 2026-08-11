@@ -175,6 +175,13 @@ function normalizeTrackNames(value: unknown) {
   return [];
 }
 
+function normalizeInstagramPosts(value: unknown) {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map(item => String(item || "").trim())
+    .filter(item => /^https:\/\/(www\.)?instagram\.com\/(p|reel)\//.test(item));
+}
+
 type InlineEditContextValue = {
   editing: boolean;
   locale: Locale;
@@ -759,6 +766,7 @@ function MusicSection({ locale, content }: { locale: Locale; content: SiteConten
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, amount: 0.15 });
   const t = messages[locale];
+  const f = fixedMessages[locale];
   const [spotifyAlbums, setSpotifyAlbums] = useState<SpotifyRelease[]>([]);
   const [spotifyStatus, setSpotifyStatus] = useState("");
   const editor = useContext(InlineEditContext);
@@ -814,6 +822,72 @@ function MusicSection({ locale, content }: { locale: Locale; content: SiteConten
               <span className="text-white/35 text-xs tracking-[.3em] uppercase"><EditableText k="instagramLabel" fallback={t.officialProfile} /></span><strong className="text-white text-3xl" style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>INSTAGRAM ↗</strong>
             </a>
           </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function InstagramSignalSection({ locale, content }: { locale: Locale; content: SiteContent }) {
+  const posts = normalizeInstagramPosts(content.instagramPosts);
+  const f = fixedMessages[locale];
+
+  useEffect(() => {
+    if (!posts.length) return;
+    const processEmbeds = () => {
+      (window as Window & { instgrm?: { Embeds?: { process?: () => void } } }).instgrm?.Embeds?.process?.();
+    };
+    const src = "https://www.instagram.com/embed.js";
+    const existing = document.querySelector<HTMLScriptElement>(`script[src="${src}"]`);
+    if (existing) {
+      window.setTimeout(processEmbeds, 0);
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = src;
+    script.async = true;
+    script.onload = processEmbeds;
+    document.body.appendChild(script);
+  }, [posts.join("|")]);
+
+  if (!posts.length) return null;
+
+  return (
+    <section id="yg-instagram" className="bg-black border-t border-white/5 py-24 md:py-36 overflow-hidden">
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="grid md:grid-cols-[0.85fr_1.15fr] gap-10 md:gap-16 items-end mb-12">
+          <div>
+            <p className="text-xs tracking-[0.4em] uppercase text-[#E01020]">{f.instagramFeedKicker}</p>
+            <h2 className="mt-4 text-white font-black leading-none"
+              style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: "clamp(3.4rem, 9vw, 8rem)" }}>
+              {f.instagramFeedTitle}
+            </h2>
+          </div>
+          <p className="text-white/40 text-sm md:text-base leading-relaxed md:max-w-xl">{f.instagramFeedBody}</p>
+        </div>
+
+        <div className="grid auto-cols-[minmax(280px,380px)] grid-flow-col md:grid-flow-row md:grid-cols-3 gap-5 overflow-x-auto md:overflow-visible pb-4">
+          {posts.map((url, index) => (
+            <article key={`${url}-${index}`} className="group relative min-w-0 border border-white/10 bg-white/[0.025] p-3 transition-colors hover:border-red-600/35">
+              <div className="mb-3 flex items-center justify-between gap-4">
+                <span className="text-white/25 text-xs tracking-[0.25em] uppercase">#{String(index + 1).padStart(2, "0")} · Official post</span>
+                <span className="h-px flex-1 bg-red-600/30" />
+              </div>
+              <div className="relative min-h-[440px] overflow-hidden bg-neutral-950">
+                <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-px bg-red-600/70 opacity-0 transition-opacity group-hover:opacity-100" />
+                <blockquote
+                  className="instagram-media"
+                  data-instgrm-permalink={url}
+                  data-instgrm-version="14"
+                  style={{ background: "#0a0a0a", border: 0, margin: 0, minWidth: 0, width: "100%" }}
+                />
+              </div>
+              <a href={url} target="_blank" rel="noreferrer"
+                className="mt-4 inline-block text-red-300/80 hover:text-red-200 text-xs tracking-[0.25em] uppercase">
+                {f.openInstagramPost} ↗
+              </a>
+            </article>
+          ))}
         </div>
       </div>
     </section>
@@ -1292,6 +1366,7 @@ function AdminPanel({ content, onSaved, onClose }: { content: SiteContent; onSav
     uiText: { ...(content.uiText || {}) },
     events: Array.isArray(content.events) ? content.events : [],
     albums: Array.isArray(content.albums) ? content.albums : [],
+    instagramPosts: Array.isArray(content.instagramPosts) ? content.instagramPosts : [],
   }));
   const [feedback, setFeedback] = useState("");
 
@@ -1349,6 +1424,22 @@ function AdminPanel({ content, onSaved, onClose }: { content: SiteContent; onSav
     setDraft(current => ({ ...current, albums: (current.albums || []).filter((_, albumIndex) => albumIndex !== index) }));
   }
 
+  function updateInstagramPost(index: number, value: string) {
+    setDraft(current => {
+      const instagramPosts = [...(current.instagramPosts || [])];
+      instagramPosts[index] = value;
+      return { ...current, instagramPosts };
+    });
+  }
+
+  function addInstagramPost() {
+    setDraft(current => ({ ...current, instagramPosts: [...(current.instagramPosts || []), ""] }));
+  }
+
+  function removeInstagramPost(index: number) {
+    setDraft(current => ({ ...current, instagramPosts: (current.instagramPosts || []).filter((_, postIndex) => postIndex !== index) }));
+  }
+
   async function importSpotifyAlbums() {
     setFeedback("Fetching Spotify releases...");
     try {
@@ -1374,8 +1465,9 @@ function AdminPanel({ content, onSaved, onClose }: { content: SiteContent; onSav
     setFeedback("Saving...");
     try {
       const { siteName: _siteName, faviconUrl: _faviconUrl, ...editableDraft } = draft;
-      await saveSiteContent(editableDraft);
-      onSaved({ ...editableDraft, siteName: OFFICIAL_BRAND_NAME, faviconUrl: FIXED_FAVICON_URL });
+      const nextContent = { ...editableDraft, instagramPosts: normalizeInstagramPosts(editableDraft.instagramPosts) };
+      await saveSiteContent(nextContent);
+      onSaved({ ...nextContent, siteName: OFFICIAL_BRAND_NAME, faviconUrl: FIXED_FAVICON_URL });
       setFeedback("Saved. Public pages will use the new content immediately.");
     } catch (error) {
       setFeedback(error instanceof Error && error.message !== "SUPABASE_NOT_CONFIGURED" ? error.message : "Supabase is not configured or your account is not admin.");
@@ -1386,6 +1478,7 @@ function AdminPanel({ content, onSaved, onClose }: { content: SiteContent; onSav
   const labelClass = "block text-white/45 text-xs tracking-wider";
   const events = draft.events || [];
   const albums = draft.albums || [];
+  const instagramPosts = draft.instagramPosts || [];
   const uiText = draft.uiText || {};
 
   return <div className="fixed inset-0 z-[105] bg-black/88 grid place-items-center p-4" role="dialog" aria-modal="true" aria-label="Admin dashboard">
@@ -1461,6 +1554,23 @@ function AdminPanel({ content, onSaved, onClose }: { content: SiteContent; onSav
               </div>
               <button type="button" onClick={() => removeEvent(index)} className="mt-3 text-red-400/70 hover:text-red-300 text-xs">刪除這筆活動</button>
             </div>)}
+          </div>
+        </section>
+
+        <section className="border-t border-white/8 pt-6">
+          <div className="flex items-center justify-between gap-4 mb-4">
+            <h3 className="text-white font-bold">Instagram 官方貼文</h3>
+            <button type="button" onClick={addInstagramPost} className="px-3 py-2 border border-white/15 text-white/60 text-xs hover:text-white">新增 IG URL</button>
+          </div>
+          <p className="text-white/35 text-xs leading-relaxed mb-4">
+            只貼 Instagram 官方貼文或 Reel URL，例如 https://www.instagram.com/p/... 或 https://www.instagram.com/reel/...。網站只做官方 embed，不下載、不重傳、不把圖片存進 Supabase 或 GitHub。
+          </p>
+          <div className="grid gap-3">
+            {instagramPosts.map((url, index) => <div key={`${index}-${url}`} className="border border-white/8 p-4">
+              <label className={labelClass}>Instagram URL<input value={url || ""} onChange={e => updateInstagramPost(index, e.target.value)} placeholder="https://www.instagram.com/p/..." className={inputClass} /></label>
+              <button type="button" onClick={() => removeInstagramPost(index)} className="mt-3 text-red-400/70 hover:text-red-300 text-xs">刪除這則 IG</button>
+            </div>)}
+            {!instagramPosts.length && <p className="text-white/28 text-xs">尚未新增 Instagram 貼文 URL。新增後才會在前台顯示 IG 區塊。</p>}
           </div>
         </section>
 
@@ -1767,6 +1877,7 @@ export default function App() {
       <AboutSection locale={locale} content={siteContent} />
       <MembersSection locale={locale} content={siteContent} />
       <MusicSection locale={locale} content={siteContent} />
+      <InstagramSignalSection locale={locale} content={siteContent} />
       <EventsSection locale={locale} content={siteContent} />
       <CustomSections sections={siteContent.customSections || []} />
       <CommunitySection user={user} locale={locale} onLogin={() => setAuthOpen(true)} />

@@ -89,6 +89,10 @@ type FixedCopy = {
   spotifyUnavailableHelp: string;
   openSpotifyDiscography: string;
   detailIntro: string;
+  instagramFeedKicker: string;
+  instagramFeedTitle: string;
+  instagramFeedBody: string;
+  openInstagramPost: string;
   viewAllPosts: string;
   allPostsAria: string;
   emptyPosts: string;
@@ -120,6 +124,10 @@ export const fixedMessages: Record<Locale, FixedCopy> = {
     spotifyUnavailableHelp: "如果你是管理員，請確認 spotify-releases Edge Function 已重新部署，或先在齒輪後台手動新增專輯／單曲。",
     openSpotifyDiscography: "開啟 Spotify 作品頁",
     detailIntro: "詳細介紹",
+    instagramFeedKicker: "官方 YG Signal",
+    instagramFeedTitle: "Instagram Dispatch",
+    instagramFeedBody: "只嵌入官方 Instagram 貼文，不下載、不重新上傳、不儲存圖片檔；內容由 Instagram 依其服務條款提供。",
+    openInstagramPost: "在 Instagram 開啟",
     viewAllPosts: "查看全部留言",
     allPostsAria: "全部 MONSTIEZ 留言",
     emptyPosts: "目前還沒有留言。",
@@ -149,6 +157,10 @@ export const fixedMessages: Record<Locale, FixedCopy> = {
     spotifyUnavailableHelp: "如果你是管理员，请确认 spotify-releases Edge Function 已重新部署，或先在齿轮后台手动新增专辑／单曲。",
     openSpotifyDiscography: "打开 Spotify 作品页",
     detailIntro: "详细介绍",
+    instagramFeedKicker: "官方 YG Signal",
+    instagramFeedTitle: "Instagram Dispatch",
+    instagramFeedBody: "只嵌入官方 Instagram 帖文，不下载、不重新上传、不储存图片文件；内容由 Instagram 按其服务条款提供。",
+    openInstagramPost: "在 Instagram 打开",
     viewAllPosts: "查看全部留言",
     allPostsAria: "全部 MONSTIEZ 留言",
     emptyPosts: "目前还没有留言。",
@@ -178,6 +190,10 @@ export const fixedMessages: Record<Locale, FixedCopy> = {
     spotifyUnavailableHelp: "หากคุณเป็นผู้ดูแล โปรดตรวจสอบว่าได้ deploy Edge Function spotify-releases ใหม่แล้ว หรือเพิ่มอัลบั้ม/ซิงเกิลด้วยตนเองในหลังบ้านก่อน",
     openSpotifyDiscography: "เปิดผลงานใน Spotify",
     detailIntro: "รายละเอียด",
+    instagramFeedKicker: "สัญญาณ YG ทางการ",
+    instagramFeedTitle: "Instagram Dispatch",
+    instagramFeedBody: "ฝังเฉพาะโพสต์ Instagram ทางการเท่านั้น ไม่มีการดาวน์โหลด อัปโหลดซ้ำ หรือจัดเก็บไฟล์รูปภาพ เนื้อหาจัดส่งโดย Instagram ตามเงื่อนไขของแพลตฟอร์ม",
+    openInstagramPost: "เปิดใน Instagram",
     viewAllPosts: "ดูข้อความทั้งหมด",
     allPostsAria: "ข้อความ MONSTIEZ ทั้งหมด",
     emptyPosts: "ยังไม่มีข้อความ",
@@ -207,6 +223,10 @@ export const fixedMessages: Record<Locale, FixedCopy> = {
     spotifyUnavailableHelp: "If you are an administrator, confirm that the spotify-releases Edge Function has been redeployed, or manually add albums/singles in the admin panel first.",
     openSpotifyDiscography: "Open Spotify discography",
     detailIntro: "Detailed intro",
+    instagramFeedKicker: "Official YG Signal",
+    instagramFeedTitle: "Instagram Dispatch",
+    instagramFeedBody: "Official Instagram posts are embedded only. This site does not download, reupload, or store image files; the content is provided by Instagram under its own terms.",
+    openInstagramPost: "Open on Instagram",
     viewAllPosts: "View all posts",
     allPostsAria: "All MONSTIEZ posts",
     emptyPosts: "There are no posts yet.",
@@ -236,6 +256,10 @@ export const fixedMessages: Record<Locale, FixedCopy> = {
     spotifyUnavailableHelp: "관리자라면 spotify-releases Edge Function을 다시 배포했는지 확인하거나 관리자 패널에서 앨범/싱글을 직접 추가해 주세요.",
     openSpotifyDiscography: "Spotify 디스코그래피 열기",
     detailIntro: "자세히 보기",
+    instagramFeedKicker: "공식 YG Signal",
+    instagramFeedTitle: "Instagram Dispatch",
+    instagramFeedBody: "공식 Instagram 게시물만 임베드하며 이미지 파일을 다운로드, 재업로드 또는 저장하지 않습니다. 콘텐츠는 Instagram 약관에 따라 제공됩니다.",
+    openInstagramPost: "Instagram에서 열기",
     viewAllPosts: "전체 댓글 보기",
     allPostsAria: "전체 MONSTIEZ 댓글",
     emptyPosts: "아직 댓글이 없습니다.",
@@ -265,6 +289,10 @@ export const fixedMessages: Record<Locale, FixedCopy> = {
     spotifyUnavailableHelp: "管理者の場合は、spotify-releases Edge Functionを再デプロイしたか確認するか、管理画面でアルバム／シングルを手動追加してください。",
     openSpotifyDiscography: "Spotifyディスコグラフィーを開く",
     detailIntro: "詳しい紹介",
+    instagramFeedKicker: "公式YG Signal",
+    instagramFeedTitle: "Instagram Dispatch",
+    instagramFeedBody: "公式Instagram投稿のみを埋め込みます。画像ファイルのダウンロード、再アップロード、保存は行わず、コンテンツはInstagramの規約に基づいて提供されます。",
+    openInstagramPost: "Instagramで開く",
     viewAllPosts: "すべての投稿を見る",
     allPostsAria: "すべてのMONSTIEZ投稿",
     emptyPosts: "まだ投稿はありません。",
