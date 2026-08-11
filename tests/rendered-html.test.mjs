@@ -43,8 +43,12 @@ test("bundles six static languages and translates fan posts only", async () => {
   assert.match(page, /InlineEditContext/);
   assert.match(page, /customSections/);
   assert.match(page, /APP PURPOSE/);
+  assert.match(page, /應用程式名稱：/);
+  assert.match(page, /Monstiez — BABYMONSTER 全球粉絲社群/);
+  assert.match(page, /應用程式用途是讓粉絲使用 Google/);
   assert.match(page, /MON<span style=\{\{ color: "#E01020" \}\}>STIEZ<\/span>/);
   assert.match(page, /Google 登入僅用於建立與辨識你的粉絲帳號/);
+  assert.doesNotMatch(page, /\{messages\[locale\]\.streamsLabel\}<\/div>/);
   assert.match(page, /fetchSpotifyReleaseStatus/);
   assert.match(page, /Spotify 專輯資料暫時沒有載入/);
   assert.match(page, /AllPostsModal/);

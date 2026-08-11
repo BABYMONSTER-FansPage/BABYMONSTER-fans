@@ -439,6 +439,16 @@ function Hero({ playing, onToggle, locale, content }: { playing: boolean; onTogg
           <EditableText k="heroNote" fallback={contentText(content.heroNote, "")} />
         </motion.p>
 
+        <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 1.2 }}
+          className="mx-auto mb-12 max-w-2xl border border-white/10 bg-black/45 px-5 py-4 backdrop-blur-md">
+          <p className="text-white/35 text-[10px] tracking-[0.35em] uppercase mb-2">App name</p>
+          <p className="text-white text-lg md:text-xl font-semibold tracking-wide">Monstiez</p>
+          <p className="text-white/50 text-xs md:text-sm leading-relaxed mt-2">
+            非官方 BABYMONSTER 全球粉絲社群；使用 Google 登入是為了建立粉絲帳號、維持登入狀態、顯示暱稱並保護留言板安全。
+          </p>
+        </motion.div>
+
         {/* Stat row */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 1.35 }}
@@ -481,9 +491,10 @@ function AppPurposeSection() {
         <div className="grid md:grid-cols-[0.7fr_1.3fr] gap-8 md:gap-16 items-start border border-white/8 p-6 md:p-8 bg-white/[0.018]">
           <div>
             <p className="text-red-400 text-xs tracking-[0.35em] uppercase mb-3">APP PURPOSE</p>
+            <p className="text-white/55 text-sm mb-3">應用程式名稱：<span className="text-white font-semibold">Monstiez</span></p>
             <EditableText
               k="appPurposeTitle"
-              fallback="Monstiez 是什麼？"
+              fallback="Monstiez — BABYMONSTER 全球粉絲社群"
               as="h2"
               className="text-white font-black text-4xl md:text-5xl leading-none"
               style={{ fontFamily: "'Barlow Condensed', sans-serif" }} />
@@ -491,7 +502,7 @@ function AppPurposeSection() {
           <div className="space-y-4">
             <EditableText
               k="appPurposeBody"
-              fallback="babymonster.fans 是非官方 BABYMONSTER 全球粉絲社群網站。本站用途是讓粉絲使用 Google、Kakao 或電子郵件登入後設定暱稱、參與留言板、按讚、交流討論，並瀏覽由管理員整理的公開活動資訊、官方 Spotify、YouTube 與 Instagram 連結。"
+              fallback="Monstiez 是非官方 BABYMONSTER 全球粉絲社群網站。應用程式用途是讓粉絲使用 Google、Kakao 或電子郵件登入後設定暱稱、參與留言板、按讚、交流討論，並瀏覽由管理員整理的公開活動資訊、官方 Spotify、YouTube 與 Instagram 連結。"
               as="p"
               className="text-white/55 text-sm md:text-base leading-relaxed" />
             <EditableText
@@ -770,7 +781,7 @@ function MembersSection({ locale, content }: { locale: Locale; content: SiteCont
 // ALBUM CARD
 // ─────────────────────────────────────────────
 
-function AlbumCard({ album, index, isVisible, locale }: { album: SpotifyRelease; index: number; isVisible: boolean; locale: Locale }) {
+function AlbumCard({ album, index, isVisible }: { album: SpotifyRelease; index: number; isVisible: boolean }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -797,7 +808,6 @@ function AlbumCard({ album, index, isVisible, locale }: { album: SpotifyRelease;
         <div className="absolute top-4 right-4 text-white/45 text-xs tracking-widest">{album.year}</div>
       </div>
 
-      <div className="text-xs tracking-[0.3em] uppercase mb-1" style={{ color: "#E01020" }}>{messages[locale].streamsLabel}</div>
       <div className="text-white font-black text-3xl leading-none mb-2 transition-colors duration-300 group-hover:text-red-400"
         style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>
         {album.title}
@@ -859,7 +869,7 @@ function MusicSection({ locale, content }: { locale: Locale; content: SiteConten
         {albums.length > 0 && <div className="album-marquee-viewport" aria-label="BABYMONSTER releases">
           <div className="album-marquee-track" style={{ animationDuration: `${Math.max(30, albums.length * 8)}s` }}>
             {[...albums, ...albums].map((a, i) => <div key={`${a.id || a.title}-${i}`} className="album-marquee-item">
-              <AlbumCard album={a} index={i % albums.length} isVisible={isInView} locale={locale} />
+              <AlbumCard album={a} index={i % albums.length} isVisible={isInView} />
             </div>)}
           </div>
         </div>}
