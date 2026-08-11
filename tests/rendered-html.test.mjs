@@ -51,9 +51,8 @@ test("bundles six static languages and translates fan posts only", async () => {
   assert.match(i18n, /\bth:/); assert.match(i18n, /\ben:/); assert.match(i18n, /\bko:/); assert.match(i18n, /\bja:/);
   assert.match(page, /InlineEditContext/);
   assert.match(page, /customSections/);
-  assert.match(page, /APP PURPOSE/);
   assert.match(page, /OFFICIAL_BRAND_NAME = "Monstiez"/);
-  assert.match(page, /<h1 className="text-white text-3xl/);
+  assert.match(page, /<h2 id="official-app-name"/);
   assert.match(page, /Official app name/);
   assert.match(page, /Monstiez 是提供 BABYMONSTER 粉絲交流、留言與內容瀏覽的粉絲社群平台/);
   assert.match(page, /使用者可以建立帳號、參與社群互動、管理個人資料/);
@@ -61,9 +60,8 @@ test("bundles six static languages and translates fan posts only", async () => {
   assert.match(page, /不會要求 Gmail、Google Drive 或 Google Calendar 權限/);
   assert.match(page, /https:\/\/babymonster\.fans\/privacy\.html/);
   assert.match(page, /https:\/\/babymonster\.fans\/terms\.html/);
-  assert.match(page, /應用程式名稱：/);
-  assert.match(page, /Monstiez — BABYMONSTER 全球粉絲社群/);
-  assert.match(page, /本站只使用登入必要的基本 Profile 與 Email 資訊/);
+  assert.ok(page.indexOf("<AppPurposeSection />") > page.indexOf("<Announcements"));
+  assert.ok(page.indexOf("<AppPurposeSection />") < page.indexOf("<Footer"));
   assert.match(page, /MON<span style=\{\{ color: "#E01020" \}\}>STIEZ<\/span>/);
   assert.match(page, /aria-label="Loading Monstiez fan site"/);
   assert.match(page, />\s*Monstiez\s*<\/motion\.h1>/);

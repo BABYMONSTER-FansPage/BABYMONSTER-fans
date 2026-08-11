@@ -443,26 +443,6 @@ function Hero({ playing, onToggle, locale, content }: { playing: boolean; onTogg
           <EditableText k="heroNote" fallback={contentText(content.heroNote, "")} />
         </motion.p>
 
-        <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 1.2 }}
-          className="mx-auto mb-12 max-w-3xl border border-white/10 bg-black/55 px-5 py-5 backdrop-blur-md">
-          <p className="text-white/35 text-[10px] tracking-[0.35em] uppercase mb-2">Official app name</p>
-          <h1 className="text-white text-3xl md:text-4xl font-black tracking-wide leading-none"
-            style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>
-            Monstiez
-          </h1>
-          <p className="text-red-300/75 text-[11px] md:text-xs tracking-[0.22em] uppercase mt-2">
-            BABYMONSTER fan community platform
-          </p>
-          <p className="text-white/58 text-xs md:text-sm leading-relaxed mt-3">
-            Monstiez 是提供 BABYMONSTER 粉絲交流、留言與內容瀏覽的粉絲社群平台。使用者可以建立帳號、參與社群互動、管理個人資料，並瀏覽官方 Spotify、YouTube、Instagram 連結、成員介紹與近期活動整理。Google 登入用於快速建立及登入 Monstiez 帳號，僅使用基本 Profile 與 Email 資訊；本站不會要求 Gmail、Google Drive 或 Google Calendar 權限。
-          </p>
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
-            <a href={PRIVACY_POLICY_URL} className="text-red-300 hover:text-red-200 text-[10px] tracking-[0.25em] uppercase">Privacy Policy ↗</a>
-            <a href={TERMS_OF_SERVICE_URL} className="text-white/38 hover:text-white text-[10px] tracking-[0.25em] uppercase">Terms of Service ↗</a>
-          </div>
-        </motion.div>
-
         {/* Stat row */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 1.35 }}
@@ -500,34 +480,23 @@ function Hero({ playing, onToggle, locale, content }: { playing: boolean; onTogg
 
 function AppPurposeSection() {
   return (
-    <section id="purpose" className="bg-black border-t border-white/5 py-16 md:py-20">
+    <section id="purpose" aria-labelledby="official-app-name" className="bg-black border-t border-white/8 py-16 md:py-20">
       <div className="max-w-7xl mx-auto px-6">
-        <div className="grid md:grid-cols-[0.7fr_1.3fr] gap-8 md:gap-16 items-start border border-white/8 p-6 md:p-8 bg-white/[0.018]">
-          <div>
-            <p className="text-red-400 text-xs tracking-[0.35em] uppercase mb-3">APP PURPOSE</p>
-            <p className="text-white/55 text-sm mb-3">應用程式名稱：<span className="text-white font-semibold">Monstiez</span></p>
-            <EditableText
-              k="appPurposeTitle"
-              fallback="Monstiez — BABYMONSTER 全球粉絲社群"
-              as="h2"
-              className="text-white font-black text-4xl md:text-5xl leading-none"
-              style={{ fontFamily: "'Barlow Condensed', sans-serif" }} />
-          </div>
-          <div className="space-y-4">
-            <EditableText
-              k="appPurposeBody"
-              fallback="Monstiez 是提供 BABYMONSTER 粉絲交流、留言與內容瀏覽的非官方粉絲社群平台。使用者可以透過本平台建立帳號、設定暱稱、參與留言板、按讚、交流討論、管理個人資料，並瀏覽由管理員整理的公開活動資訊、成員介紹、官方 Spotify、YouTube 與 Instagram 連結。"
-              as="p"
-              className="text-white/55 text-sm md:text-base leading-relaxed" />
-            <EditableText
-              k="appPurposeDataUse"
-              fallback="Google 登入用於快速建立及登入 Monstiez 帳號、維持登入狀態、顯示公開暱稱與保護留言板安全。本站只使用登入必要的基本 Profile 與 Email 資訊，例如 Google 帳號識別碼、電子郵件、公開名稱與頭像；本站不會要求、讀取或儲存 Gmail、Google Drive、Google Calendar 或其他 Google 內容。"
-              as="p"
-              className="text-white/45 text-sm leading-relaxed" />
-            <div className="flex flex-wrap gap-4 pt-2">
-              <a href={PRIVACY_POLICY_URL} className="text-red-300 hover:text-red-200 text-xs tracking-[0.25em] uppercase">Privacy Policy ↗</a>
-              <a href={TERMS_OF_SERVICE_URL} className="text-white/35 hover:text-white text-xs tracking-[0.25em] uppercase">Terms of Service ↗</a>
-            </div>
+        <div className="mx-auto max-w-4xl border border-white/10 bg-white/[0.025] p-6 text-center md:p-10">
+          <p className="text-white/35 text-[10px] tracking-[0.35em] uppercase mb-3">Official app name</p>
+          <h2 id="official-app-name" className="text-white text-4xl md:text-5xl font-black tracking-wide leading-none"
+            style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>
+            Monstiez
+          </h2>
+          <p className="text-red-300/75 text-[11px] md:text-xs tracking-[0.22em] uppercase mt-3">
+            BABYMONSTER fan community platform
+          </p>
+          <p className="mx-auto mt-5 max-w-3xl text-white/58 text-sm md:text-base leading-relaxed">
+            Monstiez 是提供 BABYMONSTER 粉絲交流、留言與內容瀏覽的粉絲社群平台。使用者可以建立帳號、參與社群互動、管理個人資料，並瀏覽官方 Spotify、YouTube、Instagram 連結、成員介紹與近期活動整理。Google 登入用於快速建立及登入 Monstiez 帳號，僅使用基本 Profile 與 Email 資訊；本站不會要求 Gmail、Google Drive 或 Google Calendar 權限。
+          </p>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
+            <a href={PRIVACY_POLICY_URL} className="text-red-300 hover:text-red-200 text-xs tracking-[0.25em] uppercase">Privacy Policy ↗</a>
+            <a href={TERMS_OF_SERVICE_URL} className="text-white/35 hover:text-white text-xs tracking-[0.25em] uppercase">Terms of Service ↗</a>
           </div>
         </div>
       </div>
@@ -1840,7 +1809,6 @@ export default function App() {
       {booting && <OpeningLoader />}
       <Nav playing={playing} onToggle={toggle} user={user} locale={locale} onLocale={changeLocale} onLogin={() => setAuthOpen(true)} onLogout={logout} onAdmin={() => setAdminOpen(true)} onEdit={() => setEditMode(true)} />
       <Hero playing={playing} onToggle={toggle} locale={locale} content={siteContent} />
-      <AppPurposeSection />
       <AboutSection locale={locale} content={siteContent} />
       <MembersSection locale={locale} content={siteContent} />
       <MusicSection locale={locale} content={siteContent} />
@@ -1849,6 +1817,7 @@ export default function App() {
       <CommunitySection user={user} locale={locale} onLogin={() => setAuthOpen(true)} />
       <FanVoices locale={locale} user={user} />
       <Announcements locale={locale} />
+      <AppPurposeSection />
       <Footer locale={locale} content={siteContent} />
       <AudioPlayerBar playing={playing} onToggle={toggle} locale={locale} />
       {authOpen && <AuthModal locale={locale} mode={authMode} onMode={setAuthMode} onClose={() => setAuthOpen(false)} onAuthenticated={setUser} />}
