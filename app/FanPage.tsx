@@ -292,8 +292,8 @@ function useAmbientMusic() {
 // NAV
 // ─────────────────────────────────────────────
 
-function Nav({ playing, onToggle, user, locale, siteName, onLocale, onLogin, onLogout, onAdmin, onEdit }: {
-  playing: boolean; onToggle: () => void; user: User | null; locale: Locale; siteName: string;
+function Nav({ playing, onToggle, user, locale, onLocale, onLogin, onLogout, onAdmin, onEdit }: {
+  playing: boolean; onToggle: () => void; user: User | null; locale: Locale;
   onLocale: (locale: Locale) => void; onLogin: () => void; onLogout: () => void; onAdmin: () => void; onEdit: () => void;
 }) {
   const [scrolled, setScrolled] = useState(false);
@@ -320,9 +320,7 @@ function Nav({ playing, onToggle, user, locale, siteName, onLocale, onLogin, onL
     >
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         <a href="#top" className="font-black text-xl tracking-[0.12em] text-white" style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>
-          {siteName.includes(" ")
-            ? <>{siteName.split(" ")[0]}<span style={{ color: "#E01020" }}> {siteName.split(" ").slice(1).join(" ")}</span></>
-            : <>BABY<span style={{ color: "#E01020" }}>MONSTER</span></>}
+          MON<span style={{ color: "#E01020" }}>STIEZ</span>
         </a>
 
         <div className="hidden md:flex items-center gap-8">
@@ -1733,9 +1731,8 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const siteName = contentText(siteContent.siteName, DEFAULT_SITE_CONTENT.siteName);
     const tagline = contentText(siteContent.siteTagline, DEFAULT_SITE_CONTENT.siteTagline);
-    const nextTitle = siteName;
+    const nextTitle = "Monstiez";
     document.title = nextTitle;
     localStorage.removeItem("babymonster-site-title");
     localStorage.setItem("monstiez-site-title", nextTitle);
@@ -1814,7 +1811,7 @@ export default function App() {
     <InlineEditContext.Provider value={{ editing: editMode, text: readText, image: readImage, updateText, updateImage }}>
     <div className="bg-black min-h-screen" style={{ fontFamily: "'Inter', sans-serif" }}>
       {booting && <OpeningLoader />}
-      <Nav playing={playing} onToggle={toggle} user={user} locale={locale} siteName={contentText(siteContent.siteName, DEFAULT_SITE_CONTENT.siteName)} onLocale={changeLocale} onLogin={() => setAuthOpen(true)} onLogout={logout} onAdmin={() => setAdminOpen(true)} onEdit={() => setEditMode(true)} />
+      <Nav playing={playing} onToggle={toggle} user={user} locale={locale} onLocale={changeLocale} onLogin={() => setAuthOpen(true)} onLogout={logout} onAdmin={() => setAdminOpen(true)} onEdit={() => setEditMode(true)} />
       <Hero playing={playing} onToggle={toggle} locale={locale} content={siteContent} />
       <AppPurposeSection />
       <AboutSection locale={locale} content={siteContent} />
