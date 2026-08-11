@@ -505,7 +505,7 @@ function AppPurposeSection() {
             BABYMONSTER fan community platform
           </p>
           <p className="mx-auto mt-5 max-w-3xl text-white/58 text-sm md:text-base leading-relaxed">
-            Monstiez 是提供 BABYMONSTER 粉絲交流、留言與內容瀏覽的粉絲社群平台。使用者可以建立帳號、參與社群互動、管理個人資料，並瀏覽官方 Spotify、YouTube、Instagram 連結、成員介紹與近期活動整理。Google 登入用於快速建立及登入 Monstiez 帳號，僅使用基本 Profile 與 Email 資訊；本站不會要求 Gmail、Google Drive 或 Google Calendar 權限。
+            Monstiez 是提供 BABYMONSTER 粉絲交流、留言與內容瀏覽的粉絲社群平台。使用者可以建立帳號、參與社群互動、管理個人資料，並瀏覽官方社群連結、成員介紹與近期活動整理。
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
             <a href={PRIVACY_POLICY_URL} className="text-red-300 hover:text-red-200 text-xs tracking-[0.25em] uppercase">Privacy Policy ↗</a>
