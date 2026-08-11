@@ -10,7 +10,7 @@ test("builds a GitHub Pages entry for babymonster.fans", async () => {
     readFile(new URL("../dist-pages/robots.txt", import.meta.url), "utf8"),
     readFile(new URL("../dist-pages/sitemap.xml", import.meta.url), "utf8"),
   ]);
-  assert.match(html, /<title>Monstiez<\/title>/);
+  assert.match(html, /<title>Monstiez｜BABYMONSTER Fans Club<\/title>/);
   assert.match(html, /<meta name="description" content="Monstiez 是提供 BABYMONSTER 粉絲交流、留言與內容瀏覽的非官方粉絲社群平台/);
   assert.match(html, /<meta property="og:title" content="Monstiez"/);
   assert.match(html, /<meta name="twitter:card" content="summary_large_image"/);

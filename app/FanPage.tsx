@@ -1751,7 +1751,7 @@ export default function App() {
 
   useEffect(() => {
     const tagline = contentText(siteContent.siteTagline, DEFAULT_SITE_CONTENT.siteTagline);
-    const nextTitle = OFFICIAL_BRAND_NAME;
+    const nextTitle = "Monstiez｜BABYMONSTER Fans Club";
     document.title = nextTitle;
     localStorage.removeItem("babymonster-site-title");
     localStorage.setItem("monstiez-site-title", nextTitle);
