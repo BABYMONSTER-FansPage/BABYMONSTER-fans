@@ -175,11 +175,25 @@ function normalizeTrackNames(value: unknown) {
   return [];
 }
 
+function normalizeInstagramUrl(value: unknown) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  const withProtocol = /^https?:\/\//.test(raw) ? raw : `https://${raw.replace(/^\/+/, "")}`;
+  try {
+    const parsed = new URL(withProtocol);
+    if (!/(^|\.)instagram\.com$/.test(parsed.hostname)) return "";
+    const [kind, shortcode] = parsed.pathname.split("/").filter(Boolean);
+    const normalizedKind = kind === "reels" ? "reel" : kind;
+    if (!["p", "reel", "tv"].includes(normalizedKind) || !shortcode) return "";
+    return `https://www.instagram.com/${normalizedKind}/${shortcode}/`;
+  } catch {
+    return "";
+  }
+}
+
 function normalizeInstagramPosts(value: unknown) {
   if (!Array.isArray(value)) return [];
-  return value
-    .map(item => String(item || "").trim())
-    .filter(item => /^https:\/\/(www\.)?instagram\.com\/(p|reel)\//.test(item));
+  return Array.from(new Set(value.map(normalizeInstagramUrl).filter(Boolean)));
 }
 
 type InlineEditContextValue = {
@@ -840,7 +854,7 @@ function InstagramSignalSection({ locale, content }: { locale: Locale; content: 
     const src = "https://www.instagram.com/embed.js";
     const existing = document.querySelector<HTMLScriptElement>(`script[src="${src}"]`);
     if (existing) {
-      window.setTimeout(processEmbeds, 0);
+      window.requestAnimationFrame(() => window.setTimeout(processEmbeds, 80));
       return;
     }
     const script = document.createElement("script");
@@ -880,7 +894,9 @@ function InstagramSignalSection({ locale, content }: { locale: Locale; content: 
                   data-instgrm-permalink={url}
                   data-instgrm-version="14"
                   style={{ background: "#0a0a0a", border: 0, margin: 0, minWidth: 0, width: "100%" }}
-                />
+                >
+                  <a href={url} target="_blank" rel="noreferrer">{f.openInstagramPost}</a>
+                </blockquote>
               </div>
               <a href={url} target="_blank" rel="noreferrer"
                 className="mt-4 inline-block text-red-300/80 hover:text-red-200 text-xs tracking-[0.25em] uppercase">
@@ -1568,6 +1584,9 @@ function AdminPanel({ content, onSaved, onClose }: { content: SiteContent; onSav
           <div className="grid gap-3">
             {instagramPosts.map((url, index) => <div key={`${index}-${url}`} className="border border-white/8 p-4">
               <label className={labelClass}>Instagram URL<input value={url || ""} onChange={e => updateInstagramPost(index, e.target.value)} placeholder="https://www.instagram.com/p/..." className={inputClass} /></label>
+              <p className={`mt-2 text-xs ${url && !normalizeInstagramUrl(url) ? "text-red-300/75" : "text-white/28"}`}>
+                {url && !normalizeInstagramUrl(url) ? "請貼 Instagram 貼文 /p/、Reel /reel/ 或 TV /tv/ 的網址；/share/ 短連結無法直接嵌入。" : "儲存時會自動清除追蹤參數，只保留官方 permalink。"}
+              </p>
               <button type="button" onClick={() => removeInstagramPost(index)} className="mt-3 text-red-400/70 hover:text-red-300 text-xs">刪除這則 IG</button>
             </div>)}
             {!instagramPosts.length && <p className="text-white/28 text-xs">尚未新增 Instagram 貼文 URL。新增後才會在前台顯示 IG 區塊。</p>}
