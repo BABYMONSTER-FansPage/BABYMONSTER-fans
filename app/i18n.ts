@@ -88,6 +88,7 @@ type FixedCopy = {
   spotifyUnavailableTitle: string;
   spotifyUnavailableHelp: string;
   openSpotifyDiscography: string;
+  detailIntro: string;
   viewAllPosts: string;
   allPostsAria: string;
   emptyPosts: string;
@@ -118,6 +119,7 @@ export const fixedMessages: Record<Locale, FixedCopy> = {
     spotifyUnavailableTitle: "Spotify 專輯資料暫時沒有載入。",
     spotifyUnavailableHelp: "如果你是管理員，請確認 spotify-releases Edge Function 已重新部署，或先在齒輪後台手動新增專輯／單曲。",
     openSpotifyDiscography: "開啟 Spotify 作品頁",
+    detailIntro: "詳細介紹",
     viewAllPosts: "查看全部留言",
     allPostsAria: "全部 MONSTIEZ 留言",
     emptyPosts: "目前還沒有留言。",
@@ -146,6 +148,7 @@ export const fixedMessages: Record<Locale, FixedCopy> = {
     spotifyUnavailableTitle: "Spotify 专辑资料暂时没有载入。",
     spotifyUnavailableHelp: "如果你是管理员，请确认 spotify-releases Edge Function 已重新部署，或先在齿轮后台手动新增专辑／单曲。",
     openSpotifyDiscography: "打开 Spotify 作品页",
+    detailIntro: "详细介绍",
     viewAllPosts: "查看全部留言",
     allPostsAria: "全部 MONSTIEZ 留言",
     emptyPosts: "目前还没有留言。",
@@ -174,6 +177,7 @@ export const fixedMessages: Record<Locale, FixedCopy> = {
     spotifyUnavailableTitle: "ยังโหลดข้อมูลอัลบั้มจาก Spotify ไม่ได้ในขณะนี้",
     spotifyUnavailableHelp: "หากคุณเป็นผู้ดูแล โปรดตรวจสอบว่าได้ deploy Edge Function spotify-releases ใหม่แล้ว หรือเพิ่มอัลบั้ม/ซิงเกิลด้วยตนเองในหลังบ้านก่อน",
     openSpotifyDiscography: "เปิดผลงานใน Spotify",
+    detailIntro: "รายละเอียด",
     viewAllPosts: "ดูข้อความทั้งหมด",
     allPostsAria: "ข้อความ MONSTIEZ ทั้งหมด",
     emptyPosts: "ยังไม่มีข้อความ",
@@ -202,6 +206,7 @@ export const fixedMessages: Record<Locale, FixedCopy> = {
     spotifyUnavailableTitle: "Spotify album data is temporarily unavailable.",
     spotifyUnavailableHelp: "If you are an administrator, confirm that the spotify-releases Edge Function has been redeployed, or manually add albums/singles in the admin panel first.",
     openSpotifyDiscography: "Open Spotify discography",
+    detailIntro: "Detailed intro",
     viewAllPosts: "View all posts",
     allPostsAria: "All MONSTIEZ posts",
     emptyPosts: "There are no posts yet.",
@@ -230,6 +235,7 @@ export const fixedMessages: Record<Locale, FixedCopy> = {
     spotifyUnavailableTitle: "Spotify 앨범 데이터를 일시적으로 불러오지 못했습니다.",
     spotifyUnavailableHelp: "관리자라면 spotify-releases Edge Function을 다시 배포했는지 확인하거나 관리자 패널에서 앨범/싱글을 직접 추가해 주세요.",
     openSpotifyDiscography: "Spotify 디스코그래피 열기",
+    detailIntro: "자세히 보기",
     viewAllPosts: "전체 댓글 보기",
     allPostsAria: "전체 MONSTIEZ 댓글",
     emptyPosts: "아직 댓글이 없습니다.",
@@ -258,6 +264,7 @@ export const fixedMessages: Record<Locale, FixedCopy> = {
     spotifyUnavailableTitle: "Spotifyのアルバム情報を一時的に読み込めません。",
     spotifyUnavailableHelp: "管理者の場合は、spotify-releases Edge Functionを再デプロイしたか確認するか、管理画面でアルバム／シングルを手動追加してください。",
     openSpotifyDiscography: "Spotifyディスコグラフィーを開く",
+    detailIntro: "詳しい紹介",
     viewAllPosts: "すべての投稿を見る",
     allPostsAria: "すべてのMONSTIEZ投稿",
     emptyPosts: "まだ投稿はありません。",

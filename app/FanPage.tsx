@@ -529,6 +529,7 @@ function AboutSection({ locale, content }: { locale: Locale; content: SiteConten
   const ref = useRef<HTMLElement>(null);
   const isInView = useInView(ref, { once: true, amount: 0.15 });
   const t = messages[locale];
+  const f = fixedMessages[locale];
   const [detailOpen, setDetailOpen] = useState(false);
 
   return (
@@ -608,7 +609,7 @@ function AboutSection({ locale, content }: { locale: Locale; content: SiteConten
                 </div>
               ))}
             </motion.div>
-            <button onClick={() => setDetailOpen(true)} className="mt-8 text-red-400/80 hover:text-red-300 text-xs tracking-[0.25em] uppercase">詳細介紹</button>
+            <button onClick={() => setDetailOpen(true)} className="mt-8 text-red-400/80 hover:text-red-300 text-xs tracking-[0.25em] uppercase">{f.detailIntro}</button>
           </div>
         </div>
       </div>
@@ -621,7 +622,7 @@ function AboutSection({ locale, content }: { locale: Locale; content: SiteConten
 // MEMBER SPOTLIGHT (individual)
 // ─────────────────────────────────────────────
 
-function MemberSpotlight({ member, index, photoUrl }: { member: typeof MEMBERS[0]; index: number; photoUrl?: string }) {
+function MemberSpotlight({ member, index, photoUrl, locale }: { member: typeof MEMBERS[0]; index: number; photoUrl?: string; locale: Locale }) {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, amount: 0.08 });
   const isEven = index % 2 === 0;
@@ -632,6 +633,7 @@ function MemberSpotlight({ member, index, photoUrl }: { member: typeof MEMBERS[0
   const copyOpacity = useTransform(scrollYProgress, [0, 0.2, 0.82, 1], [0, 1, 1, 0]);
   const progressX = useTransform(scrollYProgress, [0.12, 0.88], [0, 1]);
   const [detailOpen, setDetailOpen] = useState(false);
+  const f = fixedMessages[locale];
 
   return (
     <div ref={ref} className="cinematic-member min-h-[145vh] md:min-h-[175vh] relative overflow-clip border-t border-white/5">
@@ -727,7 +729,7 @@ function MemberSpotlight({ member, index, photoUrl }: { member: typeof MEMBERS[0
               className="text-white/55 leading-relaxed text-sm md:text-base mb-8">
               <EditableText k={`member.${member.id}.bio`} fallback="" />
             </motion.p>
-            <button onClick={() => setDetailOpen(true)} className="text-red-400/80 hover:text-red-300 text-xs tracking-[0.25em] uppercase">詳細介紹</button>
+            <button onClick={() => setDetailOpen(true)} className="text-red-400/80 hover:text-red-300 text-xs tracking-[0.25em] uppercase">{f.detailIntro}</button>
 
           </motion.div>
         </div>
@@ -772,7 +774,7 @@ function MembersSection({ locale, content }: { locale: Locale; content: SiteCont
         </motion.p>
       </div>
 
-      {MEMBERS.map((m, i) => <MemberSpotlight key={m.id} member={m} index={i} photoUrl={content.memberPhotos?.[m.id]} />)}
+      {MEMBERS.map((m, i) => <MemberSpotlight key={m.id} member={m} index={i} photoUrl={content.memberPhotos?.[m.id]} locale={locale} />)}
     </section>
   );
 }

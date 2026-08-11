@@ -60,6 +60,9 @@ test("bundles six static languages and translates fan posts only", async () => {
   assert.doesNotMatch(page, /update\("faviconUrl"/);
   assert.match(page, /<h2 id="official-app-name"/);
   assert.match(i18n, /fixedMessages/);
+  assert.match(i18n, /detailIntro/);
+  assert.match(i18n, /Detailed intro/);
+  assert.match(i18n, /詳しい紹介/);
   assert.match(i18n, /Official app name/);
   assert.match(i18n, /Monstiez 是提供 BABYMONSTER 粉絲交流、留言與內容瀏覽的粉絲社群平台/);
   assert.match(i18n, /使用者可以建立帳號、參與社群互動、管理個人資料/);
