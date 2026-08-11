@@ -6,7 +6,7 @@ import {
   Play, Pause, Volume2, VolumeX, Heart, MessageCircle,
   ChevronDown, Menu, X, Calendar, MapPin, Music, Send, Disc3, Settings, Save,
 } from "lucide-react";
-import { getInitialLocale, localeLabels, messages, supportedLocales, type Locale } from "./i18n";
+import { fixedMessages, getInitialLocale, localeLabels, messages, supportedLocales, type Locale } from "./i18n";
 import {
   createFanPost, currentFanUser, deleteFanPost, editFanPost, emailAuth, listFanPosts,
   fetchSpotifyReleaseStatus, listAnnouncements, loadSiteContent, moderateFanPost, observeFanUser, reportFanPost,
@@ -161,6 +161,10 @@ function contentUrl(value: unknown, fallback: string) {
   return typeof value === "string" && /^https?:\/\//.test(value.trim()) ? value.trim() : fallback;
 }
 
+function localizedTextKey(key: string, locale: Locale) {
+  return `${key}.${locale}`;
+}
+
 function normalizeTrackNames(value: unknown) {
   const normalize = (item: unknown) => {
     if (typeof item === "string") return item.trim();
@@ -175,17 +179,19 @@ function normalizeTrackNames(value: unknown) {
 
 type InlineEditContextValue = {
   editing: boolean;
+  locale: Locale;
   text: (key: string, fallback?: string) => string;
   image: (key: string) => string;
-  updateText: (key: string, value: string) => void;
+  openTextEditor: (key: string, fallback?: string) => void;
   updateImage: (key: string, value: string) => void;
 };
 
 const InlineEditContext = createContext<InlineEditContextValue>({
   editing: false,
+  locale: "zh-TW",
   text: (_key, fallback = "") => fallback,
   image: () => "",
-  updateText: () => {},
+  openTextEditor: () => {},
   updateImage: () => {},
 });
 
@@ -206,10 +212,7 @@ function EditableText({ k, fallback = "", as = "span", className, style, childre
   if (!visible && !children) return null;
   return <Tag className={className} style={style}>
     {children ?? visible}
-    {editor.editing && <EditPencil label={`Edit ${k}`} onClick={() => {
-      const next = window.prompt("編輯文字", value);
-      if (next !== null) editor.updateText(k, next);
-    }} />}
+    {editor.editing && <EditPencil label={`Edit ${k}`} onClick={() => editor.openTextEditor(k, fallback)} />}
   </Tag>;
 }
 
@@ -491,25 +494,26 @@ function Hero({ playing, onToggle, locale, content }: { playing: boolean; onTogg
   );
 }
 
-function AppPurposeSection() {
+function AppPurposeSection({ locale }: { locale: Locale }) {
+  const f = fixedMessages[locale];
   return (
     <section id="purpose" aria-labelledby="official-app-name" className="bg-black border-t border-white/8 py-16 md:py-20">
       <div className="max-w-7xl mx-auto px-6">
         <div className="mx-auto max-w-4xl border border-white/10 bg-white/[0.025] p-6 text-center md:p-10">
-          <p className="text-white/35 text-[10px] tracking-[0.35em] uppercase mb-3">Official app name</p>
+          <p className="text-white/35 text-[10px] tracking-[0.35em] uppercase mb-3">{f.officialAppNameLabel}</p>
           <h2 id="official-app-name" className="text-white text-4xl md:text-5xl font-black tracking-wide leading-none"
             style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>
             Monstiez
           </h2>
           <p className="text-red-300/75 text-[11px] md:text-xs tracking-[0.22em] uppercase mt-3">
-            BABYMONSTER fan community platform
+            {f.fanCommunityPlatform}
           </p>
           <p className="mx-auto mt-5 max-w-3xl text-white/58 text-sm md:text-base leading-relaxed">
-            Monstiez 是提供 BABYMONSTER 粉絲交流、留言與內容瀏覽的粉絲社群平台。使用者可以建立帳號、參與社群互動、管理個人資料，並瀏覽官方社群連結、成員介紹與近期活動整理。
+            {f.appPurpose}
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
-            <a href={PRIVACY_POLICY_URL} className="text-red-300 hover:text-red-200 text-xs tracking-[0.25em] uppercase">Privacy Policy ↗</a>
-            <a href={TERMS_OF_SERVICE_URL} className="text-white/35 hover:text-white text-xs tracking-[0.25em] uppercase">Terms of Service ↗</a>
+            <a href={PRIVACY_POLICY_URL} className="text-red-300 hover:text-red-200 text-xs tracking-[0.25em] uppercase">{f.privacyPolicy} ↗</a>
+            <a href={TERMS_OF_SERVICE_URL} className="text-white/35 hover:text-white text-xs tracking-[0.25em] uppercase">{f.termsOfService} ↗</a>
           </div>
         </div>
       </div>
@@ -777,8 +781,9 @@ function MembersSection({ locale, content }: { locale: Locale; content: SiteCont
 // ALBUM CARD
 // ─────────────────────────────────────────────
 
-function AlbumCard({ album, index, isVisible }: { album: SpotifyRelease; index: number; isVisible: boolean }) {
+function AlbumCard({ album, index, isVisible, locale }: { album: SpotifyRelease; index: number; isVisible: boolean; locale: Locale }) {
   const [expanded, setExpanded] = useState(false);
+  const f = fixedMessages[locale];
   const trackNames = normalizeTrackNames(album.tracks);
   const visibleTracks = expanded ? trackNames : trackNames.slice(0, 5);
   const hasMoreTracks = trackNames.length > visibleTracks.length;
@@ -792,7 +797,7 @@ function AlbumCard({ album, index, isVisible }: { album: SpotifyRelease; index: 
       onClick={() => setExpanded(!expanded)}>
       <div className="relative aspect-square overflow-hidden rounded-sm mb-5 bg-neutral-900">
         {album.imageUrl && <img src={album.imageUrl} alt={album.title} className="w-full h-full object-cover transition-all duration-[1200ms] group-hover:scale-105" style={{ filter: "contrast(1.08) brightness(0.78)" }} />}
-        {!album.imageUrl && <div className="w-full h-full grid place-items-center text-white/20 text-xs tracking-[0.25em] uppercase">Spotify image</div>}
+        {!album.imageUrl && <div className="w-full h-full grid place-items-center text-white/20 text-xs tracking-[0.25em] uppercase">{f.spotifyImage}</div>}
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
         <div className="absolute inset-0 border border-transparent group-hover:border-red-600/40 transition-colors duration-300 rounded-sm" />
 
@@ -826,12 +831,12 @@ function AlbumCard({ album, index, isVisible }: { album: SpotifyRelease; index: 
             </div>
           ))
         ) : (
-          <p className="text-white/28 text-sm leading-relaxed">曲目資料尚未提供，可從 Spotify 匯入或在後台手動新增歌曲名稱。</p>
+          <p className="text-white/28 text-sm leading-relaxed">{f.trackListMissing}</p>
         )}
         {hasMoreTracks && (
           <button type="button" onClick={(event) => { event.stopPropagation(); setExpanded(true); }}
             className="mt-3 text-red-300/75 hover:text-red-200 text-xs tracking-[0.2em] uppercase">
-            顯示全部歌曲
+            {f.showAllSongs}
           </button>
         )}
       </motion.div>
@@ -876,14 +881,14 @@ function MusicSection({ locale, content }: { locale: Locale; content: SiteConten
         {albums.length > 0 && <div className="album-marquee-viewport" aria-label="BABYMONSTER releases">
           <div className="album-marquee-track" style={{ animationDuration: `${Math.max(30, albums.length * 8)}s` }}>
             {[...albums, ...albums].map((a, i) => <div key={`${a.id || a.title}-${i}`} className="album-marquee-item">
-              <AlbumCard album={a} index={i % albums.length} isVisible={isInView} />
+              <AlbumCard album={a} index={i % albums.length} isVisible={isInView} locale={locale} />
             </div>)}
           </div>
         </div>}
         {albums.length === 0 && spotifyStatus && <div className="border border-white/8 bg-white/[0.018] p-6 text-white/45 text-sm leading-relaxed">
-          <p className="text-white/65 mb-2">Spotify 專輯資料暫時沒有載入。</p>
-          <p>狀態：<code className="text-red-300">{spotifyStatus}</code>。如果你是管理員，請確認 `spotify-releases` Edge Function 已重新部署，或先在齒輪後台手動新增專輯／單曲。</p>
-          <a href="https://open.spotify.com/artist/1SIocsqdEefUTE6XKGUiVS" target="_blank" rel="noreferrer" className="inline-block mt-4 text-red-300 hover:text-red-200 text-xs tracking-[0.25em] uppercase">Open Spotify Discography ↗</a>
+          <p className="text-white/65 mb-2">{f.spotifyUnavailableTitle}</p>
+          <p>狀態：<code className="text-red-300">{spotifyStatus}</code>。{f.spotifyUnavailableHelp}</p>
+          <a href="https://open.spotify.com/artist/1SIocsqdEefUTE6XKGUiVS" target="_blank" rel="noreferrer" className="inline-block mt-4 text-red-300 hover:text-red-200 text-xs tracking-[0.25em] uppercase">{f.openSpotifyDiscography} ↗</a>
         </div>}
 
         <div className="grid md:grid-cols-[1.4fr_.6fr] gap-8 mt-16">
@@ -1097,6 +1102,7 @@ function CommunitySection({ user, locale, onLogin }: { user: User | null; locale
   const [body, setBody] = useState("");
   const [allOpen, setAllOpen] = useState(false);
   const t = messages[locale];
+  const f = fixedMessages[locale];
 
   const refresh = useCallback(() => {
     listFanPosts(user).then(data => setPosts(data)).catch(() => setPosts(EMPTY_POSTS));
@@ -1166,7 +1172,7 @@ function CommunitySection({ user, locale, onLogin }: { user: User | null; locale
 
         {/* Posts */}
         <div className="mb-5 flex justify-end">
-          <button onClick={() => setAllOpen(true)} className="text-red-400/80 hover:text-red-300 text-xs tracking-[0.25em] uppercase">查看全部留言</button>
+          <button onClick={() => setAllOpen(true)} className="text-red-400/80 hover:text-red-300 text-xs tracking-[0.25em] uppercase">{f.viewAllPosts}</button>
         </div>
         <div className="space-y-4">
           {posts.map((p, i) => <PostCard key={p.id} post={p} index={i} onLike={handleLike} onRefresh={refresh} user={user} locale={locale} />)}
@@ -1180,7 +1186,8 @@ function CommunitySection({ user, locale, onLogin }: { user: User | null; locale
 function AllPostsModal({ posts, onLike, onRefresh, user, locale, onClose }: {
   posts: ApiPost[]; onLike: (post: ApiPost) => void; onRefresh: () => void; user: User | null; locale: Locale; onClose: () => void;
 }) {
-  return <div className="fixed inset-0 z-[112] bg-black/90 grid place-items-center p-4" role="dialog" aria-modal="true" aria-label="All MONSTIEZ posts">
+  const f = fixedMessages[locale];
+  return <div className="fixed inset-0 z-[112] bg-black/90 grid place-items-center p-4" role="dialog" aria-modal="true" aria-label={f.allPostsAria}>
     <div className="w-full max-w-4xl max-h-[90vh] overflow-auto bg-[#090909] border border-white/15 p-6 shadow-2xl">
       <div className="flex items-start justify-between gap-5 mb-6">
         <h2 className="text-white font-black text-5xl leading-none" style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>MONSTIEZ BOARD</h2>
@@ -1188,7 +1195,7 @@ function AllPostsModal({ posts, onLike, onRefresh, user, locale, onClose }: {
       </div>
       <div className="space-y-4">
         {posts.map((post, index) => <PostCard key={post.id} post={post} index={index} onLike={onLike} onRefresh={onRefresh} user={user} locale={locale} />)}
-        {!posts.length && <p className="text-white/35 text-sm">目前還沒有留言。</p>}
+        {!posts.length && <p className="text-white/35 text-sm">{f.emptyPosts}</p>}
       </div>
     </div>
   </div>;
@@ -1246,6 +1253,7 @@ function Footer({ locale, content }: { locale: Locale; content: SiteContent }) {
   const ref = useRef<HTMLElement>(null);
   const isInView = useInView(ref, { once: true, amount: 0.3 });
   const t = messages[locale];
+  const f = fixedMessages[locale];
   const links = [{ id: "members", label: t.nav[1] }, { id: "music", label: t.nav[2] }, { id: "events", label: t.nav[3] }, { id: "community", label: t.nav[4] }];
   const siteName = OFFICIAL_BRAND_NAME;
 
@@ -1288,8 +1296,8 @@ function Footer({ locale, content }: { locale: Locale; content: SiteContent }) {
         <div className="border-t border-white/5 pt-8 flex items-center justify-between">
           <span className="text-white/18 text-xs">© 2026 {OFFICIAL_BRAND_NAME} · babymonster.fans</span>
           <div className="flex flex-wrap items-center justify-end gap-4">
-            <a href={TERMS_OF_SERVICE_URL} className="text-white/28 hover:text-white text-xs tracking-widest">服務條款</a>
-            <a href={PRIVACY_POLICY_URL} className="text-white/28 hover:text-white text-xs tracking-widest">隱私權政策</a>
+            <a href={TERMS_OF_SERVICE_URL} className="text-white/28 hover:text-white text-xs tracking-widest">{f.termsOfService}</a>
+            <a href={PRIVACY_POLICY_URL} className="text-white/28 hover:text-white text-xs tracking-widest">{f.privacyPolicy}</a>
             <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "#E01020" }} />
             <EditableText k="footerSignal" fallback="MONSTERS FOREVER" as="span" className="text-white/18 text-xs tracking-widest" />
           </div>
@@ -1346,7 +1354,8 @@ function AudioPlayerBar({ playing, onToggle, locale }: { playing: boolean; onTog
   );
 }
 
-function OpeningLoader() {
+function OpeningLoader({ locale }: { locale: Locale }) {
+  const f = fixedMessages[locale];
   return <motion.div
     initial={{ opacity: 1 }}
     exit={{ opacity: 0, transition: { duration: 0.65, ease: [0.16, 1, 0.3, 1] } }}
@@ -1374,7 +1383,7 @@ function OpeningLoader() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.55 }}
         className="text-white/35 text-xs tracking-[0.5em] uppercase mb-5">
-        MONSTIEZ SIGNAL
+        {f.loadingSignal}
       </motion.p>
       <div className="overflow-hidden">
         <motion.h1
@@ -1398,7 +1407,7 @@ function OpeningLoader() {
         animate={{ opacity: [0.25, 0.8, 0.25] }}
         transition={{ duration: 1.2, repeat: Infinity }}
         className="mt-5 text-white/28 text-xs tracking-[0.35em] uppercase">
-        Loading official links · fan voices · stage data
+        {f.loadingStatus}
       </motion.div>
     </div>
   </motion.div>;
@@ -1626,17 +1635,18 @@ function AdminPanel({ content, onSaved, onClose }: { content: SiteContent; onSav
   </div>;
 }
 
-function EditToolbar({ dirty, onSave, onAddSection, onOpenAdmin, onStop }: {
-  dirty: boolean; onSave: () => void; onAddSection: (kind: "text" | "image" | "mixed") => void; onOpenAdmin: () => void; onStop: () => void;
+function EditToolbar({ dirty, locale, onSave, onAddSection, onOpenAdmin, onStop }: {
+  dirty: boolean; locale: Locale; onSave: () => void; onAddSection: (kind: "text" | "image" | "mixed") => void; onOpenAdmin: () => void; onStop: () => void;
 }) {
+  const f = fixedMessages[locale];
   return <div className="fixed left-1/2 -translate-x-1/2 bottom-[calc(4.25rem+env(safe-area-inset-bottom))] z-[120] flex flex-wrap items-center justify-center gap-2 rounded-full border border-white/12 bg-black/90 px-4 py-3 shadow-2xl backdrop-blur">
-    <span className="text-red-300 text-xs tracking-[0.25em] uppercase">Edit mode</span>
-    <button onClick={onSave} className="px-3 py-2 rounded-full bg-[#E01020] text-white text-xs disabled:opacity-40" disabled={!dirty}>儲存{dirty ? " *" : ""}</button>
-    <button onClick={() => onAddSection("text")} className="px-3 py-2 rounded-full border border-white/15 text-white/60 text-xs">新增文字</button>
-    <button onClick={() => onAddSection("image")} className="px-3 py-2 rounded-full border border-white/15 text-white/60 text-xs">新增圖片</button>
-    <button onClick={() => onAddSection("mixed")} className="px-3 py-2 rounded-full border border-white/15 text-white/60 text-xs">新增板塊</button>
-    <button onClick={onOpenAdmin} className="px-3 py-2 rounded-full border border-white/15 text-white/60 text-xs">活動管理</button>
-    <button onClick={onStop} className="px-3 py-2 rounded-full border border-white/15 text-white/60 text-xs">關閉</button>
+    <span className="text-red-300 text-xs tracking-[0.25em] uppercase">{f.editMode}</span>
+    <button onClick={onSave} className="px-3 py-2 rounded-full bg-[#E01020] text-white text-xs disabled:opacity-40" disabled={!dirty}>{f.save}{dirty ? " *" : ""}</button>
+    <button onClick={() => onAddSection("text")} className="px-3 py-2 rounded-full border border-white/15 text-white/60 text-xs">{f.addText}</button>
+    <button onClick={() => onAddSection("image")} className="px-3 py-2 rounded-full border border-white/15 text-white/60 text-xs">{f.addImage}</button>
+    <button onClick={() => onAddSection("mixed")} className="px-3 py-2 rounded-full border border-white/15 text-white/60 text-xs">{f.addSection}</button>
+    <button onClick={onOpenAdmin} className="px-3 py-2 rounded-full border border-white/15 text-white/60 text-xs">{f.activityManager}</button>
+    <button onClick={onStop} className="px-3 py-2 rounded-full border border-white/15 text-white/60 text-xs">{messages[locale].close}</button>
   </div>;
 }
 
@@ -1657,9 +1667,50 @@ function CustomSections({ sections }: { sections: NonNullable<SiteContent["custo
   </section>;
 }
 
+function TextEditModal({ editKey, values, fallback, onSave, onClose }: {
+  editKey: string;
+  values: Record<Locale, string>;
+  fallback: string;
+  onSave: (values: Record<Locale, string>) => void;
+  onClose: () => void;
+}) {
+  const [draft, setDraft] = useState<Record<Locale, string>>(() => ({ ...values }));
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    onSave(draft);
+  }
+  return <div className="fixed inset-0 z-[130] bg-black/90 grid place-items-center p-4" role="dialog" aria-modal="true" aria-label="Edit multilingual text">
+    <form onSubmit={submit} className="w-full max-w-5xl max-h-[92vh] overflow-auto bg-[#090909] border border-white/15 p-6 md:p-8 shadow-2xl">
+      <div className="flex items-start justify-between gap-5 mb-6">
+        <div>
+          <p className="text-red-400 text-xs tracking-[0.35em] uppercase mb-2">MULTILINGUAL COPY</p>
+          <h2 className="text-white font-black text-4xl md:text-5xl leading-none" style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>EDIT TEXT</h2>
+          <p className="text-white/30 text-xs mt-3 break-all">{editKey}</p>
+        </div>
+        <button type="button" onClick={onClose} className="text-white/50 hover:text-white text-2xl" aria-label="Close">×</button>
+      </div>
+      <div className="grid md:grid-cols-2 gap-4">
+        {supportedLocales.map(item => (
+          <label key={item} className="block text-white/45 text-xs tracking-wider">
+            {localeLabels[item]}
+            <textarea rows={5} value={draft[item] || ""} placeholder={fallback}
+              onChange={event => setDraft(current => ({ ...current, [item]: event.target.value }))}
+              className="mt-2 w-full resize-y bg-black border border-white/15 p-3 text-white/75 text-sm leading-relaxed focus:outline-none focus:border-red-600/60" />
+          </label>
+        ))}
+      </div>
+      <div className="mt-7 flex flex-wrap items-center justify-end gap-3">
+        <button type="button" onClick={onClose} className="px-5 py-3 border border-white/15 text-white/55 text-xs tracking-[0.2em] uppercase">取消</button>
+        <button type="submit" className="px-5 py-3 bg-[#E01020] text-white text-xs tracking-[0.2em] uppercase">儲存 6 種語言</button>
+      </div>
+    </form>
+  </div>;
+}
+
 function NicknameModal({ locale, onSaved }: { locale: Locale; onSaved: (user: User) => void }) {
   const [feedback, setFeedback] = useState("");
   const t = messages[locale];
+  const f = fixedMessages[locale];
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const nickname = String(new FormData(event.currentTarget).get("nickname") || "");
@@ -1672,10 +1723,10 @@ function NicknameModal({ locale, onSaved }: { locale: Locale; onSaved: (user: Us
   }
   return <div className="fixed inset-0 z-[115] bg-black/90 grid place-items-center p-5" role="dialog" aria-modal="true" aria-label={t.nickname}>
     <form onSubmit={submit} className="w-full max-w-md bg-[#090909] border border-white/15 p-7 shadow-2xl">
-      <h2 className="text-white font-black text-4xl mb-3" style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>MONSTIEZ NAME</h2>
-      <p className="text-white/45 text-sm leading-relaxed mb-6">社群登入完成後，請設定公開顯示的粉絲暱稱。這會顯示在留言板上。</p>
+      <h2 className="text-white font-black text-4xl mb-3" style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>{f.nicknameTitle}</h2>
+      <p className="text-white/45 text-sm leading-relaxed mb-6">{f.nicknameHelp}</p>
       <label className="text-white/45 text-xs">{t.nickname}<input name="nickname" required minLength={2} maxLength={24} className="block w-full mt-2 p-3 bg-black border border-white/15 text-white focus:outline-none focus:border-red-600/60" /></label>
-      <button type="submit" className="mt-5 w-full p-4 bg-[#E01020] text-white text-xs tracking-[.2em] uppercase">儲存暱稱</button>
+      <button type="submit" className="mt-5 w-full p-4 bg-[#E01020] text-white text-xs tracking-[.2em] uppercase">{f.saveNickname}</button>
       {feedback && <p className="text-red-400 text-xs mt-4">{feedback}</p>}
     </form>
   </div>;
@@ -1687,6 +1738,7 @@ function AuthModal({ locale, mode, onMode, onClose, onAuthenticated }: {
 }) {
   const [feedback, setFeedback] = useState("");
   const t = messages[locale];
+  const f = fixedMessages[locale];
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setFeedback("");
     const payload = Object.fromEntries(new FormData(event.currentTarget).entries());
@@ -1704,7 +1756,7 @@ function AuthModal({ locale, mode, onMode, onClose, onAuthenticated }: {
     <div className="w-full max-w-lg max-h-[92vh] overflow-auto bg-[#090909] border border-white/15 p-7 shadow-2xl">
       <div className="flex items-center justify-between"><h2 className="text-white font-black text-4xl" style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>JOIN <span className="text-[#E01020]">MONSTIEZ</span></h2><button onClick={onClose} className="text-white/50 hover:text-white text-2xl" aria-label={t.close}>×</button></div>
       <p className="text-white/42 text-xs leading-relaxed mt-4">
-        Monstiez 是 BABYMONSTER 粉絲交流、留言與內容瀏覽平台。Google 登入只用於快速建立或登入 Monstiez 帳號，並提供與帳號相關的社群功能。
+        {f.authPurpose}
       </p>
       <div className="grid grid-cols-2 border-b border-white/10 my-6"><button onClick={() => onMode("login")} className={`py-3 text-sm ${mode === "login" ? "text-white border-b-2 border-red-600" : "text-white/35"}`}>{t.loginTab}</button><button onClick={() => onMode("register")} className={`py-3 text-sm ${mode === "register" ? "text-white border-b-2 border-red-600" : "text-white/35"}`}>{t.registerTab}</button></div>
       <div className="grid grid-cols-2 gap-2"><button onClick={() => void oauth("google")} className="min-h-11 border border-white/15 p-3 text-center text-white/60 text-xs">Google</button><button onClick={() => void oauth("kakao")} className="min-h-11 border border-white/15 p-3 text-center text-white/60 text-xs">KakaoTalk</button></div>
@@ -1732,6 +1784,7 @@ export default function App() {
   const [editMode, setEditMode] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [editFeedback, setEditFeedback] = useState("");
+  const [textEditRequest, setTextEditRequest] = useState<{ key: string; fallback: string } | null>(null);
 
   useEffect(() => {
     const next = getInitialLocale(navigator.languages, localStorage.getItem("monstiez-locale"));
@@ -1774,8 +1827,21 @@ export default function App() {
   function changeLocale(next: Locale) { setLocale(next); localStorage.setItem("monstiez-locale", next); document.documentElement.lang = next; }
   async function logout() { await signOutFan(); setUser(null); }
   function updateSiteContent(next: SiteContent) { setSiteContent(next); setDirty(true); }
-  function updateText(key: string, value: string) {
-    updateSiteContent({ ...siteContent, uiText: { ...(siteContent.uiText || {}), [key]: value } });
+  function openTextEditor(key: string, fallback = "") {
+    setTextEditRequest({ key, fallback });
+  }
+  function localizedTextValues(key: string, fallback = "") {
+    return supportedLocales.reduce((values, item) => ({
+      ...values,
+      [item]: contentText(siteContent.uiText?.[localizedTextKey(key, item)], contentText(siteContent.uiText?.[key], fallback)),
+    }), {} as Record<Locale, string>);
+  }
+  function updateLocalizedText(key: string, values: Record<Locale, string>) {
+    const nextUiText = { ...(siteContent.uiText || {}) };
+    for (const item of supportedLocales) nextUiText[localizedTextKey(key, item)] = values[item] || "";
+    delete nextUiText[key];
+    updateSiteContent({ ...siteContent, uiText: nextUiText });
+    setTextEditRequest(null);
   }
   function updateImage(key: string, value: string) {
     if (key.startsWith("memberPhotos.")) {
@@ -1791,7 +1857,7 @@ export default function App() {
     updateSiteContent({ ...siteContent, [key]: value });
   }
   function readText(key: string, fallback = "") {
-    return contentText(siteContent.uiText?.[key], fallback);
+    return contentText(siteContent.uiText?.[localizedTextKey(key, locale)], contentText(siteContent.uiText?.[key], fallback));
   }
   function readImage(key: string) {
     if (key.startsWith("memberPhotos.")) return contentUrl(siteContent.memberPhotos?.[key.split(".")[1]], "");
@@ -1829,9 +1895,9 @@ export default function App() {
   }, []);
 
   return (
-    <InlineEditContext.Provider value={{ editing: editMode, text: readText, image: readImage, updateText, updateImage }}>
+    <InlineEditContext.Provider value={{ editing: editMode, locale, text: readText, image: readImage, openTextEditor, updateImage }}>
     <div className="bg-black min-h-screen" style={{ fontFamily: "'Inter', sans-serif" }}>
-      {booting && <OpeningLoader />}
+      {booting && <OpeningLoader locale={locale} />}
       <Nav playing={playing} onToggle={toggle} user={user} locale={locale} onLocale={changeLocale} onLogin={() => setAuthOpen(true)} onLogout={logout} onAdmin={() => setAdminOpen(true)} onEdit={() => setEditMode(true)} />
       <Hero playing={playing} onToggle={toggle} locale={locale} content={siteContent} />
       <AboutSection locale={locale} content={siteContent} />
@@ -1842,13 +1908,14 @@ export default function App() {
       <CommunitySection user={user} locale={locale} onLogin={() => setAuthOpen(true)} />
       <FanVoices locale={locale} user={user} />
       <Announcements locale={locale} />
-      <AppPurposeSection />
+      <AppPurposeSection locale={locale} />
       <Footer locale={locale} content={siteContent} />
       <AudioPlayerBar playing={playing} onToggle={toggle} locale={locale} />
       {authOpen && <AuthModal locale={locale} mode={authMode} onMode={setAuthMode} onClose={() => setAuthOpen(false)} onAuthenticated={setUser} />}
       {adminOpen && user?.role === "admin" && <AdminPanel content={siteContent} onSaved={setSiteContent} onClose={() => setAdminOpen(false)} />}
-      {editMode && user?.role === "admin" && <EditToolbar dirty={dirty} onSave={() => void saveEdits()} onAddSection={addSection} onOpenAdmin={() => setAdminOpen(true)} onStop={() => setEditMode(false)} />}
+      {editMode && user?.role === "admin" && <EditToolbar dirty={dirty} locale={locale} onSave={() => void saveEdits()} onAddSection={addSection} onOpenAdmin={() => setAdminOpen(true)} onStop={() => setEditMode(false)} />}
       {editMode && editFeedback && <div className="fixed left-1/2 -translate-x-1/2 bottom-[calc(8.25rem+env(safe-area-inset-bottom))] z-[121] rounded-full border border-white/12 bg-black/90 px-4 py-2 text-white/55 text-xs shadow-2xl">{editFeedback}</div>}
+      {textEditRequest && <TextEditModal editKey={textEditRequest.key} fallback={textEditRequest.fallback} values={localizedTextValues(textEditRequest.key, textEditRequest.fallback)} onSave={values => updateLocalizedText(textEditRequest.key, values)} onClose={() => setTextEditRequest(null)} />}
       {user?.needsNickname && <NicknameModal locale={locale} onSaved={setUser} />}
       {/* Spacer for fixed audio bar */}
       <div className="h-[calc(3.5rem+env(safe-area-inset-bottom))]" />

@@ -76,6 +76,206 @@ export const messages: Record<Locale, Copy> = {
   },
 };
 
+type FixedCopy = {
+  officialAppNameLabel: string;
+  fanCommunityPlatform: string;
+  appPurpose: string;
+  privacyPolicy: string;
+  termsOfService: string;
+  spotifyImage: string;
+  trackListMissing: string;
+  showAllSongs: string;
+  spotifyUnavailableTitle: string;
+  spotifyUnavailableHelp: string;
+  openSpotifyDiscography: string;
+  viewAllPosts: string;
+  allPostsAria: string;
+  emptyPosts: string;
+  loadingSignal: string;
+  loadingStatus: string;
+  nicknameTitle: string;
+  nicknameHelp: string;
+  saveNickname: string;
+  authPurpose: string;
+  editMode: string;
+  save: string;
+  addText: string;
+  addImage: string;
+  addSection: string;
+  activityManager: string;
+};
+
+export const fixedMessages: Record<Locale, FixedCopy> = {
+  "zh-TW": {
+    officialAppNameLabel: "Official app name",
+    fanCommunityPlatform: "BABYMONSTER fan community platform",
+    appPurpose: "Monstiez 是提供 BABYMONSTER 粉絲交流、留言與內容瀏覽的粉絲社群平台。使用者可以建立帳號、參與社群互動、管理個人資料，並瀏覽官方社群連結、成員介紹與近期活動整理。Google 登入用於快速建立及登入 Monstiez 帳號，僅使用基本 Profile 與 Email 資訊；本站不會要求 Gmail、Google Drive 或 Google Calendar 權限。",
+    privacyPolicy: "隱私權政策",
+    termsOfService: "服務條款",
+    spotifyImage: "Spotify 圖片",
+    trackListMissing: "曲目資料尚未提供，可從 Spotify 匯入或在後台手動新增歌曲名稱。",
+    showAllSongs: "顯示全部歌曲",
+    spotifyUnavailableTitle: "Spotify 專輯資料暫時沒有載入。",
+    spotifyUnavailableHelp: "如果你是管理員，請確認 spotify-releases Edge Function 已重新部署，或先在齒輪後台手動新增專輯／單曲。",
+    openSpotifyDiscography: "開啟 Spotify 作品頁",
+    viewAllPosts: "查看全部留言",
+    allPostsAria: "全部 MONSTIEZ 留言",
+    emptyPosts: "目前還沒有留言。",
+    loadingSignal: "MONSTIEZ SIGNAL",
+    loadingStatus: "Loading official links · fan voices · stage data",
+    nicknameTitle: "MONSTIEZ NAME",
+    nicknameHelp: "社群登入完成後，請設定公開顯示的粉絲暱稱。這會顯示在留言板上。",
+    saveNickname: "儲存暱稱",
+    authPurpose: "Monstiez 是 BABYMONSTER 粉絲交流、留言與內容瀏覽平台。Google 登入只用於快速建立或登入 Monstiez 帳號，並提供與帳號相關的社群功能。",
+    editMode: "編輯模式",
+    save: "儲存",
+    addText: "新增文字",
+    addImage: "新增圖片",
+    addSection: "新增板塊",
+    activityManager: "活動管理",
+  },
+  "zh-CN": {
+    officialAppNameLabel: "Official app name",
+    fanCommunityPlatform: "BABYMONSTER fan community platform",
+    appPurpose: "Monstiez 是提供 BABYMONSTER 粉丝交流、留言与内容浏览的粉丝社区平台。用户可以创建账号、参与社区互动、管理个人资料，并浏览官方社交链接、成员介绍与近期活动整理。Google 登录用于快速创建及登录 Monstiez 账号，仅使用基本 Profile 与 Email 信息；本站不会要求 Gmail、Google Drive 或 Google Calendar 权限。",
+    privacyPolicy: "隐私权政策",
+    termsOfService: "服务条款",
+    spotifyImage: "Spotify 图片",
+    trackListMissing: "曲目资料尚未提供，可从 Spotify 导入或在后台手动新增歌曲名称。",
+    showAllSongs: "显示全部歌曲",
+    spotifyUnavailableTitle: "Spotify 专辑资料暂时没有载入。",
+    spotifyUnavailableHelp: "如果你是管理员，请确认 spotify-releases Edge Function 已重新部署，或先在齿轮后台手动新增专辑／单曲。",
+    openSpotifyDiscography: "打开 Spotify 作品页",
+    viewAllPosts: "查看全部留言",
+    allPostsAria: "全部 MONSTIEZ 留言",
+    emptyPosts: "目前还没有留言。",
+    loadingSignal: "MONSTIEZ SIGNAL",
+    loadingStatus: "Loading official links · fan voices · stage data",
+    nicknameTitle: "MONSTIEZ NAME",
+    nicknameHelp: "社交登录完成后，请设置公开显示的粉丝昵称。它会显示在留言板上。",
+    saveNickname: "保存昵称",
+    authPurpose: "Monstiez 是 BABYMONSTER 粉丝交流、留言与内容浏览平台。Google 登录只用于快速创建或登录 Monstiez 账号，并提供与账号相关的社区功能。",
+    editMode: "编辑模式",
+    save: "保存",
+    addText: "新增文字",
+    addImage: "新增图片",
+    addSection: "新增板块",
+    activityManager: "活动管理",
+  },
+  th: {
+    officialAppNameLabel: "ชื่อแอปอย่างเป็นทางการ",
+    fanCommunityPlatform: "แพลตฟอร์มชุมชนแฟน BABYMONSTER",
+    appPurpose: "Monstiez เป็นแพลตฟอร์มชุมชนแฟนสำหรับการพูดคุย แสดงความคิดเห็น และเรียกดูคอนเทนต์เกี่ยวกับ BABYMONSTER ผู้ใช้สามารถสร้างบัญชี ร่วมโต้ตอบในชุมชน จัดการโปรไฟล์ และดูรวมลิงก์โซเชียลทางการ แนะนำสมาชิก และกิจกรรมล่าสุด การเข้าสู่ระบบด้วย Google ใช้เพื่อสร้างและเข้าสู่บัญชี Monstiez อย่างรวดเร็ว โดยใช้เฉพาะข้อมูล Profile และ Email พื้นฐาน เว็บไซต์นี้จะไม่ขอสิทธิ์ Gmail, Google Drive หรือ Google Calendar",
+    privacyPolicy: "นโยบายความเป็นส่วนตัว",
+    termsOfService: "เงื่อนไขการใช้บริการ",
+    spotifyImage: "รูปภาพ Spotify",
+    trackListMissing: "ยังไม่มีข้อมูลรายชื่อเพลง สามารถนำเข้าจาก Spotify หรือเพิ่มชื่อเพลงเองในหลังบ้าน",
+    showAllSongs: "แสดงเพลงทั้งหมด",
+    spotifyUnavailableTitle: "ยังโหลดข้อมูลอัลบั้มจาก Spotify ไม่ได้ในขณะนี้",
+    spotifyUnavailableHelp: "หากคุณเป็นผู้ดูแล โปรดตรวจสอบว่าได้ deploy Edge Function spotify-releases ใหม่แล้ว หรือเพิ่มอัลบั้ม/ซิงเกิลด้วยตนเองในหลังบ้านก่อน",
+    openSpotifyDiscography: "เปิดผลงานใน Spotify",
+    viewAllPosts: "ดูข้อความทั้งหมด",
+    allPostsAria: "ข้อความ MONSTIEZ ทั้งหมด",
+    emptyPosts: "ยังไม่มีข้อความ",
+    loadingSignal: "MONSTIEZ SIGNAL",
+    loadingStatus: "กำลังโหลดลิงก์ทางการ · เสียงแฟน ๆ · ข้อมูลเวที",
+    nicknameTitle: "ชื่อ MONSTIEZ",
+    nicknameHelp: "หลังจากเข้าสู่ระบบด้วยโซเชียลแล้ว โปรดตั้งชื่อแฟนที่จะแสดงแบบสาธารณะ ชื่อนี้จะแสดงบนกระดานข้อความ",
+    saveNickname: "บันทึกชื่อ",
+    authPurpose: "Monstiez เป็นแพลตฟอร์มสำหรับแฟน BABYMONSTER ในการพูดคุย แสดงความคิดเห็น และดูคอนเทนต์ การเข้าสู่ระบบด้วย Google ใช้เพื่อสร้างหรือเข้าสู่บัญชี Monstiez อย่างรวดเร็วและใช้งานฟีเจอร์ชุมชนที่เกี่ยวข้องกับบัญชี",
+    editMode: "โหมดแก้ไข",
+    save: "บันทึก",
+    addText: "เพิ่มข้อความ",
+    addImage: "เพิ่มรูปภาพ",
+    addSection: "เพิ่มส่วน",
+    activityManager: "จัดการกิจกรรม",
+  },
+  en: {
+    officialAppNameLabel: "Official app name",
+    fanCommunityPlatform: "BABYMONSTER fan community platform",
+    appPurpose: "Monstiez is a fan community platform for BABYMONSTER discussions, comments, and content browsing. Users can create accounts, join community interactions, manage their profiles, and browse official social links, member introductions, and recent activity summaries. Google sign-in is used to quickly create and sign in to a Monstiez account, using only basic Profile and Email information; this site does not request Gmail, Google Drive, or Google Calendar permissions.",
+    privacyPolicy: "Privacy Policy",
+    termsOfService: "Terms of Service",
+    spotifyImage: "Spotify image",
+    trackListMissing: "Track details are not available yet. Import from Spotify or add song names manually in the admin panel.",
+    showAllSongs: "Show all songs",
+    spotifyUnavailableTitle: "Spotify album data is temporarily unavailable.",
+    spotifyUnavailableHelp: "If you are an administrator, confirm that the spotify-releases Edge Function has been redeployed, or manually add albums/singles in the admin panel first.",
+    openSpotifyDiscography: "Open Spotify discography",
+    viewAllPosts: "View all posts",
+    allPostsAria: "All MONSTIEZ posts",
+    emptyPosts: "There are no posts yet.",
+    loadingSignal: "MONSTIEZ SIGNAL",
+    loadingStatus: "Loading official links · fan voices · stage data",
+    nicknameTitle: "MONSTIEZ NAME",
+    nicknameHelp: "After social sign-in, set the public fan nickname that will appear on the message board.",
+    saveNickname: "Save nickname",
+    authPurpose: "Monstiez is a BABYMONSTER fan platform for discussion, comments, and content browsing. Google sign-in is used only to quickly create or sign in to a Monstiez account and provide account-related community features.",
+    editMode: "Edit mode",
+    save: "Save",
+    addText: "Add text",
+    addImage: "Add image",
+    addSection: "Add section",
+    activityManager: "Activity manager",
+  },
+  ko: {
+    officialAppNameLabel: "공식 앱 이름",
+    fanCommunityPlatform: "BABYMONSTER 팬 커뮤니티 플랫폼",
+    appPurpose: "Monstiez는 BABYMONSTER 팬들이 교류하고 댓글을 남기며 콘텐츠를 둘러볼 수 있는 팬 커뮤니티 플랫폼입니다. 사용자는 계정을 만들고 커뮤니티 활동에 참여하며 프로필을 관리하고 공식 소셜 링크, 멤버 소개와 최근 활동 정리를 볼 수 있습니다. Google 로그인은 Monstiez 계정을 빠르게 만들고 로그인하는 데 사용되며 기본 Profile 및 Email 정보만 사용합니다. 이 사이트는 Gmail, Google Drive 또는 Google Calendar 권한을 요청하지 않습니다.",
+    privacyPolicy: "개인정보 처리방침",
+    termsOfService: "서비스 약관",
+    spotifyImage: "Spotify 이미지",
+    trackListMissing: "트랙 정보가 아직 없습니다. Spotify에서 가져오거나 관리자 패널에서 곡명을 직접 추가할 수 있습니다.",
+    showAllSongs: "전체 곡 보기",
+    spotifyUnavailableTitle: "Spotify 앨범 데이터를 일시적으로 불러오지 못했습니다.",
+    spotifyUnavailableHelp: "관리자라면 spotify-releases Edge Function을 다시 배포했는지 확인하거나 관리자 패널에서 앨범/싱글을 직접 추가해 주세요.",
+    openSpotifyDiscography: "Spotify 디스코그래피 열기",
+    viewAllPosts: "전체 댓글 보기",
+    allPostsAria: "전체 MONSTIEZ 댓글",
+    emptyPosts: "아직 댓글이 없습니다.",
+    loadingSignal: "MONSTIEZ SIGNAL",
+    loadingStatus: "공식 링크 · 팬 메시지 · 무대 데이터 로딩 중",
+    nicknameTitle: "MONSTIEZ NAME",
+    nicknameHelp: "소셜 로그인 후 게시판에 공개로 표시될 팬 닉네임을 설정해 주세요.",
+    saveNickname: "닉네임 저장",
+    authPurpose: "Monstiez는 BABYMONSTER 팬 교류, 댓글과 콘텐츠 탐색을 위한 플랫폼입니다. Google 로그인은 Monstiez 계정을 빠르게 만들거나 로그인하고 계정 관련 커뮤니티 기능을 제공하는 데만 사용됩니다.",
+    editMode: "편집 모드",
+    save: "저장",
+    addText: "텍스트 추가",
+    addImage: "이미지 추가",
+    addSection: "섹션 추가",
+    activityManager: "활동 관리",
+  },
+  ja: {
+    officialAppNameLabel: "公式アプリ名",
+    fanCommunityPlatform: "BABYMONSTERファンコミュニティプラットフォーム",
+    appPurpose: "Monstiezは、BABYMONSTERファンの交流、コメント投稿、コンテンツ閲覧のためのファンコミュニティプラットフォームです。ユーザーはアカウントを作成し、コミュニティで交流し、プロフィールを管理し、公式SNSリンク、メンバー紹介、最近の活動まとめを閲覧できます。GoogleログインはMonstiezアカウントの作成とログインをすばやく行うために使用され、基本的なProfileとEmail情報のみを利用します。本サイトはGmail、Google Drive、Google Calendarの権限を要求しません。",
+    privacyPolicy: "プライバシーポリシー",
+    termsOfService: "利用規約",
+    spotifyImage: "Spotify画像",
+    trackListMissing: "曲目情報はまだありません。Spotifyから取り込むか、管理画面で曲名を手動追加できます。",
+    showAllSongs: "すべての曲を表示",
+    spotifyUnavailableTitle: "Spotifyのアルバム情報を一時的に読み込めません。",
+    spotifyUnavailableHelp: "管理者の場合は、spotify-releases Edge Functionを再デプロイしたか確認するか、管理画面でアルバム／シングルを手動追加してください。",
+    openSpotifyDiscography: "Spotifyディスコグラフィーを開く",
+    viewAllPosts: "すべての投稿を見る",
+    allPostsAria: "すべてのMONSTIEZ投稿",
+    emptyPosts: "まだ投稿はありません。",
+    loadingSignal: "MONSTIEZ SIGNAL",
+    loadingStatus: "公式リンク · ファンの声 · ステージデータを読み込み中",
+    nicknameTitle: "MONSTIEZ NAME",
+    nicknameHelp: "ソーシャルログイン後、掲示板に公開表示されるファンニックネームを設定してください。",
+    saveNickname: "ニックネームを保存",
+    authPurpose: "Monstiezは、BABYMONSTERファンの交流、コメント、コンテンツ閲覧のためのプラットフォームです。Googleログインは、Monstiezアカウントの作成・ログインと、アカウント関連のコミュニティ機能の提供にのみ使用されます。",
+    editMode: "編集モード",
+    save: "保存",
+    addText: "テキストを追加",
+    addImage: "画像を追加",
+    addSection: "セクションを追加",
+    activityManager: "活動管理",
+  },
+};
+
 /** Curated static member copy. Site chrome/content is bundled; only fan posts use machine translation. */
 export const memberBios: Record<Locale, string[]> = {
   "zh-TW": [
