@@ -47,8 +47,8 @@ export const messages: Record<Locale, Copy> = {
     nav:["介紹","成員","影音","活動","交流"], login:"粉絲登入", logout:"登出", soundOn:"暫停音樂", soundOff:"播放音樂", soundBlocked:"瀏覽器已阻擋自動播放，點擊播放即可開始。",
     heroKicker:"全球非官方粉絲社群", heroNote:"七種聲音，一股無法忽視的 MONSTER ENERGY。一起認識作品、追蹤官方消息，和全球 MONSTIEZ 交流。",
     storyLabel:"01 — 她們的故事", storyLead:"七位成員把 vocal、rap、dance 與強烈舞台能量凝聚成 BABYMONSTER。", storyBody:"BABYMONSTER 是 YG Entertainment 推出的七人女子團體，由 RUKA、PHARITA、ASA、AHYEON、RAMI、RORA、CHIQUITA 組成。她們於 2024 年以《BABYMONS7ER》正式出道，持續以多元作品與現場演出拓展全球舞台。",
-    debut:"正式出道", agency:"所屬公司", nationalities:"成員國籍", fandom:"官方粉絲名", membersLabel:"02 — 七位成員", membersLead:"向下捲動，跟著七位成員依序進入 BABYMONSTER 的舞台世界。生日與國籍依官方公開資料整理，不自行杜撰固定定位。",
-    streamsLabel:"03 — 官方串流", streamsLead:"直接使用官方播放器與官方帳號連結，不重新上傳、不提供下載，也不複製完整歌詞。", youtubeCopy:"觀看 MV、舞台、舞蹈與幕後內容；播放量直接回到官方頻道。", instagramCopy:"追蹤官方照片、Reels 與活動動態，不在本站重製貼文。", officialChannel:"前往官方頻道", officialProfile:"前往官方帳號",
+    debut:"正式出道", agency:"所屬公司", nationalities:"成員國籍", fandom:"官方粉絲名", membersLabel:"02 — 七位成員", membersLead:"向下捲動，跟著七位成員依序進入 BABYMONSTER 的舞台世界。",
+    streamsLabel:"03 — 官方串流", streamsLead:"", youtubeCopy:"", instagramCopy:"追蹤官方照片、Reels 與活動動。", officialChannel:"前往官方頻道", officialProfile:"前往官方帳號",
     eventsLabel:"04 — 近期活動", eventsLead:"行程可能隨時變動；票務、時間與成員出席請在出發前再次確認官方公告。", verifyOfficial:"官方確認", latestNews:"最新消息",
     communityLabel:"05 — 粉絲交流", communityTitle:"MONSTIEZ 留言板", communityLead:"分享觀後感、應援靈感與新粉指南。拒絕私生資訊、未證實消息、盜版連結與騷擾。", signInToJoin:"登入後參與交流", rules:"社群守則：友善交流、不冒充官方、不公開個資、不提供盜版下載。留言可被檢舉，管理員可在後端審核。",
     composeGuest:"登入後即可發表留言…", composeUser:"想和全球 MONSTIEZ 分享什麼？", publish:"發表留言", replies:"則回覆", edit:"編輯", remove:"刪除", report:"檢舉", moderate:"審核",
@@ -110,7 +110,7 @@ export const fixedMessages: Record<Locale, FixedCopy> = {
   "zh-TW": {
     officialAppNameLabel: "Official app name",
     fanCommunityPlatform: "BABYMONSTER fan community platform",
-    appPurpose: "Monstiez 是提供 BABYMONSTER 粉絲交流、留言與內容瀏覽的粉絲社群平台。使用者可以建立帳號、參與社群互動、管理個人資料，並瀏覽官方社群連結、成員介紹與近期活動整理。Google 登入用於快速建立及登入 Monstiez 帳號，僅使用基本 Profile 與 Email 資訊；本站不會要求 Gmail、Google Drive 或 Google Calendar 權限。",
+    appPurpose: "Monstiez 是提供 BABYMONSTER 粉絲交流、留言與內容瀏覽的粉絲社群平台。使用者可以建立帳號、參與社群互動、管理個人資料，並瀏覽官方社群連結、成員介紹與近期活動整理。Google 登入用於快速建立及登入 Monstiez 帳號，僅使用基本 Profile 與 Email 資訊；",
     privacyPolicy: "隱私權政策",
     termsOfService: "服務條款",
     spotifyImage: "Spotify 圖片",
@@ -139,7 +139,7 @@ export const fixedMessages: Record<Locale, FixedCopy> = {
   "zh-CN": {
     officialAppNameLabel: "Official app name",
     fanCommunityPlatform: "BABYMONSTER fan community platform",
-    appPurpose: "Monstiez 是提供 BABYMONSTER 粉丝交流、留言与内容浏览的粉丝社区平台。用户可以创建账号、参与社区互动、管理个人资料，并浏览官方社交链接、成员介绍与近期活动整理。Google 登录用于快速创建及登录 Monstiez 账号，仅使用基本 Profile 与 Email 信息；本站不会要求 Gmail、Google Drive 或 Google Calendar 权限。",
+    appPurpose: "Monstiez 是提供 BABYMONSTER 粉丝交流、留言与内容浏览的粉丝社区平台。用户可以创建账号、参与社区互动、管理个人资料，并浏览官方社交链接、成员介绍与近期活动整理。",
     privacyPolicy: "隐私权政策",
     termsOfService: "服务条款",
     spotifyImage: "Spotify 图片",
@@ -168,7 +168,7 @@ export const fixedMessages: Record<Locale, FixedCopy> = {
   th: {
     officialAppNameLabel: "ชื่อแอปอย่างเป็นทางการ",
     fanCommunityPlatform: "แพลตฟอร์มชุมชนแฟน BABYMONSTER",
-    appPurpose: "Monstiez เป็นแพลตฟอร์มชุมชนแฟนสำหรับการพูดคุย แสดงความคิดเห็น และเรียกดูคอนเทนต์เกี่ยวกับ BABYMONSTER ผู้ใช้สามารถสร้างบัญชี ร่วมโต้ตอบในชุมชน จัดการโปรไฟล์ และดูรวมลิงก์โซเชียลทางการ แนะนำสมาชิก และกิจกรรมล่าสุด การเข้าสู่ระบบด้วย Google ใช้เพื่อสร้างและเข้าสู่บัญชี Monstiez อย่างรวดเร็ว โดยใช้เฉพาะข้อมูล Profile และ Email พื้นฐาน เว็บไซต์นี้จะไม่ขอสิทธิ์ Gmail, Google Drive หรือ Google Calendar",
+    appPurpose: "Monstiez เป็นแพลตฟอร์มชุมชนแฟนสำหรับการพูดคุย แสดงความคิดเห็น และเรียกดูคอนเทนต์เกี่ยวกับ BABYMONSTER ผู้ใช้สามารถสร้างบัญชี ร่วมโต้ตอบในชุมชน จัดการโปรไฟล์ และดูรวมลิงก์โซเชียลทางการ แนะนำสมาชิก และกิจกรรมล่าสุด การเข้าสู่ระบบด้วย Google ใช้เพื่อสร้างและเข้าสู่บัญชี Monstiez อย่างรวดเร็ว โดยใช้เฉพาะข้อมูล Profile และ Email พื้นฐาน",
     privacyPolicy: "นโยบายความเป็นส่วนตัว",
     termsOfService: "เงื่อนไขการใช้บริการ",
     spotifyImage: "รูปภาพ Spotify",
@@ -197,7 +197,7 @@ export const fixedMessages: Record<Locale, FixedCopy> = {
   en: {
     officialAppNameLabel: "Official app name",
     fanCommunityPlatform: "BABYMONSTER fan community platform",
-    appPurpose: "Monstiez is a fan community platform for BABYMONSTER discussions, comments, and content browsing. Users can create accounts, join community interactions, manage their profiles, and browse official social links, member introductions, and recent activity summaries. Google sign-in is used to quickly create and sign in to a Monstiez account, using only basic Profile and Email information; this site does not request Gmail, Google Drive, or Google Calendar permissions.",
+    appPurpose: "Monstiez is a fan community platform for BABYMONSTER discussions, comments, and content browsing. Users can create accounts, join community interactions, manage their profiles, and browse official social links, member introductions, and recent activity summaries. Google sign-in is used to quickly create and sign in to a Monstiez account, using only basic Profile and Email information.",
     privacyPolicy: "Privacy Policy",
     termsOfService: "Terms of Service",
     spotifyImage: "Spotify image",
@@ -226,7 +226,7 @@ export const fixedMessages: Record<Locale, FixedCopy> = {
   ko: {
     officialAppNameLabel: "공식 앱 이름",
     fanCommunityPlatform: "BABYMONSTER 팬 커뮤니티 플랫폼",
-    appPurpose: "Monstiez는 BABYMONSTER 팬들이 교류하고 댓글을 남기며 콘텐츠를 둘러볼 수 있는 팬 커뮤니티 플랫폼입니다. 사용자는 계정을 만들고 커뮤니티 활동에 참여하며 프로필을 관리하고 공식 소셜 링크, 멤버 소개와 최근 활동 정리를 볼 수 있습니다. Google 로그인은 Monstiez 계정을 빠르게 만들고 로그인하는 데 사용되며 기본 Profile 및 Email 정보만 사용합니다. 이 사이트는 Gmail, Google Drive 또는 Google Calendar 권한을 요청하지 않습니다.",
+    appPurpose: "Monstiez는 BABYMONSTER 팬들이 교류하고 댓글을 남기며 콘텐츠를 둘러볼 수 있는 팬 커뮤니티 플랫폼입니다. 사용자는 계정을 만들고 커뮤니티 활동에 참여하며 프로필을 관리하고 공식 소셜 링크, 멤버 소개와 최근 활동 정리를 볼 수 있습니다. Google 로그인은 Monstiez 계정을 빠르게 만들고 로그인하는 데 사용되며 기본 Profile 및 Email 정보만 사용합니다.",
     privacyPolicy: "개인정보 처리방침",
     termsOfService: "서비스 약관",
     spotifyImage: "Spotify 이미지",
@@ -255,7 +255,7 @@ export const fixedMessages: Record<Locale, FixedCopy> = {
   ja: {
     officialAppNameLabel: "公式アプリ名",
     fanCommunityPlatform: "BABYMONSTERファンコミュニティプラットフォーム",
-    appPurpose: "Monstiezは、BABYMONSTERファンの交流、コメント投稿、コンテンツ閲覧のためのファンコミュニティプラットフォームです。ユーザーはアカウントを作成し、コミュニティで交流し、プロフィールを管理し、公式SNSリンク、メンバー紹介、最近の活動まとめを閲覧できます。GoogleログインはMonstiezアカウントの作成とログインをすばやく行うために使用され、基本的なProfileとEmail情報のみを利用します。本サイトはGmail、Google Drive、Google Calendarの権限を要求しません。",
+    appPurpose: "Monstiezは、BABYMONSTERファンの交流、コメント投稿、コンテンツ閲覧のためのファンコミュニティプラットフォームです。ユーザーはアカウントを作成し、コミュニティで交流し、プロフィールを管理し、公式SNSリンク、メンバー紹介、最近の活動まとめを閲覧できます。GoogleログインはMonstiezアカウントの作成とログインをすばやく行うために使用され、基本的なProfileとEmail情報のみを利用します。",
     privacyPolicy: "プライバシーポリシー",
     termsOfService: "利用規約",
     spotifyImage: "Spotify画像",
