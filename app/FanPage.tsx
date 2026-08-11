@@ -3,7 +3,7 @@
 import { createContext, FormEvent, type CSSProperties, type ReactNode, useContext, useState, useEffect, useRef, useCallback } from "react";
 import { motion, useInView, useScroll, useTransform } from "motion/react";
 import {
-  Play, Pause, Volume2, VolumeX, Heart, MessageCircle,
+  Play, Heart, MessageCircle,
   ChevronDown, Menu, X, Calendar, MapPin, Music, Send, Disc3, Settings, Save,
 } from "lucide-react";
 import { fixedMessages, getInitialLocale, localeLabels, messages, supportedLocales, type Locale } from "./i18n";
@@ -26,8 +26,6 @@ const HERO_PARTICLES = Array.from({ length: 18 }, (_, i) => ({
   delay: (i * 0.29) % 4.5,
   size: i % 3 === 0 ? 3 : 1.5,
 }));
-
-const WAVEFORM = Array.from({ length: 24 }, (_, i) => 5 + ((i * 7 + 3) % 17));
 
 // ─────────────────────────────────────────────
 // DATA
@@ -234,86 +232,11 @@ function EditableImage({ k, alt, className, style }: { k: string; alt: string; c
 const EMPTY_POSTS: ApiPost[] = [];
 
 // ─────────────────────────────────────────────
-// HOOKS
-// ─────────────────────────────────────────────
-
-function useAmbientMusic() {
-  const [playing, setPlaying] = useState(false);
-  const [started, setStarted] = useState(false);
-  const ctxRef = useRef<AudioContext | null>(null);
-  const gainRef = useRef<GainNode | null>(null);
-
-  const start = useCallback(() => {
-    if (ctxRef.current) return;
-    try {
-      const ctx = new AudioContext();
-      ctxRef.current = ctx;
-
-      const master = ctx.createGain();
-      master.gain.setValueAtTime(0, ctx.currentTime);
-      master.gain.linearRampToValueAtTime(0.22, ctx.currentTime + 3);
-      master.connect(ctx.destination);
-      gainRef.current = master;
-
-      // Atmospheric Am chord with subtle vibrato
-      const layers = [
-        { freq: 110, gain: 0.18, type: "sawtooth" as OscillatorType },
-        { freq: 220, gain: 0.09, type: "sine" as OscillatorType },
-        { freq: 261.63, gain: 0.06, type: "sine" as OscillatorType },
-        { freq: 329.63, gain: 0.05, type: "sine" as OscillatorType },
-        { freq: 440, gain: 0.04, type: "sine" as OscillatorType },
-        { freq: 523.25, gain: 0.02, type: "sine" as OscillatorType },
-      ];
-
-      layers.forEach(({ freq, gain: gv, type }, li) => {
-        const osc = ctx.createOscillator();
-        const g = ctx.createGain();
-        g.gain.value = gv;
-        osc.type = type;
-        osc.frequency.value = freq;
-        const lfo = ctx.createOscillator();
-        const lfoG = ctx.createGain();
-        lfo.frequency.value = 0.25 + li * 0.07;
-        lfoG.gain.value = 1.2;
-        lfo.connect(lfoG);
-        lfoG.connect(osc.frequency);
-        lfo.start();
-        osc.connect(g);
-        g.connect(master);
-        osc.start();
-      });
-
-      setPlaying(true);
-      setStarted(true);
-    } catch {
-      /* audio not supported */
-    }
-  }, []);
-
-  const toggle = useCallback(() => {
-    if (!started) { start(); return; }
-    if (!gainRef.current || !ctxRef.current) return;
-    const { currentTime } = ctxRef.current;
-    if (playing) {
-      gainRef.current.gain.linearRampToValueAtTime(0, currentTime + 0.8);
-      setTimeout(() => setPlaying(false), 850);
-    } else {
-      gainRef.current.gain.linearRampToValueAtTime(0.22, currentTime + 1.2);
-      setPlaying(true);
-    }
-  }, [playing, started, start]);
-
-  useEffect(() => () => { if (ctxRef.current && ctxRef.current.state !== "closed") void ctxRef.current.close(); }, []);
-
-  return { playing, toggle };
-}
-
-// ─────────────────────────────────────────────
 // NAV
 // ─────────────────────────────────────────────
 
-function Nav({ playing, onToggle, user, locale, onLocale, onLogin, onLogout, onAdmin, onEdit }: {
-  playing: boolean; onToggle: () => void; user: User | null; locale: Locale;
+function Nav({ user, locale, onLocale, onLogin, onLogout, onAdmin, onEdit }: {
+  user: User | null; locale: Locale;
   onLocale: (locale: Locale) => void; onLogin: () => void; onLogout: () => void; onAdmin: () => void; onEdit: () => void;
 }) {
   const [scrolled, setScrolled] = useState(false);
@@ -363,13 +286,6 @@ function Nav({ playing, onToggle, user, locale, onLocale, onLogin, onLogout, onA
             : <button onClick={onLogin} className="hidden sm:block text-white/50 hover:text-white text-xs tracking-widest uppercase">{messages[locale].login}</button>}
           {user?.role === "admin" && <button onClick={onEdit} className="text-red-400/80 hover:text-red-300" aria-label="Edit mode">✎</button>}
           {user?.role === "admin" && <button onClick={onAdmin} className="text-red-400/80 hover:text-red-300" aria-label="Admin dashboard"><Settings size={16} /></button>}
-          <button onClick={onToggle}
-            className="flex items-center gap-1.5 text-white/50 hover:text-white transition-colors duration-200">
-            {playing ? <Volume2 size={15} /> : <VolumeX size={15} />}
-            <span className="hidden md:inline text-xs tracking-widest uppercase">
-              {playing ? t.soundOn : t.soundOff}
-            </span>
-          </button>
           <button className="md:hidden text-white/70 hover:text-white" onClick={() => setOpen(!open)}>
             {open ? <X size={20} /> : <Menu size={20} />}
           </button>
@@ -401,7 +317,7 @@ function Nav({ playing, onToggle, user, locale, onLocale, onLogin, onLogout, onA
 // HERO
 // ─────────────────────────────────────────────
 
-function Hero({ playing, onToggle, locale, content }: { playing: boolean; onToggle: () => void; locale: Locale; content: SiteContent }) {
+function Hero({ locale, content }: { locale: Locale; content: SiteContent }) {
   const t = messages[locale];
   const heroImage = contentUrl(content.heroImageUrl, "");
   return (
@@ -472,13 +388,6 @@ function Hero({ playing, onToggle, locale, content }: { playing: boolean; onTogg
           ))}
         </motion.div>
 
-        {/* Sound toggle */}
-        <motion.button initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-          transition={{ delay: 1.8 }} onClick={onToggle}
-          className="flex items-center gap-2 mx-auto px-7 py-3 border border-white/15 rounded-full text-white/55 hover:text-white hover:border-white/35 transition-all duration-300 text-xs tracking-[0.2em] uppercase">
-          {playing ? <Volume2 size={13} /> : <VolumeX size={13} />}
-          {playing ? t.soundOn : t.soundOff}
-        </motion.button>
       </div>
 
       {/* Scroll indicator */}
@@ -1310,52 +1219,6 @@ function Footer({ locale, content }: { locale: Locale; content: SiteContent }) {
   );
 }
 
-// ─────────────────────────────────────────────
-// AUDIO PLAYER BAR
-// ─────────────────────────────────────────────
-
-function AudioPlayerBar({ playing, onToggle, locale }: { playing: boolean; onToggle: () => void; locale: Locale }) {
-  const t = messages[locale];
-  return (
-    <motion.div initial={{ y: 72 }} animate={{ y: 0 }}
-      transition={{ delay: 2.8, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-      className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/8 pb-[env(safe-area-inset-bottom)]"
-      style={{ background: "rgba(4,4,4,0.96)", backdropFilter: "blur(24px)" }}>
-      <div className="max-w-7xl mx-auto px-6 h-14 flex items-center gap-4">
-        <button onClick={onToggle}
-          className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-opacity duration-200 hover:opacity-80"
-          style={{ background: "#E01020" }}>
-          {playing
-            ? <Pause size={13} className="text-white" />
-            : <Play size={13} className="text-white ml-0.5" />}
-        </button>
-
-        {/* Waveform */}
-        <div className="flex items-center gap-px h-7">
-          {WAVEFORM.map((maxH, i) => (
-            <motion.div key={i}
-              className="w-[2px] rounded-full transition-colors duration-300"
-              style={{ backgroundColor: playing ? "#E01020" : "rgba(255,255,255,0.15)" }}
-              animate={playing ? { height: ["4px", `${maxH}px`, "4px"] } : { height: "4px" }}
-              transition={playing
-                ? { duration: 0.42 + (i % 5) * 0.09, repeat: Infinity, delay: i * 0.028, ease: "easeInOut" }
-                : { duration: 0.3 }} />
-          ))}
-        </div>
-
-        <div className="flex-1 min-w-0">
-          <div className="text-white text-xs font-medium truncate">BABYMONSTER — DRIP</div>
-          <div className="text-white/28 text-xs truncate">{playing ? t.soundOn : t.soundOff}</div>
-        </div>
-
-        {playing
-          ? <Volume2 size={14} className="text-white/35 shrink-0" />
-          : <VolumeX size={14} className="text-white/25 shrink-0" />}
-      </div>
-    </motion.div>
-  );
-}
-
 function OpeningLoader({ locale }: { locale: Locale }) {
   const f = fixedMessages[locale];
   return <motion.div
@@ -1775,7 +1638,6 @@ function AuthModal({ locale, mode, onMode, onClose, onAuthenticated }: {
 }
 
 export default function App() {
-  const { playing, toggle } = useAmbientMusic();
   const [user, setUser] = useState<User | null>(null);
   const [locale, setLocale] = useState<Locale>("zh-TW");
   const [authOpen, setAuthOpen] = useState(false);
@@ -1900,8 +1762,8 @@ export default function App() {
     <InlineEditContext.Provider value={{ editing: editMode, locale, text: readText, image: readImage, openTextEditor, updateImage }}>
     <div className="bg-black min-h-screen" style={{ fontFamily: "'Inter', sans-serif" }}>
       {booting && <OpeningLoader locale={locale} />}
-      <Nav playing={playing} onToggle={toggle} user={user} locale={locale} onLocale={changeLocale} onLogin={() => setAuthOpen(true)} onLogout={logout} onAdmin={() => setAdminOpen(true)} onEdit={() => setEditMode(true)} />
-      <Hero playing={playing} onToggle={toggle} locale={locale} content={siteContent} />
+      <Nav user={user} locale={locale} onLocale={changeLocale} onLogin={() => setAuthOpen(true)} onLogout={logout} onAdmin={() => setAdminOpen(true)} onEdit={() => setEditMode(true)} />
+      <Hero locale={locale} content={siteContent} />
       <AboutSection locale={locale} content={siteContent} />
       <MembersSection locale={locale} content={siteContent} />
       <MusicSection locale={locale} content={siteContent} />
@@ -1912,15 +1774,12 @@ export default function App() {
       <Announcements locale={locale} />
       <AppPurposeSection locale={locale} />
       <Footer locale={locale} content={siteContent} />
-      <AudioPlayerBar playing={playing} onToggle={toggle} locale={locale} />
       {authOpen && <AuthModal locale={locale} mode={authMode} onMode={setAuthMode} onClose={() => setAuthOpen(false)} onAuthenticated={setUser} />}
       {adminOpen && user?.role === "admin" && <AdminPanel content={siteContent} onSaved={setSiteContent} onClose={() => setAdminOpen(false)} />}
       {editMode && user?.role === "admin" && <EditToolbar dirty={dirty} locale={locale} onSave={() => void saveEdits()} onAddSection={addSection} onOpenAdmin={() => setAdminOpen(true)} onStop={() => setEditMode(false)} />}
       {editMode && editFeedback && <div className="fixed left-1/2 -translate-x-1/2 bottom-[calc(8.25rem+env(safe-area-inset-bottom))] z-[121] rounded-full border border-white/12 bg-black/90 px-4 py-2 text-white/55 text-xs shadow-2xl">{editFeedback}</div>}
       {textEditRequest && <TextEditModal editKey={textEditRequest.key} fallback={textEditRequest.fallback} values={localizedTextValues(textEditRequest.key, textEditRequest.fallback)} onSave={values => updateLocalizedText(textEditRequest.key, values)} onClose={() => setTextEditRequest(null)} />}
       {user?.needsNickname && <NicknameModal locale={locale} onSaved={setUser} />}
-      {/* Spacer for fixed audio bar */}
-      <div className="h-[calc(3.5rem+env(safe-area-inset-bottom))]" />
     </div>
     </InlineEditContext.Provider>
   );

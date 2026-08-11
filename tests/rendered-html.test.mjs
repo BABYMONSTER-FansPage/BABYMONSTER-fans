@@ -86,6 +86,10 @@ test("bundles six static languages and translates fan posts only", async () => {
   assert.match(page, /supportedLocales\.map/);
   assert.match(page, /openTextEditor/);
   assert.doesNotMatch(page, /window\.prompt\("編輯文字"/);
+  assert.doesNotMatch(page, /useAmbientMusic/);
+  assert.doesNotMatch(page, /AudioContext/);
+  assert.doesNotMatch(page, /AudioPlayerBar/);
+  assert.doesNotMatch(i18n, /soundOn|soundOff|soundBlocked/);
   assert.doesNotMatch(page, /tracks\.length\s*\+\s*["'`]\s*tracks/i);
   assert.match(page, /AllPostsModal/);
   assert.match(page, /updateFanNickname/);
