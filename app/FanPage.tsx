@@ -148,6 +148,10 @@ const DEFAULT_SITE_CONTENT: Required<Pick<SiteContent, "siteName" | "siteTagline
   siteTagline: "",
 };
 
+const OFFICIAL_BRAND_NAME = "Monstiez";
+const PRIVACY_POLICY_URL = "https://babymonster.fans/privacy.html";
+const TERMS_OF_SERVICE_URL = "https://babymonster.fans/terms.html";
+
 function contentText(value: unknown, fallback: string) {
   return typeof value === "string" && value.trim() ? value : fallback;
 }
@@ -441,12 +445,22 @@ function Hero({ playing, onToggle, locale, content }: { playing: boolean; onTogg
 
         <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 1.2 }}
-          className="mx-auto mb-12 max-w-2xl border border-white/10 bg-black/45 px-5 py-4 backdrop-blur-md">
-          <p className="text-white/35 text-[10px] tracking-[0.35em] uppercase mb-2">App name</p>
-          <p className="text-white text-lg md:text-xl font-semibold tracking-wide">Monstiez</p>
-          <p className="text-white/50 text-xs md:text-sm leading-relaxed mt-2">
-            非官方 BABYMONSTER 全球粉絲社群；使用 Google 登入是為了建立粉絲帳號、維持登入狀態、顯示暱稱並保護留言板安全。
+          className="mx-auto mb-12 max-w-3xl border border-white/10 bg-black/55 px-5 py-5 backdrop-blur-md">
+          <p className="text-white/35 text-[10px] tracking-[0.35em] uppercase mb-2">Official app name</p>
+          <h1 className="text-white text-3xl md:text-4xl font-black tracking-wide leading-none"
+            style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>
+            Monstiez
+          </h1>
+          <p className="text-red-300/75 text-[11px] md:text-xs tracking-[0.22em] uppercase mt-2">
+            BABYMONSTER fan community platform
           </p>
+          <p className="text-white/58 text-xs md:text-sm leading-relaxed mt-3">
+            Monstiez 是提供 BABYMONSTER 粉絲交流、留言與內容瀏覽的粉絲社群平台。使用者可以建立帳號、參與社群互動、管理個人資料，並瀏覽官方 Spotify、YouTube、Instagram 連結、成員介紹與近期活動整理。Google 登入用於快速建立及登入 Monstiez 帳號，僅使用基本 Profile 與 Email 資訊；本站不會要求 Gmail、Google Drive 或 Google Calendar 權限。
+          </p>
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+            <a href={PRIVACY_POLICY_URL} className="text-red-300 hover:text-red-200 text-[10px] tracking-[0.25em] uppercase">Privacy Policy ↗</a>
+            <a href={TERMS_OF_SERVICE_URL} className="text-white/38 hover:text-white text-[10px] tracking-[0.25em] uppercase">Terms of Service ↗</a>
+          </div>
         </motion.div>
 
         {/* Stat row */}
@@ -502,17 +516,17 @@ function AppPurposeSection() {
           <div className="space-y-4">
             <EditableText
               k="appPurposeBody"
-              fallback="Monstiez 是非官方 BABYMONSTER 全球粉絲社群網站。應用程式用途是讓粉絲使用 Google、Kakao 或電子郵件登入後設定暱稱、參與留言板、按讚、交流討論，並瀏覽由管理員整理的公開活動資訊、官方 Spotify、YouTube 與 Instagram 連結。"
+              fallback="Monstiez 是提供 BABYMONSTER 粉絲交流、留言與內容瀏覽的非官方粉絲社群平台。使用者可以透過本平台建立帳號、設定暱稱、參與留言板、按讚、交流討論、管理個人資料，並瀏覽由管理員整理的公開活動資訊、成員介紹、官方 Spotify、YouTube 與 Instagram 連結。"
               as="p"
               className="text-white/55 text-sm md:text-base leading-relaxed" />
             <EditableText
               k="appPurposeDataUse"
-              fallback="Google 登入僅用於建立與辨識你的粉絲帳號；本站只使用登入必要的基本帳號資訊，例如 Google 帳號識別碼、電子郵件與公開名稱，以維持登入狀態、顯示暱稱與保護留言板安全。本站不會讀取你的 Google Drive、Gmail、日曆或其他 Google 內容。"
+              fallback="Google 登入用於快速建立及登入 Monstiez 帳號、維持登入狀態、顯示公開暱稱與保護留言板安全。本站只使用登入必要的基本 Profile 與 Email 資訊，例如 Google 帳號識別碼、電子郵件、公開名稱與頭像；本站不會要求、讀取或儲存 Gmail、Google Drive、Google Calendar 或其他 Google 內容。"
               as="p"
               className="text-white/45 text-sm leading-relaxed" />
             <div className="flex flex-wrap gap-4 pt-2">
-              <a href="/privacy.html" className="text-red-300 hover:text-red-200 text-xs tracking-[0.25em] uppercase">Privacy Policy ↗</a>
-              <a href="/terms.html" className="text-white/35 hover:text-white text-xs tracking-[0.25em] uppercase">Terms of Service ↗</a>
+              <a href={PRIVACY_POLICY_URL} className="text-red-300 hover:text-red-200 text-xs tracking-[0.25em] uppercase">Privacy Policy ↗</a>
+              <a href={TERMS_OF_SERVICE_URL} className="text-white/35 hover:text-white text-xs tracking-[0.25em] uppercase">Terms of Service ↗</a>
             </div>
           </div>
         </div>
@@ -1240,7 +1254,7 @@ function Footer({ locale, content }: { locale: Locale; content: SiteContent }) {
   const isInView = useInView(ref, { once: true, amount: 0.3 });
   const t = messages[locale];
   const links = [{ id: "members", label: t.nav[1] }, { id: "music", label: t.nav[2] }, { id: "events", label: t.nav[3] }, { id: "community", label: t.nav[4] }];
-  const siteName = contentText(content.siteName, DEFAULT_SITE_CONTENT.siteName);
+  const siteName = OFFICIAL_BRAND_NAME;
 
   return (
     <footer ref={ref} className="bg-black border-t border-white/8 py-16">
@@ -1279,10 +1293,10 @@ function Footer({ locale, content }: { locale: Locale; content: SiteContent }) {
         </div>
 
         <div className="border-t border-white/5 pt-8 flex items-center justify-between">
-          <span className="text-white/18 text-xs">© 2026 babymonster.fans</span>
+          <span className="text-white/18 text-xs">© 2026 {OFFICIAL_BRAND_NAME} · babymonster.fans</span>
           <div className="flex flex-wrap items-center justify-end gap-4">
-            <a href="/terms.html" className="text-white/28 hover:text-white text-xs tracking-widest">服務條款</a>
-            <a href="/privacy.html" className="text-white/28 hover:text-white text-xs tracking-widest">隱私權政策</a>
+            <a href={TERMS_OF_SERVICE_URL} className="text-white/28 hover:text-white text-xs tracking-widest">服務條款</a>
+            <a href={PRIVACY_POLICY_URL} className="text-white/28 hover:text-white text-xs tracking-widest">隱私權政策</a>
             <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "#E01020" }} />
             <EditableText k="footerSignal" fallback="MONSTERS FOREVER" as="span" className="text-white/18 text-xs tracking-widest" />
           </div>
@@ -1694,6 +1708,9 @@ function AuthModal({ locale, mode, onMode, onClose, onAuthenticated }: {
   return <div className="fixed inset-0 z-[100] bg-black/85 grid place-items-center p-5" role="dialog" aria-modal="true" aria-label={t.login}>
     <div className="w-full max-w-lg max-h-[92vh] overflow-auto bg-[#090909] border border-white/15 p-7 shadow-2xl">
       <div className="flex items-center justify-between"><h2 className="text-white font-black text-4xl" style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>JOIN <span className="text-[#E01020]">MONSTIEZ</span></h2><button onClick={onClose} className="text-white/50 hover:text-white text-2xl" aria-label={t.close}>×</button></div>
+      <p className="text-white/42 text-xs leading-relaxed mt-4">
+        Monstiez 是 BABYMONSTER 粉絲交流、留言與內容瀏覽平台。Google 登入只用於快速建立或登入 Monstiez 帳號，並提供與帳號相關的社群功能。
+      </p>
       <div className="grid grid-cols-2 border-b border-white/10 my-6"><button onClick={() => onMode("login")} className={`py-3 text-sm ${mode === "login" ? "text-white border-b-2 border-red-600" : "text-white/35"}`}>{t.loginTab}</button><button onClick={() => onMode("register")} className={`py-3 text-sm ${mode === "register" ? "text-white border-b-2 border-red-600" : "text-white/35"}`}>{t.registerTab}</button></div>
       <div className="grid grid-cols-2 gap-2"><button onClick={() => void oauth("google")} className="min-h-11 border border-white/15 p-3 text-center text-white/60 text-xs">Google</button><button onClick={() => void oauth("kakao")} className="min-h-11 border border-white/15 p-3 text-center text-white/60 text-xs">KakaoTalk</button></div>
       <div className="text-center text-white/25 text-xs my-5">— {t.orEmail} —</div>
@@ -1742,7 +1759,7 @@ export default function App() {
 
   useEffect(() => {
     const tagline = contentText(siteContent.siteTagline, DEFAULT_SITE_CONTENT.siteTagline);
-    const nextTitle = "Monstiez";
+    const nextTitle = OFFICIAL_BRAND_NAME;
     document.title = nextTitle;
     localStorage.removeItem("babymonster-site-title");
     localStorage.setItem("monstiez-site-title", nextTitle);
