@@ -196,6 +196,10 @@ function normalizeInstagramPosts(value: unknown) {
   return Array.from(new Set(value.map(normalizeInstagramUrl).filter(Boolean)));
 }
 
+function instagramEmbedUrl(url: string) {
+  return `${url}embed/captioned/`;
+}
+
 type InlineEditContextValue = {
   editing: boolean;
   locale: Locale;
@@ -846,24 +850,6 @@ function InstagramSignalSection({ locale, content }: { locale: Locale; content: 
   const posts = normalizeInstagramPosts(content.instagramPosts);
   const f = fixedMessages[locale];
 
-  useEffect(() => {
-    if (!posts.length) return;
-    const processEmbeds = () => {
-      (window as Window & { instgrm?: { Embeds?: { process?: () => void } } }).instgrm?.Embeds?.process?.();
-    };
-    const src = "https://www.instagram.com/embed.js";
-    const existing = document.querySelector<HTMLScriptElement>(`script[src="${src}"]`);
-    if (existing) {
-      window.requestAnimationFrame(() => window.setTimeout(processEmbeds, 80));
-      return;
-    }
-    const script = document.createElement("script");
-    script.src = src;
-    script.async = true;
-    script.onload = processEmbeds;
-    document.body.appendChild(script);
-  }, [posts.join("|")]);
-
   if (!posts.length) return null;
 
   return (
@@ -889,14 +875,13 @@ function InstagramSignalSection({ locale, content }: { locale: Locale; content: 
               </div>
               <div className="relative min-h-[440px] overflow-hidden bg-neutral-950">
                 <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-px bg-red-600/70 opacity-0 transition-opacity group-hover:opacity-100" />
-                <blockquote
-                  className="instagram-media"
-                  data-instgrm-permalink={url}
-                  data-instgrm-version="14"
-                  style={{ background: "#0a0a0a", border: 0, margin: 0, minWidth: 0, width: "100%" }}
-                >
-                  <a href={url} target="_blank" rel="noreferrer">{f.openInstagramPost}</a>
-                </blockquote>
+                <iframe
+                  title={`Instagram official post ${index + 1}`}
+                  src={instagramEmbedUrl(url)}
+                  className="h-[540px] w-full border-0 bg-black"
+                  loading="lazy"
+                  allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+                />
               </div>
               <a href={url} target="_blank" rel="noreferrer"
                 className="mt-4 inline-block text-red-300/80 hover:text-red-200 text-xs tracking-[0.25em] uppercase">

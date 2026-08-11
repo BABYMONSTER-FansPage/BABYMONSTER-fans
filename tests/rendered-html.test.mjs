@@ -53,11 +53,12 @@ test("bundles six static languages and translates fan posts only", async () => {
   assert.match(page, /customSections/);
   assert.match(client, /instagramPosts\?: string\[\]/);
   assert.match(page, /InstagramSignalSection/);
-  assert.match(page, /instagram\.com\/embed\.js/);
-  assert.match(page, /data-instgrm-permalink/);
+  assert.match(page, /instagramEmbedUrl/);
+  assert.match(page, /embed\/captioned\//);
+  assert.match(page, /<iframe/);
   assert.match(page, /normalizeInstagramUrl/);
-  assert.match(page, /requestAnimationFrame/);
-  assert.match(page, /<a href=\{url\} target="_blank" rel="noreferrer">\{f\.openInstagramPost\}<\/a>/);
+  assert.doesNotMatch(page, /instagram\.com\/embed\.js/);
+  assert.doesNotMatch(page, /data-instgrm-permalink/);
   assert.match(page, /\/share\/ 短連結無法直接嵌入/);
   assert.match(page, /normalizeInstagramPosts/);
   assert.match(page, /新增 IG URL/);
