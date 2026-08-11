@@ -1346,7 +1346,7 @@ function OpeningLoader() {
     className="fixed inset-0 z-[200] bg-black overflow-hidden grid place-items-center"
     role="status"
     aria-live="polite"
-    aria-label="Loading BABYMONSTER fan site">
+    aria-label="Loading Monstiez fan site">
     <div className="absolute inset-0">
       <motion.div
         className="absolute left-0 right-0 top-1/2 h-px bg-[#E01020]"
@@ -1376,7 +1376,7 @@ function OpeningLoader() {
           transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
           className="text-white font-black leading-[0.82]"
           style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: "clamp(3.8rem, 14vw, 12rem)" }}>
-          BABYMONSTER
+          Monstiez
         </motion.h1>
       </div>
       <div className="mt-9 h-1 w-56 mx-auto bg-white/10 overflow-hidden">

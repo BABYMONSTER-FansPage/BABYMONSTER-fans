@@ -55,6 +55,9 @@ test("bundles six static languages and translates fan posts only", async () => {
   assert.match(page, /應用程式用途是讓粉絲使用 Google/);
   assert.match(page, /MON<span style=\{\{ color: "#E01020" \}\}>STIEZ<\/span>/);
   assert.match(page, /Google 登入僅用於建立與辨識你的粉絲帳號/);
+  assert.match(page, /aria-label="Loading Monstiez fan site"/);
+  assert.match(page, />\s*Monstiez\s*<\/motion\.h1>/);
+  assert.doesNotMatch(page, /Loading BABYMONSTER fan site/);
   assert.doesNotMatch(page, /\{messages\[locale\]\.streamsLabel\}<\/div>/);
   assert.match(page, /fetchSpotifyReleaseStatus/);
   assert.match(page, /Spotify 專輯資料暫時沒有載入/);
