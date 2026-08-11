@@ -19,6 +19,13 @@ test("builds a GitHub Pages entry for babymonster.fans", async () => {
   assert.equal(cname.trim(), "babymonster.fans");
   assert.match(robots, /Sitemap: https:\/\/babymonster\.fans\/sitemap\.xml/);
   assert.match(sitemap, /<loc>https:\/\/babymonster\.fans\/<\/loc>/);
+  assert.match(sitemap, /<loc>https:\/\/babymonster\.fans\/#purpose<\/loc>/);
+  assert.match(sitemap, /<loc>https:\/\/babymonster\.fans\/#members<\/loc>/);
+  assert.match(sitemap, /<loc>https:\/\/babymonster\.fans\/#music<\/loc>/);
+  assert.match(sitemap, /<loc>https:\/\/babymonster\.fans\/#events<\/loc>/);
+  assert.match(sitemap, /<loc>https:\/\/babymonster\.fans\/#community<\/loc>/);
+  assert.match(sitemap, /<loc>https:\/\/babymonster\.fans\/privacy\.html<\/loc>/);
+  assert.match(sitemap, /<loc>https:\/\/babymonster\.fans\/terms\.html<\/loc>/);
   assert.match(workflow, /actions\/deploy-pages@v4/);
   assert.match(workflow, /VITE_SUPABASE_PUBLISHABLE_KEY/);
 });
