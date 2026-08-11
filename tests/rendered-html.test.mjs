@@ -69,6 +69,9 @@ test("bundles six static languages and translates fan posts only", async () => {
   assert.doesNotMatch(page, /\{messages\[locale\]\.streamsLabel\}<\/div>/);
   assert.match(page, /fetchSpotifyReleaseStatus/);
   assert.match(page, /Spotify 專輯資料暫時沒有載入/);
+  assert.match(page, /normalizeTrackNames/);
+  assert.match(page, /顯示全部歌曲/);
+  assert.doesNotMatch(page, /tracks\.length\s*\+\s*["'`]\s*tracks/i);
   assert.match(page, /AllPostsModal/);
   assert.match(page, /updateFanNickname/);
   assert.match(page, /useScroll/); assert.match(page, /useTransform/);

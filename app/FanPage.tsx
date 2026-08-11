@@ -160,6 +160,18 @@ function contentUrl(value: unknown, fallback: string) {
   return typeof value === "string" && /^https?:\/\//.test(value.trim()) ? value.trim() : fallback;
 }
 
+function normalizeTrackNames(value: unknown) {
+  const normalize = (item: unknown) => {
+    if (typeof item === "string") return item.trim();
+    if (item && typeof item === "object" && "name" in item) return String((item as { name?: unknown }).name || "").trim();
+    return "";
+  };
+
+  if (Array.isArray(value)) return value.map(normalize).filter(Boolean);
+  if (typeof value === "string") return value.split(/[,;\n]/).map(item => item.trim()).filter(Boolean);
+  return [];
+}
+
 type InlineEditContextValue = {
   editing: boolean;
   text: (key: string, fallback?: string) => string;
@@ -766,6 +778,9 @@ function MembersSection({ locale, content }: { locale: Locale; content: SiteCont
 
 function AlbumCard({ album, index, isVisible }: { album: SpotifyRelease; index: number; isVisible: boolean }) {
   const [expanded, setExpanded] = useState(false);
+  const trackNames = normalizeTrackNames(album.tracks);
+  const visibleTracks = expanded ? trackNames : trackNames.slice(0, 5);
+  const hasMoreTracks = trackNames.length > visibleTracks.length;
 
   return (
     <motion.div
@@ -798,19 +813,27 @@ function AlbumCard({ album, index, isVisible }: { album: SpotifyRelease; index: 
       <EditableText k={`album.${album.id}.lead`} fallback="" as="div" className="text-white/40 text-sm leading-relaxed" />
 
       {/* Track list */}
-      {expanded && (
-        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}
-          className="mt-5 border-t border-white/8 pt-4 overflow-hidden">
-          {album.tracks.map((t, ti) => (
-            <div key={t} className="flex items-center gap-3 py-2 text-white/45 hover:text-white transition-colors duration-200 group/t">
+      <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}
+        className="mt-5 border-t border-white/8 pt-4 overflow-hidden">
+        {visibleTracks.length > 0 ? (
+          visibleTracks.map((trackName, ti) => (
+            <div key={`${trackName}-${ti}`} className="flex items-center gap-3 py-2 text-white/45 hover:text-white transition-colors duration-200 group/t">
               <span className="text-xs text-white/20 w-4 text-right shrink-0">{ti + 1}</span>
               <Music size={11} style={{ color: "#E01020", opacity: 0.6 }} />
-              <span className="text-sm tracking-wide flex-1">{t}</span>
+              <span className="text-sm tracking-wide flex-1">{trackName}</span>
               <Play size={11} className="text-red-600 opacity-0 group-hover/t:opacity-100 transition-opacity shrink-0" />
             </div>
-          ))}
-        </motion.div>
-      )}
+          ))
+        ) : (
+          <p className="text-white/28 text-sm leading-relaxed">曲目資料尚未提供，可從 Spotify 匯入或在後台手動新增歌曲名稱。</p>
+        )}
+        {hasMoreTracks && (
+          <button type="button" onClick={(event) => { event.stopPropagation(); setExpanded(true); }}
+            className="mt-3 text-red-300/75 hover:text-red-200 text-xs tracking-[0.2em] uppercase">
+            顯示全部歌曲
+          </button>
+        )}
+      </motion.div>
     </motion.div>
   );
 }
