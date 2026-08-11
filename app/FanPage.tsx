@@ -143,12 +143,13 @@ const EVENTS: EditableEvent[] = [
   },
 ];
 
-const DEFAULT_SITE_CONTENT: Required<Pick<SiteContent, "siteName" | "siteTagline">> = {
-  siteName: "Monstiez",
+const DEFAULT_SITE_CONTENT: Required<Pick<SiteContent, "siteTagline">> = {
   siteTagline: "",
 };
 
 const OFFICIAL_BRAND_NAME = "Monstiez";
+const SITE_BROWSER_TITLE = "Monstiez｜BABYMONSTER Fans Club";
+const FIXED_FAVICON_URL = "/favicon.svg";
 const PRIVACY_POLICY_URL = "https://babymonster.fans/privacy.html";
 const TERMS_OF_SERVICE_URL = "https://babymonster.fans/terms.html";
 
@@ -1410,7 +1411,8 @@ function OpeningLoader() {
 function AdminPanel({ content, onSaved, onClose }: { content: SiteContent; onSaved: (content: SiteContent) => void; onClose: () => void }) {
   const [draft, setDraft] = useState<SiteContent>(() => ({
     ...content,
-    siteName: contentText(content.siteName, DEFAULT_SITE_CONTENT.siteName),
+    siteName: OFFICIAL_BRAND_NAME,
+    faviconUrl: FIXED_FAVICON_URL,
     siteTagline: contentText(content.siteTagline, DEFAULT_SITE_CONTENT.siteTagline),
     memberPhotos: { ...(content.memberPhotos || {}) },
     uiText: { ...(content.uiText || {}) },
@@ -1497,8 +1499,9 @@ function AdminPanel({ content, onSaved, onClose }: { content: SiteContent; onSav
     event.preventDefault();
     setFeedback("Saving...");
     try {
-      await saveSiteContent(draft);
-      onSaved(draft);
+      const { siteName: _siteName, faviconUrl: _faviconUrl, ...editableDraft } = draft;
+      await saveSiteContent(editableDraft);
+      onSaved({ ...editableDraft, siteName: OFFICIAL_BRAND_NAME, faviconUrl: FIXED_FAVICON_URL });
       setFeedback("Saved. Public pages will use the new content immediately.");
     } catch (error) {
       setFeedback(error instanceof Error && error.message !== "SUPABASE_NOT_CONFIGURED" ? error.message : "Supabase is not configured or your account is not admin.");
@@ -1523,11 +1526,11 @@ function AdminPanel({ content, onSaved, onClose }: { content: SiteContent; onSav
 
       <div className="grid gap-8">
         <section className="border-t border-white/8 pt-6">
-          <h3 className="text-white font-bold mb-4">網站名稱與 Icon</h3>
+          <h3 className="text-white font-bold mb-4">網站資訊</h3>
           <div className="grid md:grid-cols-2 gap-4">
-            <label className={labelClass}>網站名稱<input value={draft.siteName || ""} onChange={e => update("siteName", e.target.value)} className={inputClass} /></label>
+            <div className={labelClass}>網站名稱<div className="mt-2 border border-white/10 bg-white/[0.025] p-3 text-white/40 text-sm">Monstiez（固定）</div></div>
             <label className={labelClass}>網站短標語<input value={draft.siteTagline || ""} onChange={e => update("siteTagline", e.target.value)} className={inputClass} /></label>
-            <label className={labelClass}>Favicon / icon URL<input value={draft.faviconUrl || ""} onChange={e => update("faviconUrl", e.target.value)} placeholder="https://..." className={inputClass} /></label>
+            <div className={labelClass}>Favicon / icon<div className="mt-2 border border-white/10 bg-white/[0.025] p-3 text-white/40 text-sm">/favicon.svg（固定）</div></div>
             <label className={labelClass}>社群分享圖片 URL<input value={draft.ogImageUrl || ""} onChange={e => update("ogImageUrl", e.target.value)} placeholder="https://..." className={inputClass} /></label>
           </div>
         </section>
@@ -1751,18 +1754,17 @@ export default function App() {
 
   useEffect(() => {
     const tagline = contentText(siteContent.siteTagline, DEFAULT_SITE_CONTENT.siteTagline);
-    const nextTitle = "Monstiez｜BABYMONSTER Fans Club";
+    const nextTitle = SITE_BROWSER_TITLE;
     document.title = nextTitle;
     localStorage.removeItem("babymonster-site-title");
     localStorage.setItem("monstiez-site-title", nextTitle);
-    const faviconUrl = contentUrl(siteContent.faviconUrl, "/favicon.svg");
     let icon = document.querySelector<HTMLLinkElement>("link[rel='icon']");
     if (!icon) {
       icon = document.createElement("link");
       icon.rel = "icon";
       document.head.appendChild(icon);
     }
-    icon.href = faviconUrl;
+    icon.href = FIXED_FAVICON_URL;
     const description = document.querySelector<HTMLMetaElement>("meta[name='description']");
     if (description) description.content = tagline;
     const ogImage = document.querySelector<HTMLMetaElement>("meta[property='og:image']");

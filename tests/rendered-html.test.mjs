@@ -52,6 +52,12 @@ test("bundles six static languages and translates fan posts only", async () => {
   assert.match(page, /InlineEditContext/);
   assert.match(page, /customSections/);
   assert.match(page, /OFFICIAL_BRAND_NAME = "Monstiez"/);
+  assert.match(page, /SITE_BROWSER_TITLE = "Monstiez｜BABYMONSTER Fans Club"/);
+  assert.match(page, /FIXED_FAVICON_URL = "\/favicon\.svg"/);
+  assert.match(page, /Monstiez（固定）/);
+  assert.match(page, /\/favicon\.svg（固定）/);
+  assert.doesNotMatch(page, /update\("siteName"/);
+  assert.doesNotMatch(page, /update\("faviconUrl"/);
   assert.match(page, /<h2 id="official-app-name"/);
   assert.match(page, /Official app name/);
   assert.match(page, /Monstiez 是提供 BABYMONSTER 粉絲交流、留言與內容瀏覽的粉絲社群平台/);
