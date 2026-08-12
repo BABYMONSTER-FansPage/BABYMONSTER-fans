@@ -1,11 +1,9 @@
 import { env } from "cloudflare:workers";
 import { NextResponse } from "next/server";
 
-type Provider = "google" | "kakao" | "wechat";
+type Provider = "google";
 const names: Record<Provider, { id: string; authorize: string; scope: string }> = {
   google: { id: "GOOGLE_CLIENT_ID", authorize: "https://accounts.google.com/o/oauth2/v2/auth", scope: "openid email profile" },
-  kakao: { id: "KAKAO_CLIENT_ID", authorize: "https://kauth.kakao.com/oauth/authorize", scope: "profile_nickname account_email" },
-  wechat: { id: "WECHAT_CLIENT_ID", authorize: "https://open.weixin.qq.com/connect/qrconnect", scope: "snsapi_login" },
 };
 
 function randomState() {
@@ -23,12 +21,7 @@ export async function GET(request: Request) {
   const state = randomState();
   const callback = `${url.origin}/api/auth/oauth/callback?provider=${provider}`;
   const target = new URL(config.authorize);
-  if (provider === "wechat") {
-    target.search = new URLSearchParams({ appid: clientId, redirect_uri: callback, response_type: "code", scope: config.scope, state }).toString();
-    target.hash = "wechat_redirect";
-  } else {
-    target.search = new URLSearchParams({ client_id: clientId, redirect_uri: callback, response_type: "code", scope: config.scope, state }).toString();
-  }
+  target.search = new URLSearchParams({ client_id: clientId, redirect_uri: callback, response_type: "code", scope: config.scope, state }).toString();
   const response = NextResponse.redirect(target);
   response.headers.set("set-cookie", `monstiez_oauth=${provider}.${state}; Path=/; HttpOnly; SameSite=Lax; Max-Age=600${url.protocol === "https:" ? "; Secure" : ""}`);
   return response;

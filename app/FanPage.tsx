@@ -1851,7 +1851,7 @@ function AuthModal({ locale, mode, onMode, onClose, onAuthenticated }: {
     try { await requestPasswordReset(email); setFeedback(authCopy.resetSent); }
     catch (error) { setFeedback(error instanceof Error ? error.message : t.genericError); }
   }
-  async function oauth(provider: "google" | "kakao") {
+  async function oauth(provider: "google") {
     setFeedback("");
     try { await socialAuth(provider); } catch (error) { setFeedback(error instanceof Error ? error.message : t.genericError); }
   }
@@ -1868,7 +1868,7 @@ function AuthModal({ locale, mode, onMode, onClose, onAuthenticated }: {
         <button type="submit" className="p-4 bg-[#E01020] text-white text-xs tracking-[.2em] uppercase">{authCopy.send}</button>
         <button type="button" onClick={() => { setForgotPassword(false); setFeedback(""); }} className="text-xs text-white/45 hover:text-white">{authCopy.back}</button>
       </form> : <>
-      <div className="grid grid-cols-2 gap-2"><button onClick={() => void oauth("google")} className="min-h-11 border border-white/15 p-3 text-center text-white/60 text-xs">Google</button><button onClick={() => void oauth("kakao")} className="min-h-11 border border-white/15 p-3 text-center text-white/60 text-xs">KakaoTalk</button></div>
+      <button onClick={() => void oauth("google")} className="w-full min-h-11 border border-white/15 p-3 text-center text-white/60 text-xs">Google</button>
       <div className="text-center text-white/25 text-xs my-5">— {t.orEmail} —</div>
       <form onSubmit={submit} className="grid gap-4">
         {mode === "register" && <label className="text-white/45 text-xs">{t.nickname}<input name="nickname" required minLength={2} maxLength={24} className="block w-full mt-2 p-3 bg-black border border-white/15 text-white focus:outline-none focus:border-red-600/60" /></label>}

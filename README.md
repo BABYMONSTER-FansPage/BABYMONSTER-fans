@@ -39,7 +39,7 @@ npm run build
    - Site URL：`https://babymonster.fans`
    - Redirect URL：`https://babymonster.fans/**`
    - 開發用 Redirect URL：`http://localhost:5173/**`
-5. 啟用 Email、Google 與 Kakao 登入。
+5. 啟用 Email 與 Google 登入。
 
 前端只需要可公開的設定：
 

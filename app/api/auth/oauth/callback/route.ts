@@ -2,7 +2,7 @@ import { env } from "cloudflare:workers";
 import { NextResponse } from "next/server";
 import { createSession, findOrCreateOAuthUser, sessionCookie } from "../../../_lib/database";
 
-type Provider = "google" | "kakao" | "wechat";
+type Provider = "google";
 
 function readCookie(request: Request, name: string) {
   const pair = (request.headers.get("cookie") || "").split(";").map(v => v.trim()).find(v => v.startsWith(`${name}=`));
@@ -16,18 +16,7 @@ async function exchange(provider: Provider, code: string, redirectUri: string) {
     const profile = await fetch("https://openidconnect.googleapis.com/v1/userinfo", { headers: { authorization: `Bearer ${token.access_token}` } }).then(r => r.json()) as { sub: string; email?: string; name?: string };
     return { id: profile.sub, email: profile.email || null, nickname: profile.name || "Google MONSTIEZ" };
   }
-  if (provider === "kakao") {
-    const token = await fetch("https://kauth.kakao.com/oauth/token", { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ grant_type: "authorization_code", client_id: runtime.KAKAO_CLIENT_ID!, client_secret: runtime.KAKAO_CLIENT_SECRET || "", redirect_uri: redirectUri, code }) }).then(r => r.json()) as { access_token?: string };
-    const profile = await fetch("https://kapi.kakao.com/v2/user/me", { headers: { authorization: `Bearer ${token.access_token}` } }).then(r => r.json()) as { id: number; kakao_account?: { email?: string; profile?: { nickname?: string } } };
-    return { id: String(profile.id), email: profile.kakao_account?.email || null, nickname: profile.kakao_account?.profile?.nickname || "Kakao MONSTIEZ" };
-  }
-  const tokenUrl = new URL("https://api.weixin.qq.com/sns/oauth2/access_token");
-  tokenUrl.search = new URLSearchParams({ appid: runtime.WECHAT_CLIENT_ID!, secret: runtime.WECHAT_CLIENT_SECRET!, code, grant_type: "authorization_code" }).toString();
-  const token = await fetch(tokenUrl).then(r => r.json()) as { access_token: string; openid: string };
-  const profileUrl = new URL("https://api.weixin.qq.com/sns/userinfo");
-  profileUrl.search = new URLSearchParams({ access_token: token.access_token, openid: token.openid, lang: "zh_TW" }).toString();
-  const profile = await fetch(profileUrl).then(r => r.json()) as { openid: string; nickname?: string };
-  return { id: profile.openid, email: null, nickname: profile.nickname || "WeChat MONSTIEZ" };
+  throw new Error("Provider is not supported");
 }
 
 export async function GET(request: Request) {
@@ -35,7 +24,7 @@ export async function GET(request: Request) {
   const provider = url.searchParams.get("provider") as Provider;
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state");
-  if (!code || !state || !["google", "kakao", "wechat"].includes(provider) || readCookie(request, "monstiez_oauth") !== `${provider}.${state}`) return NextResponse.redirect(new URL("/?auth=invalid", url.origin));
+  if (!code || !state || provider !== "google" || readCookie(request, "monstiez_oauth") !== `${provider}.${state}`) return NextResponse.redirect(new URL("/?auth=invalid", url.origin));
   try {
     const redirectUri = `${url.origin}/api/auth/oauth/callback?provider=${provider}`;
     const profile = await exchange(provider, code, redirectUri);

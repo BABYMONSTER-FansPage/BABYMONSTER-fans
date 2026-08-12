@@ -144,7 +144,7 @@ export function observePasswordRecovery(callback: () => void) {
   return () => data.subscription.unsubscribe();
 }
 
-export async function socialAuth(provider: "google" | "kakao") {
+export async function socialAuth(provider: "google") {
   const client = supabaseClient();
   if (!client) throw new Error("SUPABASE_NOT_CONFIGURED");
   const providerId = provider as Provider;
