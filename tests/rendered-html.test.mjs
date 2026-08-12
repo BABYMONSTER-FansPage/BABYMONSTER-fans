@@ -89,6 +89,13 @@ test("bundles six static languages and translates fan posts only", async () => {
   assert.match(page, /saveInstagramPostsOnly/);
   assert.match(page, /saveSiteContent\(\{ instagramPosts: posts \}\)/);
   assert.match(page, /OFFICIAL_BRAND_NAME = "Monstiez"/);
+  assert.match(client, /emailRedirectTo/);
+  assert.match(client, /resetPasswordForEmail/);
+  assert.match(client, /PASSWORD_RECOVERY/);
+  assert.match(client, /updateUser\(\{ password \}\)/);
+  assert.match(page, /ResetPasswordModal/);
+  assert.match(page, /忘記密碼/);
+  assert.match(page, /needsEmailConfirmation/);
   assert.match(tourMigration, /choom-hong-kong-2027/);
   assert.match(page, /SITE_BROWSER_TITLE = "Monstiez｜BABYMONSTER Fans Club"/);
   assert.match(page, /FIXED_FAVICON_URL = "\/favicon\.svg"/);

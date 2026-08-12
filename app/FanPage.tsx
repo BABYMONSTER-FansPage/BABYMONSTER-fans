@@ -10,7 +10,7 @@ import { fixedMessages, getInitialLocale, localeLabels, messages, supportedLocal
 import {
   createFanPost, currentFanUser, deleteFanPost, editFanPost, emailAuth, listFanPosts,
   fetchSpotifyReleaseStatus, listAnnouncements, loadSiteContent, moderateFanPost, observeFanUser, reportFanPost,
-  saveSiteContent, signOutFan, socialAuth, toggleFanLike, translateFanPost, updateFanNickname,
+  observePasswordRecovery, requestPasswordReset, saveSiteContent, signOutFan, socialAuth, toggleFanLike, translateFanPost, updateFanNickname, updateFanPassword,
   type EditableEvent, type FanPost as ApiPost, type FanUser as User, type SiteContent, type SpotifyRelease,
 } from "./lib/supabase-browser";
 
@@ -1825,16 +1825,31 @@ function AuthModal({ locale, mode, onMode, onClose, onAuthenticated }: {
   onClose: () => void; onAuthenticated: (user: User) => void;
 }) {
   const [feedback, setFeedback] = useState("");
+  const [forgotPassword, setForgotPassword] = useState(false);
   const t = messages[locale];
   const f = fixedMessages[locale];
+  const authCopy = {
+    "zh-TW": { verify: "驗證信已寄出，請到信箱點擊連結後再登入。", forgot: "忘記密碼？", resetTitle: "重設密碼", resetSent: "重設密碼信已寄出，請查看信箱。", send: "寄送重設連結", back: "返回登入" },
+    "zh-CN": { verify: "验证邮件已发送，请点击邮件中的链接后再登录。", forgot: "忘记密码？", resetTitle: "重设密码", resetSent: "重设密码邮件已发送。", send: "发送重设链接", back: "返回登录" },
+    th: { verify: "ส่งอีเมลยืนยันแล้ว โปรดกดลิงก์ในอีเมลก่อนเข้าสู่ระบบ", forgot: "ลืมรหัสผ่าน?", resetTitle: "รีเซ็ตรหัสผ่าน", resetSent: "ส่งอีเมลรีเซ็ตรหัสผ่านแล้ว", send: "ส่งลิงก์รีเซ็ต", back: "กลับไปเข้าสู่ระบบ" },
+    en: { verify: "Verification email sent. Open the link in your inbox before signing in.", forgot: "Forgot password?", resetTitle: "Reset password", resetSent: "Password reset email sent.", send: "Send reset link", back: "Back to sign in" },
+    ko: { verify: "인증 메일을 보냈습니다. 메일의 링크를 연 후 로그인하세요.", forgot: "비밀번호를 잊으셨나요?", resetTitle: "비밀번호 재설정", resetSent: "비밀번호 재설정 메일을 보냈습니다.", send: "재설정 링크 보내기", back: "로그인으로 돌아가기" },
+    ja: { verify: "確認メールを送信しました。メール内のリンクを開いてからログインしてください。", forgot: "パスワードを忘れた場合", resetTitle: "パスワードを再設定", resetSent: "再設定メールを送信しました。", send: "再設定リンクを送る", back: "ログインに戻る" },
+  }[locale];
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setFeedback("");
     const payload = Object.fromEntries(new FormData(event.currentTarget).entries());
     try {
-      const user = await emailAuth(mode, String(payload.email || ""), String(payload.password || ""), String(payload.nickname || ""));
-      if (user) { onAuthenticated(user); onClose(); }
-      else setFeedback(t.successLogin);
+      const result = await emailAuth(mode, String(payload.email || ""), String(payload.password || ""), String(payload.nickname || ""));
+      if (result.user) { onAuthenticated(result.user); onClose(); }
+      else if (result.needsEmailConfirmation) setFeedback(authCopy.verify);
     } catch (error) { setFeedback(error instanceof Error && error.message !== "SUPABASE_NOT_CONFIGURED" ? error.message : t.genericError); }
+  }
+  async function sendReset(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault(); setFeedback("");
+    const email = String(new FormData(event.currentTarget).get("email") || "");
+    try { await requestPasswordReset(email); setFeedback(authCopy.resetSent); }
+    catch (error) { setFeedback(error instanceof Error ? error.message : t.genericError); }
   }
   async function oauth(provider: "google" | "kakao") {
     setFeedback("");
@@ -1846,7 +1861,13 @@ function AuthModal({ locale, mode, onMode, onClose, onAuthenticated }: {
       <p className="text-white/42 text-xs leading-relaxed mt-4">
         {f.authPurpose}
       </p>
-      <div className="grid grid-cols-2 border-b border-white/10 my-6"><button onClick={() => onMode("login")} className={`py-3 text-sm ${mode === "login" ? "text-white border-b-2 border-red-600" : "text-white/35"}`}>{t.loginTab}</button><button onClick={() => onMode("register")} className={`py-3 text-sm ${mode === "register" ? "text-white border-b-2 border-red-600" : "text-white/35"}`}>{t.registerTab}</button></div>
+      {!forgotPassword && <div className="grid grid-cols-2 border-b border-white/10 my-6"><button onClick={() => onMode("login")} className={`py-3 text-sm ${mode === "login" ? "text-white border-b-2 border-red-600" : "text-white/35"}`}>{t.loginTab}</button><button onClick={() => onMode("register")} className={`py-3 text-sm ${mode === "register" ? "text-white border-b-2 border-red-600" : "text-white/35"}`}>{t.registerTab}</button></div>}
+      {forgotPassword ? <form onSubmit={sendReset} className="mt-6 grid gap-4">
+        <h3 className="text-2xl font-black text-white">{authCopy.resetTitle}</h3>
+        <label className="text-white/45 text-xs">{t.email}<input name="email" type="email" required className="block w-full mt-2 p-3 bg-black border border-white/15 text-white focus:outline-none focus:border-red-600/60" /></label>
+        <button type="submit" className="p-4 bg-[#E01020] text-white text-xs tracking-[.2em] uppercase">{authCopy.send}</button>
+        <button type="button" onClick={() => { setForgotPassword(false); setFeedback(""); }} className="text-xs text-white/45 hover:text-white">{authCopy.back}</button>
+      </form> : <>
       <div className="grid grid-cols-2 gap-2"><button onClick={() => void oauth("google")} className="min-h-11 border border-white/15 p-3 text-center text-white/60 text-xs">Google</button><button onClick={() => void oauth("kakao")} className="min-h-11 border border-white/15 p-3 text-center text-white/60 text-xs">KakaoTalk</button></div>
       <div className="text-center text-white/25 text-xs my-5">— {t.orEmail} —</div>
       <form onSubmit={submit} className="grid gap-4">
@@ -1855,8 +1876,45 @@ function AuthModal({ locale, mode, onMode, onClose, onAuthenticated }: {
         <label className="text-white/45 text-xs">{t.password}<input name="password" type="password" required minLength={10} className="block w-full mt-2 p-3 bg-black border border-white/15 text-white focus:outline-none focus:border-red-600/60" /></label>
         <button type="submit" className="p-4 bg-[#E01020] text-white text-xs tracking-[.2em] uppercase">{mode === "register" ? t.createAccount : t.loginBoard}</button>
       </form>
+      {mode === "login" && <button type="button" onClick={() => { setForgotPassword(true); setFeedback(""); }} className="mt-4 text-xs text-red-300/75 hover:text-red-200">{authCopy.forgot}</button>}
+      </>}
       {feedback && <p className="text-red-400 text-xs mt-4">{feedback}</p>}
     </div>
+  </div>;
+}
+
+function ResetPasswordModal({ locale, onClose }: { locale: Locale; onClose: () => void }) {
+  const [feedback, setFeedback] = useState("");
+  const t = messages[locale];
+  const copy = {
+    "zh-TW": { title: "設定新密碼", save: "更新密碼", success: "密碼已更新，可以使用新密碼登入。", mismatch: "兩次密碼不一致。", confirm: "再次輸入密碼" },
+    "zh-CN": { title: "设置新密码", save: "更新密码", success: "密码已更新。", mismatch: "两次密码不一致。", confirm: "再次输入密码" },
+    th: { title: "ตั้งรหัสผ่านใหม่", save: "อัปเดตรหัสผ่าน", success: "อัปเดตรหัสผ่านแล้ว", mismatch: "รหัสผ่านไม่ตรงกัน", confirm: "ยืนยันรหัสผ่าน" },
+    en: { title: "Set new password", save: "Update password", success: "Password updated. You can now sign in.", mismatch: "Passwords do not match.", confirm: "Confirm password" },
+    ko: { title: "새 비밀번호 설정", save: "비밀번호 변경", success: "비밀번호가 변경되었습니다.", mismatch: "비밀번호가 일치하지 않습니다.", confirm: "비밀번호 확인" },
+    ja: { title: "新しいパスワード", save: "パスワードを更新", success: "パスワードを更新しました。", mismatch: "パスワードが一致しません。", confirm: "パスワードを再入力" },
+  }[locale];
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault(); setFeedback("");
+    const payload = Object.fromEntries(new FormData(event.currentTarget).entries());
+    if (payload.password !== payload.confirmPassword) { setFeedback(copy.mismatch); return; }
+    try {
+      await updateFanPassword(String(payload.password || ""));
+      window.history.replaceState({}, "", window.location.pathname);
+      setFeedback(copy.success);
+      window.setTimeout(onClose, 1400);
+    } catch (error) { setFeedback(error instanceof Error ? error.message : t.genericError); }
+  }
+  return <div className="fixed inset-0 z-[125] grid place-items-center bg-black/90 p-5" role="dialog" aria-modal="true" aria-label={copy.title}>
+    <form onSubmit={submit} className="w-full max-w-md border border-white/15 bg-[#090909] p-7 shadow-2xl">
+      <div className="mb-6 flex justify-between gap-4"><h2 className="text-4xl font-black text-white">{copy.title}</h2><button type="button" onClick={onClose} className="text-2xl text-white/50">×</button></div>
+      <div className="grid gap-4">
+        <label className="text-xs text-white/45">{t.password}<input name="password" type="password" required minLength={10} className="mt-2 block w-full border border-white/15 bg-black p-3 text-white" /></label>
+        <label className="text-xs text-white/45">{copy.confirm}<input name="confirmPassword" type="password" required minLength={10} className="mt-2 block w-full border border-white/15 bg-black p-3 text-white" /></label>
+        <button type="submit" className="bg-[#E01020] p-4 text-xs uppercase tracking-[.2em] text-white">{copy.save}</button>
+      </div>
+      {feedback && <p className="mt-4 text-xs text-red-400">{feedback}</p>}
+    </form>
   </div>;
 }
 
@@ -1865,6 +1923,7 @@ export default function App() {
   const [locale, setLocale] = useState<Locale>("zh-TW");
   const [authOpen, setAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState<"login" | "register">("login");
+  const [passwordRecoveryOpen, setPasswordRecoveryOpen] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
   const [siteContent, setSiteContent] = useState<SiteContent>({});
   const [booting, setBooting] = useState(true);
@@ -1890,6 +1949,11 @@ export default function App() {
       });
     const unsubscribe = observeFanUser(value => { if (active) setUser(value); });
     return () => { active = false; unsubscribe(); };
+  }, []);
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("mode") === "reset-password") setPasswordRecoveryOpen(true);
+    return observePasswordRecovery(() => setPasswordRecoveryOpen(true));
   }, []);
 
   useEffect(() => {
@@ -1998,6 +2062,7 @@ export default function App() {
       <AppPurposeSection locale={locale} />
       <Footer locale={locale} content={siteContent} />
       {authOpen && <AuthModal locale={locale} mode={authMode} onMode={setAuthMode} onClose={() => setAuthOpen(false)} onAuthenticated={setUser} />}
+      {passwordRecoveryOpen && <ResetPasswordModal locale={locale} onClose={() => setPasswordRecoveryOpen(false)} />}
       {adminOpen && user?.role === "admin" && <AdminPanel content={siteContent} onSaved={setSiteContent} onClose={() => setAdminOpen(false)} />}
       {editMode && user?.role === "admin" && <EditToolbar dirty={dirty} locale={locale} onSave={() => void saveEdits()} onAddSection={addSection} onOpenAdmin={() => setAdminOpen(true)} onStop={() => setEditMode(false)} />}
       {editMode && editFeedback && <div className="fixed left-1/2 -translate-x-1/2 bottom-[calc(8.25rem+env(safe-area-inset-bottom))] z-[121] rounded-full border border-white/12 bg-black/90 px-4 py-2 text-white/55 text-xs shadow-2xl">{editFeedback}</div>}

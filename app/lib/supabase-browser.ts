@@ -98,17 +98,50 @@ export async function emailAuth(mode: "login" | "register", email: string, passw
   const client = supabaseClient();
   if (!client) throw new Error("SUPABASE_NOT_CONFIGURED");
   if (mode === "register") {
-    const { data, error } = await client.auth.signUp({ email, password, options: { data: { nickname } } });
+    const { data, error } = await client.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { nickname },
+        emailRedirectTo: `${window.location.origin}/?auth=confirmed`,
+      },
+    });
     if (error) throw error;
+    if (!data.session) return { user: null, needsEmailConfirmation: true };
     const user = data.user ? await profileFor(data.user) : null;
     writeFanCookie(user);
-    return user;
+    return { user, needsEmailConfirmation: false };
   }
   const { data, error } = await client.auth.signInWithPassword({ email, password });
   if (error) throw error;
   const user = data.user ? await profileFor(data.user) : null;
   writeFanCookie(user);
-  return user;
+  return { user, needsEmailConfirmation: false };
+}
+
+export async function requestPasswordReset(email: string) {
+  const client = supabaseClient();
+  if (!client) throw new Error("SUPABASE_NOT_CONFIGURED");
+  const { error } = await client.auth.resetPasswordForEmail(email, {
+    redirectTo: `${window.location.origin}/?mode=reset-password`,
+  });
+  if (error) throw error;
+}
+
+export async function updateFanPassword(password: string) {
+  const client = supabaseClient();
+  if (!client) throw new Error("SUPABASE_NOT_CONFIGURED");
+  const { error } = await client.auth.updateUser({ password });
+  if (error) throw error;
+}
+
+export function observePasswordRecovery(callback: () => void) {
+  const client = supabaseClient();
+  if (!client) return () => {};
+  const { data } = client.auth.onAuthStateChange(event => {
+    if (event === "PASSWORD_RECOVERY") callback();
+  });
+  return () => data.subscription.unsubscribe();
 }
 
 export async function socialAuth(provider: "google" | "kakao") {
