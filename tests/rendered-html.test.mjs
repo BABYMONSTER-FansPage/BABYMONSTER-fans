@@ -54,6 +54,9 @@ test("bundles six static languages and translates fan posts only", async () => {
   assert.match(page, /customSections/);
   assert.match(client, /instagramPosts\?: string\[\]/);
   assert.match(page, /InstagramSignalSection/);
+  assert.match(page, /FEATURED_INSTAGRAM_POSTS/);
+  assert.match(page, /DbsLtoLmfWh/);
+  assert.match(page, /savedPosts\.length \? savedPosts : FEATURED_INSTAGRAM_POSTS/);
   assert.match(page, /instagramEmbedUrl/);
   assert.match(page, /embed\/captioned\//);
   assert.match(page, /<iframe/);

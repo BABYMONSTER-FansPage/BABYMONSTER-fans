@@ -150,6 +150,7 @@ const SITE_BROWSER_TITLE = "Monstiez｜BABYMONSTER Fans Club";
 const FIXED_FAVICON_URL = "/favicon.svg";
 const PRIVACY_POLICY_URL = "https://babymonster.fans/privacy.html";
 const TERMS_OF_SERVICE_URL = "https://babymonster.fans/terms.html";
+const FEATURED_INSTAGRAM_POSTS = ["https://www.instagram.com/p/DbsLtoLmfWh/"];
 
 function contentText(value: unknown, fallback: string) {
   return typeof value === "string" && value.trim() ? value : fallback;
@@ -889,7 +890,8 @@ function MusicSection({ locale, content }: { locale: Locale; content: SiteConten
 }
 
 function InstagramSignalSection({ locale, content }: { locale: Locale; content: SiteContent }) {
-  const posts = normalizeInstagramPosts(content.instagramPosts);
+  const savedPosts = normalizeInstagramPosts(content.instagramPosts);
+  const posts = savedPosts.length ? savedPosts : FEATURED_INSTAGRAM_POSTS;
   const f = fixedMessages[locale];
 
   if (!posts.length) return null;
