@@ -186,7 +186,7 @@ test("offers Google as the only social login", async () => {
   assert.doesNotMatch(oauthCallback, /kakao|wechat/i);
 });
 
-test("auth emails and delivery notices cover all six languages", async () => {
+test("auth delivery notices cover six languages and emails use English", async () => {
   const [page, confirmation, recovery, passwordChanged] = await Promise.all([
     readFile(new URL("../app/FanPage.tsx", import.meta.url), "utf8"),
     readFile(new URL("../supabase/templates/confirmation.html", import.meta.url), "utf8"),
@@ -195,14 +195,16 @@ test("auth emails and delivery notices cover all six languages", async () => {
   ]);
   for (const notice of ["垃圾郵件匣", "垃圾邮件文件夹", "สแปม", "spam or junk folder", "스팸 메일함", "迷惑メールフォルダ"]) {
     assert.match(page, new RegExp(notice));
-    assert.match(confirmation, new RegExp(notice));
-    assert.match(recovery, new RegExp(notice));
   }
   for (const template of [confirmation, recovery, passwordChanged]) {
+    assert.match(template, /<html lang="en">/);
     assert.match(template, /support@babymonster\.fans/);
     assert.match(template, /https:\/\/babymonster\.fans\/favicon\.svg/);
-    for (const language of ["zh-Hans", "th", "en", "ko", "ja"]) {
-      assert.match(template, new RegExp(`lang="${language}"`));
-    }
+    assert.match(template, /background:#f079a2/);
+    assert.doesNotMatch(template, /#9185f7|#a99fff|#b8afff/i);
+    assert.doesNotMatch(template, /lang="(?:zh-Hans|th|ko|ja)"/);
   }
+  assert.match(confirmation, /Confirm your email address/);
+  assert.match(recovery, /Reset your password/);
+  assert.match(passwordChanged, /Your password was changed/);
 });

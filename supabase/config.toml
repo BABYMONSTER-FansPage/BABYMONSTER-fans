@@ -227,16 +227,16 @@ otp_expiry = 3600
 # sender_name = "Admin"
 
 [auth.email.template.confirmation]
-subject = "[Monstiez] 請確認你的電子信箱"
+subject = "[Monstiez] Confirm your email address"
 content_path = "./supabase/templates/confirmation.html"
 
 [auth.email.template.recovery]
-subject = "[Monstiez] 重設你的密碼"
+subject = "[Monstiez] Reset your password"
 content_path = "./supabase/templates/recovery.html"
 
 [auth.email.notification.password_changed]
 enabled = true
-subject = "[Monstiez] 你的密碼已變更"
+subject = "[Monstiez] Your password was changed"
 content_path = "./supabase/templates/password_changed_notification.html"
 
 [auth.sms]

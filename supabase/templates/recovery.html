@@ -1,59 +1,54 @@
 <!doctype html>
-<html lang="zh-Hant">
+<html lang="en">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="color-scheme" content="dark light">
-    <meta name="supported-color-schemes" content="dark light">
-    <title>重設你的 Monstiez 密碼</title>
+    <meta name="color-scheme" content="dark">
+    <meta name="supported-color-schemes" content="dark">
+    <title>Reset your Monstiez password</title>
     <style>
       @media only screen and (max-width: 620px) {
-        .email-shell { width: 100% !important; }
-        .email-card { padding: 32px 22px !important; }
-        .email-title { font-size: 28px !important; }
-        .button { display: block !important; width: auto !important; }
+        .shell { width: 100% !important; }
+        .content { padding: 36px 24px !important; }
+        .title { font-size: 34px !important; }
+        .button { display: block !important; text-align: center !important; }
       }
     </style>
   </head>
-  <body style="margin:0;padding:0;background:#080808;color:#f7f7f7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;">
-    <div style="display:none;max-height:0;overflow:hidden;opacity:0;">你要求重設 Monstiez 密碼，請使用安全連結繼續。</div>
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#080808;">
-      <tr><td align="center" style="padding:36px 14px;">
-        <table role="presentation" class="email-shell" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;">
-          <tr><td style="padding:0 0 18px 4px;">
+  <body style="margin:0;padding:0;background:#0c0c0f;color:#ffffff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;">
+    <div style="display:none;max-height:0;overflow:hidden;opacity:0;">Use this secure link to reset your Monstiez password.</div>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#0c0c0f;">
+      <tr><td align="center" style="padding:34px 14px;">
+        <table role="presentation" class="shell" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;background:#1b1b1f;border-radius:4px;overflow:hidden;">
+          <tr><td style="padding:21px 26px;background:#f079a2;">
             <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
-              <td style="vertical-align:middle;"><img src="https://babymonster.fans/favicon.svg" width="42" height="42" alt="Monstiez" style="display:block;width:42px;height:42px;border:0;border-radius:12px;"></td>
-              <td style="padding-left:12px;vertical-align:middle;font-size:20px;font-weight:800;letter-spacing:.4px;color:#ffffff;">Monstiez</td>
+              <td style="vertical-align:middle;"><img src="https://babymonster.fans/favicon.svg" width="34" height="34" alt="Monstiez" style="display:block;width:34px;height:34px;border:0;border-radius:9px;"></td>
+              <td style="padding-left:11px;vertical-align:middle;font-size:20px;font-weight:800;color:#ffffff;">Monstiez</td>
             </tr></table>
           </td></tr>
-          <tr><td class="email-card" style="padding:46px 44px;background:#141414;border:1px solid #2b2b2b;border-radius:24px;">
-            <div style="font-size:12px;font-weight:800;letter-spacing:1.8px;color:#fb84aa;text-transform:uppercase;">Password reset</div>
-            <h1 class="email-title" style="margin:14px 0 16px;font-size:34px;line-height:1.2;color:#ffffff;">重設你的密碼</h1>
-            <p style="margin:0 0 16px;font-size:16px;line-height:1.75;color:#d5d5d5;">我們收到為 <strong style="color:#ffffff;">{{ .Email }}</strong> 重設 Monstiez 密碼的要求。請使用下方安全連結設定新密碼。</p>
-            <p style="margin:0 0 28px;font-size:16px;line-height:1.75;color:#d5d5d5;">此連結將於 1 小時後失效，且只能使用一次。若信件未出現在收件匣，請查看垃圾郵件匣。</p>
-            <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 28px;"><tr><td bgcolor="#fb79a6" style="border-radius:12px;">
-              <a class="button" href="{{ .ConfirmationURL }}" target="_blank" style="display:inline-block;padding:15px 26px;color:#151015;background:#fb79a6;border-radius:12px;font-size:16px;font-weight:800;text-decoration:none;">安全重設密碼</a>
+          <tr><td class="content" style="padding:52px 42px 44px;">
+            <p style="margin:0 0 18px;font-size:12px;font-weight:800;letter-spacing:1.6px;text-transform:uppercase;color:#ff9abc;">Password recovery</p>
+            <h1 class="title" style="margin:0 0 28px;font-size:42px;line-height:1.08;letter-spacing:-1.2px;color:#ffffff;">Reset your password</h1>
+            <p style="margin:0 0 18px;font-size:16px;line-height:1.7;color:#f1f1f3;">Hello,</p>
+            <p style="margin:0 0 18px;font-size:15px;line-height:1.75;color:#c9c9cf;">We received a password reset request for the Monstiez account associated with <strong style="color:#ffffff;">{{ .Email }}</strong>.</p>
+            <p style="margin:0 0 28px;font-size:15px;line-height:1.75;color:#c9c9cf;">Use the button below or enter the verification code on the password reset screen.</p>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 26px;"><tr><td style="padding:18px 20px;background:#151519;border-left:3px solid #f079a2;">
+              <div style="font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:#8f8f98;">Reset code</div>
+              <div style="margin-top:7px;font-size:25px;font-weight:800;letter-spacing:5px;color:#ff9abc;">{{ .Token }}</div>
             </td></tr></table>
-            <div style="padding:18px;background:#0c0c0c;border:1px solid #292929;border-radius:14px;">
-              <p style="margin:0 0 8px;font-size:13px;font-weight:700;color:#ffffff;">按鈕無法開啟？</p>
-              <p style="margin:0;font-size:12px;line-height:1.6;color:#9d9d9d;word-break:break-all;">請將此連結貼到瀏覽器：<br><a href="{{ .ConfirmationURL }}" style="color:#fb84aa;text-decoration:underline;">{{ .ConfirmationURL }}</a></p>
-            </div>
-            <div style="margin-top:28px;padding:20px;background:#101010;border:1px solid #292929;border-radius:14px;">
-              <p lang="zh-Hans" style="margin:0 0 16px;font-size:13px;line-height:1.7;color:#c8c8c8;"><strong style="color:#ffffff;">简体中文</strong><br>请点击上方按钮安全地重设密码。链接将在 1 小时后失效且只能使用一次。若未收到，请查看垃圾邮件文件夹。请勿向任何人分享链接；若并非你本人申请，请勿点击。</p>
-              <p lang="th" style="margin:0 0 16px;font-size:13px;line-height:1.7;color:#c8c8c8;"><strong style="color:#ffffff;">ไทย</strong><br>กดปุ่มด้านบนเพื่อรีเซ็ตรหัสผ่านอย่างปลอดภัย ลิงก์จะหมดอายุภายใน 1 ชั่วโมงและใช้ได้เพียงครั้งเดียว หากไม่พบอีเมล โปรดตรวจสอบโฟลเดอร์สแปมหรือจดหมายขยะ ห้ามแชร์ลิงก์ และอย่ากดหากคุณไม่ได้เป็นผู้ร้องขอ</p>
-              <p lang="en" style="margin:0 0 16px;font-size:13px;line-height:1.7;color:#c8c8c8;"><strong style="color:#ffffff;">English</strong><br>Select the button above to reset your password securely. The link expires in 1 hour and can be used once. If the message is missing, check your spam or junk folder. Never share the link; do not open it if you did not request this change.</p>
-              <p lang="ko" style="margin:0 0 16px;font-size:13px;line-height:1.7;color:#c8c8c8;"><strong style="color:#ffffff;">한국어</strong><br>위 버튼을 눌러 비밀번호를 안전하게 재설정하세요. 링크는 1시간 후 만료되며 한 번만 사용할 수 있습니다. 메일이 보이지 않으면 스팸 메일함도 확인해 주세요. 링크를 공유하지 말고, 요청한 적이 없다면 열지 마세요.</p>
-              <p lang="ja" style="margin:0;font-size:13px;line-height:1.7;color:#c8c8c8;"><strong style="color:#ffffff;">日本語</strong><br>上のボタンから安全にパスワードを再設定してください。リンクは1時間後に失効し、1回のみ使用できます。届かない場合は迷惑メールフォルダもご確認ください。リンクを共有せず、申請した覚えがない場合は開かないでください。</p>
-            </div>
-            <div style="margin-top:28px;padding-top:24px;border-top:1px solid #303030;">
-              <p style="margin:0 0 8px;font-size:13px;font-weight:800;color:#ffffff;">不是你提出的要求？</p>
-              <p style="margin:0;font-size:13px;line-height:1.7;color:#a8a8a8;">請勿點擊連結，也不要將本信轉寄給任何人；你的密碼目前不會因此自動變更。Monstiez 不會向你索取密碼或驗證連結。如有疑慮，請聯絡 <a href="mailto:support@babymonster.fans" style="color:#fb84aa;">support@babymonster.fans</a>。</p>
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 28px;"><tr><td bgcolor="#f079a2" style="border-radius:4px;">
+              <a class="button" href="{{ .ConfirmationURL }}" target="_blank" style="display:inline-block;padding:15px 24px;background:#f079a2;color:#171217;font-size:15px;font-weight:800;text-decoration:none;">Reset password securely</a>
+            </td></tr></table>
+            <p style="margin:0 0 22px;font-size:13px;line-height:1.7;color:#8f8f98;">This link and code expire in 1 hour and can only be used once.</p>
+            <div style="padding-top:22px;border-top:1px solid #313137;">
+              <p style="margin:0 0 7px;font-size:13px;font-weight:800;color:#ffffff;">Didn’t request this?</p>
+              <p style="margin:0;font-size:13px;line-height:1.7;color:#9d9da5;">Do not open the link or share this email. Your password will not change unless the reset is completed. Monstiez will never ask for your password. For help, contact <a href="mailto:support@babymonster.fans" style="color:#ff9abc;">support@babymonster.fans</a>.</p>
             </div>
           </td></tr>
-          <tr><td style="padding:22px 12px 0;text-align:center;font-size:12px;line-height:1.7;color:#777777;">
-            Monstiez｜BABYMONSTER Fans Club<br>
-            <a href="https://babymonster.fans" style="color:#aaaaaa;text-decoration:none;">babymonster.fans</a> · <a href="mailto:support@babymonster.fans" style="color:#aaaaaa;text-decoration:none;">support@babymonster.fans</a><br>
-            此為帳號安全通知，不是行銷郵件。Monstiez 為非官方粉絲社群。
+          <tr><td style="padding:25px 28px;background:#17171b;border-top:1px solid #2d2d32;text-align:center;font-size:11px;line-height:1.7;color:#777780;">
+            Monstiez · BABYMONSTER fan community<br>
+            <a href="https://babymonster.fans" style="color:#9d9da5;text-decoration:none;">babymonster.fans</a> · <a href="mailto:support@babymonster.fans" style="color:#9d9da5;text-decoration:none;">support@babymonster.fans</a><br>
+            This is an account security email, not a marketing message. Monstiez is an unofficial fan community.
           </td></tr>
         </table>
       </td></tr>
