@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, FormEvent, type CSSProperties, type ReactNode, useContext, useState, useEffect, useRef, useCallback } from "react";
-import { motion, useInView, useScroll, useTransform } from "motion/react";
+import { motion, useInView, useReducedMotion, useScroll, useTransform } from "motion/react";
 import {
   Play, Heart, MessageCircle,
   ChevronDown, Menu, X, Calendar, MapPin, Music, Send, Disc3, Settings, Save,
@@ -150,6 +150,18 @@ const SITE_BROWSER_TITLE = "Monstiez｜BABYMONSTER Fans Club";
 const FIXED_FAVICON_URL = "/favicon.svg";
 const PRIVACY_POLICY_URL = "https://babymonster.fans/privacy.html";
 const TERMS_OF_SERVICE_URL = "https://babymonster.fans/terms.html";
+const SITE_CONTENT_CACHE_KEY = "monstiez-site-content-v1";
+
+function cachedSiteContent(): SiteContent {
+  if (typeof window === "undefined") return {};
+  try { return JSON.parse(localStorage.getItem(SITE_CONTENT_CACHE_KEY) || "{}"); }
+  catch { return {}; }
+}
+
+function cacheSiteContent(content: SiteContent) {
+  try { localStorage.setItem(SITE_CONTENT_CACHE_KEY, JSON.stringify(content)); }
+  catch { /* Storage can be unavailable in private browsing. */ }
+}
 
 function contentText(value: unknown, fallback: string) {
   return typeof value === "string" && value.trim() ? value : fallback;
@@ -223,7 +235,7 @@ function InstagramEmbedFrame({ url, index, label }: { url: string; index: number
         title={`Instagram official post ${index + 1}`}
         src={instagramEmbedUrl(url)}
         className="h-full w-full border-0 bg-white"
-        loading="eager"
+        loading="lazy"
         allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
         referrerPolicy="strict-origin-when-cross-origin"
       />
@@ -307,9 +319,14 @@ function Nav({ user, locale, onLocale, onLogin, onLogout, onAdmin, onEdit }: {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    const fn = () => setScrolled(window.scrollY > 60);
+    let frame = 0;
+    const fn = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(() => { frame = 0; setScrolled(window.scrollY > 60); });
+    };
+    fn();
     window.addEventListener("scroll", fn, { passive: true });
-    return () => window.removeEventListener("scroll", fn);
+    return () => { window.removeEventListener("scroll", fn); if (frame) window.cancelAnimationFrame(frame); };
   }, []);
 
   const t = messages[locale];
@@ -607,6 +624,7 @@ function MemberSpotlight({ member, index, photoUrl, locale, instagramPosts = [] 
   const progressX = useTransform(scrollYProgress, [0.12, 0.88], [0, 1]);
   const [detailOpen, setDetailOpen] = useState(false);
   const f = fixedMessages[locale];
+  const reduceMotion = useReducedMotion();
 
   return (
     <div ref={ref} className="cinematic-member min-h-[145vh] md:min-h-[175vh] relative overflow-clip border-t border-white/5">
@@ -626,7 +644,7 @@ function MemberSpotlight({ member, index, photoUrl, locale, instagramPosts = [] 
       <div className="cinematic-frame sticky top-0 min-h-screen max-w-7xl mx-auto px-5 sm:px-6 w-full flex items-center py-20">
         <div className={`grid md:grid-cols-2 gap-12 md:gap-20 items-center ${!isEven ? "md:[grid-template-areas:'info_photo']" : ""}`}>
           {/* Portrait */}
-          <motion.div style={{ scale: visualScale, opacity: visualOpacity }}
+          <motion.div style={reduceMotion ? undefined : { scale: visualScale, opacity: visualOpacity }}
             className={!isEven ? "md:order-last" : ""}>
             <div className="aspect-[3/4] max-w-sm mx-auto relative overflow-hidden rounded-sm bg-neutral-900 group">
               <EditableImage
@@ -662,7 +680,7 @@ function MemberSpotlight({ member, index, photoUrl, locale, instagramPosts = [] 
           </motion.div>
 
           {/* Info */}
-          <motion.div style={{ y: copyY, opacity: copyOpacity }}>
+          <motion.div style={reduceMotion ? undefined : { y: copyY, opacity: copyOpacity }}>
             {/* Index + divider */}
             <motion.div initial={{ opacity: 0, y: 16 }}
               animate={isInView ? { opacity: 1, y: 0 } : {}}
@@ -838,10 +856,11 @@ function MusicSection({ locale, content }: { locale: Locale; content: SiteConten
 
   useEffect(() => {
     if (Array.isArray(content.albums) && content.albums.length) return;
+    if (!isInView) return;
     void fetchSpotifyReleaseStatus()
       .then(result => { setSpotifyAlbums(result.releases); setSpotifyStatus(result.error || (result.releases.length ? "" : "NO_SPOTIFY_RELEASES")); })
       .catch(error => { setSpotifyAlbums([]); setSpotifyStatus(error instanceof Error ? error.message : "SPOTIFY_UNAVAILABLE"); });
-  }, [content.albums]);
+  }, [content.albums, isInView]);
 
   return (
     <section id="music" className="bg-black py-24 md:py-44 border-t border-white/5">
@@ -1186,6 +1205,7 @@ function CommunitySection({ user, locale, onLogin }: { user: User | null; locale
   const [posts, setPosts] = useState<ApiPost[]>(EMPTY_POSTS);
   const [body, setBody] = useState("");
   const [allOpen, setAllOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const t = messages[locale];
   const f = fixedMessages[locale];
 
@@ -1193,21 +1213,27 @@ function CommunitySection({ user, locale, onLogin }: { user: User | null; locale
     listFanPosts(user).then(data => setPosts(data)).catch(() => setPosts(EMPTY_POSTS));
   }, [user]);
 
-  useEffect(() => { refresh(); const timer = window.setInterval(refresh, 10_000); return () => window.clearInterval(timer); }, [refresh]);
+  useEffect(() => { refresh(); const timer = window.setInterval(refresh, 30_000); return () => window.clearInterval(timer); }, [refresh]);
 
   const handleLike = async (post: ApiPost) => {
     if (!user) { onLogin(); return; }
     if (post.id < 0) return;
+    setPosts(items => items.map(item => item.id === post.id ? { ...item, likes: item.likes + (item.liked ? -1 : 1), liked: !item.liked } : item));
     try {
       await toggleFanLike(post.id, post.liked);
-      setPosts(items => items.map(item => item.id === post.id ? { ...item, likes: item.likes + (item.liked ? -1 : 1), liked: !item.liked } : item));
-    } catch { /* keep existing count when offline */ }
+    } catch {
+      setPosts(items => items.map(item => item.id === post.id ? { ...item, likes: item.likes + (post.liked ? 1 : -1), liked: post.liked } : item));
+    }
   };
 
   const submit = async () => {
     if (!user) { onLogin(); return; }
     if (!body.trim()) return;
-    try { await createFanPost(body.trim(), locale); setBody(""); refresh(); } catch { /* input remains available for retry */ }
+    if (submitting) return;
+    setSubmitting(true);
+    try { await createFanPost(body.trim(), locale); setBody(""); refresh(); }
+    catch { /* input remains available for retry */ }
+    finally { setSubmitting(false); }
   };
 
   return (
@@ -1245,12 +1271,12 @@ function CommunitySection({ user, locale, onLogin }: { user: User | null; locale
             onKeyDown={e => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) void submit(); }} />
           <div className="flex items-center justify-between mt-4 pt-4 border-t border-white/6">
             <span className="text-white/18 text-xs">{user ? "⌘ / Ctrl + Enter" : t.signInToJoin}</span>
-            <button onClick={() => void submit()} disabled={Boolean(user) && !body.trim()}
+            <button onClick={() => void submit()} disabled={submitting || (Boolean(user) && !body.trim())}
               className="flex items-center gap-2 px-5 py-2 text-white text-xs tracking-widest uppercase font-medium transition-colors duration-200 rounded-sm disabled:opacity-30 disabled:cursor-not-allowed"
               style={{ background: "#E01020" }}
               onMouseEnter={e => { if (body.trim()) (e.currentTarget as HTMLButtonElement).style.background = "#c00e1c"; }}
               onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "#E01020"; }}>
-              <Send size={12} /> {user ? t.publish : t.login}
+              <Send size={12} /> {submitting ? "…" : user ? t.publish : t.login}
             </button>
           </div>
         </motion.div>
@@ -1826,6 +1852,7 @@ function AuthModal({ locale, mode, onMode, onClose, onAuthenticated }: {
 }) {
   const [feedback, setFeedback] = useState("");
   const [forgotPassword, setForgotPassword] = useState(false);
+  const [pending, setPending] = useState(false);
   const t = messages[locale];
   const f = fixedMessages[locale];
   const authCopy = {
@@ -1838,22 +1865,30 @@ function AuthModal({ locale, mode, onMode, onClose, onAuthenticated }: {
   }[locale];
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setFeedback("");
+    if (pending) return;
+    setPending(true);
     const payload = Object.fromEntries(new FormData(event.currentTarget).entries());
     try {
       const result = await emailAuth(mode, String(payload.email || ""), String(payload.password || ""), String(payload.nickname || ""));
       if (result.user) { onAuthenticated(result.user); onClose(); }
       else if (result.needsEmailConfirmation) setFeedback(authCopy.verify);
     } catch (error) { setFeedback(error instanceof Error && error.message !== "SUPABASE_NOT_CONFIGURED" ? error.message : t.genericError); }
+    finally { setPending(false); }
   }
   async function sendReset(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setFeedback("");
+    if (pending) return;
+    setPending(true);
     const email = String(new FormData(event.currentTarget).get("email") || "");
     try { await requestPasswordReset(email); setFeedback(authCopy.resetSent); }
     catch (error) { setFeedback(error instanceof Error ? error.message : t.genericError); }
+    finally { setPending(false); }
   }
   async function oauth(provider: "google") {
     setFeedback("");
-    try { await socialAuth(provider); } catch (error) { setFeedback(error instanceof Error ? error.message : t.genericError); }
+    if (pending) return;
+    setPending(true);
+    try { await socialAuth(provider); } catch (error) { setFeedback(error instanceof Error ? error.message : t.genericError); setPending(false); }
   }
   return <div className="fixed inset-0 z-[100] bg-black/85 grid place-items-center p-5" role="dialog" aria-modal="true" aria-label={t.login}>
     <div className="w-full max-w-lg max-h-[92vh] overflow-auto bg-[#090909] border border-white/15 p-7 shadow-2xl">
@@ -1865,16 +1900,16 @@ function AuthModal({ locale, mode, onMode, onClose, onAuthenticated }: {
       {forgotPassword ? <form onSubmit={sendReset} className="mt-6 grid gap-4">
         <h3 className="text-2xl font-black text-white">{authCopy.resetTitle}</h3>
         <label className="text-white/45 text-xs">{t.email}<input name="email" type="email" required className="block w-full mt-2 p-3 bg-black border border-white/15 text-white focus:outline-none focus:border-red-600/60" /></label>
-        <button type="submit" className="p-4 bg-[#E01020] text-white text-xs tracking-[.2em] uppercase">{authCopy.send}</button>
+        <button type="submit" disabled={pending} className="p-4 bg-[#E01020] text-white text-xs tracking-[.2em] uppercase disabled:opacity-50">{pending ? "…" : authCopy.send}</button>
         <button type="button" onClick={() => { setForgotPassword(false); setFeedback(""); }} className="text-xs text-white/45 hover:text-white">{authCopy.back}</button>
       </form> : <>
-      <button onClick={() => void oauth("google")} className="w-full min-h-11 border border-white/15 p-3 text-center text-white/60 text-xs">Google</button>
+      <button onClick={() => void oauth("google")} disabled={pending} className="w-full min-h-11 border border-white/15 p-3 text-center text-white/60 text-xs disabled:opacity-50">{pending ? "Connecting…" : "Google"}</button>
       <div className="text-center text-white/25 text-xs my-5">— {t.orEmail} —</div>
       <form onSubmit={submit} className="grid gap-4">
         {mode === "register" && <label className="text-white/45 text-xs">{t.nickname}<input name="nickname" required minLength={2} maxLength={24} className="block w-full mt-2 p-3 bg-black border border-white/15 text-white focus:outline-none focus:border-red-600/60" /></label>}
         <label className="text-white/45 text-xs">{t.email}<input name="email" type="email" required className="block w-full mt-2 p-3 bg-black border border-white/15 text-white focus:outline-none focus:border-red-600/60" /></label>
         <label className="text-white/45 text-xs">{t.password}<input name="password" type="password" required minLength={10} className="block w-full mt-2 p-3 bg-black border border-white/15 text-white focus:outline-none focus:border-red-600/60" /></label>
-        <button type="submit" className="p-4 bg-[#E01020] text-white text-xs tracking-[.2em] uppercase">{mode === "register" ? t.createAccount : t.loginBoard}</button>
+        <button type="submit" disabled={pending} className="p-4 bg-[#E01020] text-white text-xs tracking-[.2em] uppercase disabled:opacity-50">{pending ? "…" : mode === "register" ? t.createAccount : t.loginBoard}</button>
       </form>
       {mode === "login" && <button type="button" onClick={() => { setForgotPassword(true); setFeedback(""); }} className="mt-4 text-xs text-red-300/75 hover:text-red-200">{authCopy.forgot}</button>}
       </>}
@@ -1925,7 +1960,7 @@ export default function App() {
   const [authMode, setAuthMode] = useState<"login" | "register">("login");
   const [passwordRecoveryOpen, setPasswordRecoveryOpen] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
-  const [siteContent, setSiteContent] = useState<SiteContent>({});
+  const [siteContent, setSiteContent] = useState<SiteContent>(cachedSiteContent);
   const [booting, setBooting] = useState(true);
   const [editMode, setEditMode] = useState(false);
   const [dirty, setDirty] = useState(false);
@@ -1936,19 +1971,15 @@ export default function App() {
     const next = getInitialLocale(navigator.languages, localStorage.getItem("monstiez-locale"));
     queueMicrotask(() => setLocale(next)); document.documentElement.lang = next;
     let active = true;
-    const startedAt = Date.now();
-    void Promise.all([currentFanUser(), loadSiteContent()])
-      .then(([nextUser, nextContent]) => {
-        if (!active) return;
-        setUser(nextUser);
-        setSiteContent(nextContent);
-      })
-      .finally(() => {
-        const delay = Math.max(0, 1350 - (Date.now() - startedAt));
-        window.setTimeout(() => { if (active) setBooting(false); }, delay);
-      });
+    const loaderTimer = window.setTimeout(() => { if (active) setBooting(false); }, 700);
+    void currentFanUser().then(nextUser => { if (active) setUser(nextUser); }).catch(() => {});
+    void loadSiteContent().then(nextContent => {
+      if (!active || !Object.keys(nextContent).length) return;
+      cacheSiteContent(nextContent);
+      setSiteContent(nextContent);
+    }).catch(() => {});
     const unsubscribe = observeFanUser(value => { if (active) setUser(value); });
-    return () => { active = false; unsubscribe(); };
+    return () => { active = false; window.clearTimeout(loaderTimer); unsubscribe(); };
   }, []);
 
   useEffect(() => {
@@ -1975,8 +2006,12 @@ export default function App() {
     if (ogImage && siteContent.ogImageUrl) ogImage.content = siteContent.ogImageUrl;
   }, [siteContent]);
 
+  useEffect(() => {
+    if (Object.keys(siteContent).length) cacheSiteContent(siteContent);
+  }, [siteContent]);
+
   function changeLocale(next: Locale) { setLocale(next); localStorage.setItem("monstiez-locale", next); document.documentElement.lang = next; }
-  async function logout() { await signOutFan(); setUser(null); }
+  async function logout() { setUser(null); await signOutFan(); }
   function updateSiteContent(next: SiteContent) { setSiteContent(next); setDirty(true); }
   function openTextEditor(key: string, fallback = "") {
     setTextEditRequest({ key, fallback });

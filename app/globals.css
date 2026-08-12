@@ -1,4 +1,3 @@
-@import url("https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,300;0,400;0,600;0,700;0,800;0,900;1,700&family=Inter:wght@300;400;500;600&display=swap");
 @import "tailwindcss";
 
 :root {
@@ -15,6 +14,13 @@ body { margin: 0; color: var(--paper); background: var(--ink); font-family: Aria
 button, input, textarea { font: inherit; }
 a { color: inherit; text-decoration: none; }
 button { color: inherit; }
+button { touch-action: manipulation; }
+img { content-visibility: auto; }
+
+#music, #events, #community, .voices-section, .announcement-section {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 900px;
+}
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 
 ::selection { background: var(--acid); color: var(--ink); }
@@ -178,6 +184,19 @@ button { color: inherit; }
 }
 @keyframes album-marquee {
   to { transform: translateX(calc(-50% - 1rem)); }
+}
+
+@media (max-width: 700px) {
+  .album-marquee-track, .voices-track { will-change: auto; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 .announcement-section { padding: 90px 0; border-top: 1px solid #292929; }

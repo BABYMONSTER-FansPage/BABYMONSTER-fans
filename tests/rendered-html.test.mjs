@@ -66,7 +66,7 @@ test("bundles six static languages and translates fan posts only", async () => {
   assert.match(page, /embeddedUrl/);
   assert.match(page, /referrerPolicy="strict-origin-when-cross-origin"/);
   assert.match(page, /h-\[560px\]/);
-  assert.match(page, /loading="eager"/);
+  assert.match(page, /loading="lazy"/);
   assert.doesNotMatch(page, /instagram\.com\/embed\.js/);
   assert.doesNotMatch(page, /data-instgrm-permalink/);
   assert.match(page, /normalizeInstagramPosts/);
@@ -96,6 +96,10 @@ test("bundles six static languages and translates fan posts only", async () => {
   assert.match(page, /ResetPasswordModal/);
   assert.match(page, /忘記密碼/);
   assert.match(page, /needsEmailConfirmation/);
+  assert.match(page, /SITE_CONTENT_CACHE_KEY/);
+  assert.match(page, /setTimeout\(\(\) => \{ if \(active\) setBooting\(false\); \}, 700\)/);
+  assert.match(client, /withTimeout/);
+  assert.match(css, /content-visibility: auto/);
   assert.match(tourMigration, /choom-hong-kong-2027/);
   assert.match(page, /SITE_BROWSER_TITLE = "Monstiez｜BABYMONSTER Fans Club"/);
   assert.match(page, /FIXED_FAVICON_URL = "\/favicon\.svg"/);

@@ -40,6 +40,18 @@ export type SiteContent = {
 let browserClient: SupabaseClient | null | undefined;
 const FAN_COOKIE = "monstiez_session";
 
+async function withTimeout<T>(request: PromiseLike<T>, milliseconds = 10_000): Promise<T> {
+  let timer = 0;
+  try {
+    return await Promise.race([
+      Promise.resolve(request),
+      new Promise<T>((_, reject) => { timer = window.setTimeout(() => reject(new Error("REQUEST_TIMEOUT")), milliseconds); }),
+    ]);
+  } finally {
+    window.clearTimeout(timer);
+  }
+}
+
 function writeFanCookie(user: FanUser | null) {
   if (typeof document === "undefined") return;
   if (!user) {
@@ -98,21 +110,21 @@ export async function emailAuth(mode: "login" | "register", email: string, passw
   const client = supabaseClient();
   if (!client) throw new Error("SUPABASE_NOT_CONFIGURED");
   if (mode === "register") {
-    const { data, error } = await client.auth.signUp({
+    const { data, error } = await withTimeout(client.auth.signUp({
       email,
       password,
       options: {
         data: { nickname },
         emailRedirectTo: `${window.location.origin}/?auth=confirmed`,
       },
-    });
+    }));
     if (error) throw error;
     if (!data.session) return { user: null, needsEmailConfirmation: true };
     const user = data.user ? await profileFor(data.user) : null;
     writeFanCookie(user);
     return { user, needsEmailConfirmation: false };
   }
-  const { data, error } = await client.auth.signInWithPassword({ email, password });
+  const { data, error } = await withTimeout(client.auth.signInWithPassword({ email, password }));
   if (error) throw error;
   const user = data.user ? await profileFor(data.user) : null;
   writeFanCookie(user);
@@ -122,16 +134,16 @@ export async function emailAuth(mode: "login" | "register", email: string, passw
 export async function requestPasswordReset(email: string) {
   const client = supabaseClient();
   if (!client) throw new Error("SUPABASE_NOT_CONFIGURED");
-  const { error } = await client.auth.resetPasswordForEmail(email, {
+  const { error } = await withTimeout(client.auth.resetPasswordForEmail(email, {
     redirectTo: `${window.location.origin}/?mode=reset-password`,
-  });
+  }));
   if (error) throw error;
 }
 
 export async function updateFanPassword(password: string) {
   const client = supabaseClient();
   if (!client) throw new Error("SUPABASE_NOT_CONFIGURED");
-  const { error } = await client.auth.updateUser({ password });
+  const { error } = await withTimeout(client.auth.updateUser({ password }));
   if (error) throw error;
 }
 
@@ -148,10 +160,10 @@ export async function socialAuth(provider: "google") {
   const client = supabaseClient();
   if (!client) throw new Error("SUPABASE_NOT_CONFIGURED");
   const providerId = provider as Provider;
-  const { error } = await client.auth.signInWithOAuth({
+  const { error } = await withTimeout(client.auth.signInWithOAuth({
     provider: providerId,
     options: { redirectTo: `${window.location.origin}${window.location.pathname}` },
-  });
+  }));
   if (error) throw error;
 }
 
@@ -283,7 +295,7 @@ export async function listAnnouncements(locale: string) {
 export async function loadSiteContent(): Promise<SiteContent> {
   const client = supabaseClient();
   if (!client) return {};
-  const { data, error } = await client.from("site_content").select("key,value");
+  const { data, error } = await withTimeout(client.from("site_content").select("key,value"), 7_000);
   if (error) return {};
   return (data || []).reduce((content, row) => ({ ...content, [String(row.key)]: row.value }), {} as SiteContent);
 }
