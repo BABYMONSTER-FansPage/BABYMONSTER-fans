@@ -178,10 +178,17 @@ function normalizeTrackNames(value: unknown) {
 function normalizeInstagramUrl(value: unknown) {
   const raw = String(value || "").trim();
   if (!raw) return "";
-  const withProtocol = /^https?:\/\//.test(raw) ? raw : `https://${raw.replace(/^\/+/, "")}`;
+  const embeddedUrl = raw.match(/https?:\/\/(?:www\.)?instagram\.com\/[^\s)\]"'<>]+/i)?.[0]
+    || raw.match(/(?:www\.)?instagram\.com\/[^\s)\]"'<>]+/i)?.[0]
+    || raw;
+  const cleaned = embeddedUrl
+    .replace(/^<|>$/g, "")
+    .replace(/[.,;，。；]+$/g, "")
+    .trim();
+  const withProtocol = /^https?:\/\//i.test(cleaned) ? cleaned : `https://${cleaned.replace(/^\/+/, "")}`;
   try {
     const parsed = new URL(withProtocol);
-    if (!/(^|\.)instagram\.com$/.test(parsed.hostname)) return "";
+    if (!/(^|\.)instagram\.com$/i.test(parsed.hostname)) return "";
     const [kind, shortcode] = parsed.pathname.split("/").filter(Boolean);
     const normalizedKind = kind === "reels" ? "reel" : kind;
     if (!["p", "reel", "tv"].includes(normalizedKind) || !shortcode) return "";
@@ -198,6 +205,41 @@ function normalizeInstagramPosts(value: unknown) {
 
 function instagramEmbedUrl(url: string) {
   return `${url}embed/captioned/`;
+}
+
+function InstagramEmbedFrame({ url, index, label }: { url: string; index: number; label: string }) {
+  const [loaded, setLoaded] = useState(false);
+
+  return (
+    <div className="relative min-h-[560px] overflow-hidden bg-neutral-950">
+      {!loaded && (
+        <div className="absolute inset-0 grid place-items-center bg-[radial-gradient(circle_at_50%_0%,rgba(225,16,32,.24),transparent_34%),#080808] px-6 text-center">
+          <div>
+            <div className="mx-auto mb-5 h-10 w-10 animate-spin rounded-full border border-white/15 border-t-red-500" />
+            <p className="text-white/70 text-sm tracking-[0.18em] uppercase">Loading official Instagram post</p>
+            <p className="mt-3 text-white/35 text-xs leading-relaxed">如果 Instagram 阻擋第三方嵌入，請使用下方官方連結開啟原貼文。</p>
+          </div>
+        </div>
+      )}
+      <iframe
+        title={`Instagram official post ${index + 1}`}
+        src={instagramEmbedUrl(url)}
+        className="relative z-10 h-[560px] w-full border-0 bg-black"
+        loading="lazy"
+        allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+        referrerPolicy="strict-origin-when-cross-origin"
+        onLoad={() => setLoaded(true)}
+      />
+      <a
+        href={url}
+        target="_blank"
+        rel="noreferrer"
+        className="absolute inset-x-4 bottom-4 z-20 border border-white/15 bg-black/75 px-4 py-3 text-center text-xs tracking-[0.18em] text-white/70 backdrop-blur transition hover:border-red-500/50 hover:text-white"
+      >
+        {label} ↗
+      </a>
+    </div>
+  );
 }
 
 type InlineEditContextValue = {
@@ -873,15 +915,9 @@ function InstagramSignalSection({ locale, content }: { locale: Locale; content: 
                 <span className="text-white/25 text-xs tracking-[0.25em] uppercase">#{String(index + 1).padStart(2, "0")} · Official post</span>
                 <span className="h-px flex-1 bg-red-600/30" />
               </div>
-              <div className="relative min-h-[440px] overflow-hidden bg-neutral-950">
+              <div className="relative overflow-hidden bg-neutral-950">
                 <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-px bg-red-600/70 opacity-0 transition-opacity group-hover:opacity-100" />
-                <iframe
-                  title={`Instagram official post ${index + 1}`}
-                  src={instagramEmbedUrl(url)}
-                  className="h-[540px] w-full border-0 bg-black"
-                  loading="lazy"
-                  allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
-                />
+                <InstagramEmbedFrame url={url} index={index} label={f.openInstagramPost} />
               </div>
               <a href={url} target="_blank" rel="noreferrer"
                 className="mt-4 inline-block text-red-300/80 hover:text-red-200 text-xs tracking-[0.25em] uppercase">

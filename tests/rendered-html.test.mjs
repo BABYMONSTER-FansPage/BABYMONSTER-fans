@@ -31,7 +31,7 @@ test("builds a GitHub Pages entry for babymonster.fans", async () => {
 });
 
 test("bundles six static languages and translates fan posts only", async () => {
-  const [page, i18n, client, oauthRoute, css, envExample, migration, cmsMigration, albumMigration, relaxedMigration, spotifyFunction, translateFunction, privacy, terms] = await Promise.all([
+  const [page, i18n, client, oauthRoute, css, envExample, migration, cmsMigration, albumMigration, relaxedMigration, instagramMigration, spotifyFunction, translateFunction, privacy, terms] = await Promise.all([
     readFile(new URL("../app/FanPage.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/i18n.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/lib/supabase-browser.ts", import.meta.url), "utf8"),
@@ -42,6 +42,7 @@ test("bundles six static languages and translates fan posts only", async () => {
     readFile(new URL("../supabase/migrations/202608100003_inline_editing_content.sql", import.meta.url), "utf8"),
     readFile(new URL("../supabase/migrations/202608100005_site_content_albums.sql", import.meta.url), "utf8"),
     readFile(new URL("../supabase/migrations/202608110001_relax_site_content_keys.sql", import.meta.url), "utf8"),
+    readFile(new URL("../supabase/migrations/202608120001_instagram_posts_content.sql", import.meta.url), "utf8"),
     readFile(new URL("../supabase/functions/spotify-releases/index.ts", import.meta.url), "utf8"),
     readFile(new URL("../supabase/functions/translate-comment/index.ts", import.meta.url), "utf8"),
     readFile(new URL("../public/privacy.html", import.meta.url), "utf8"),
@@ -57,6 +58,10 @@ test("bundles six static languages and translates fan posts only", async () => {
   assert.match(page, /embed\/captioned\//);
   assert.match(page, /<iframe/);
   assert.match(page, /normalizeInstagramUrl/);
+  assert.match(page, /raw\.match\(/);
+  assert.match(page, /embeddedUrl/);
+  assert.match(page, /referrerPolicy="strict-origin-when-cross-origin"/);
+  assert.match(page, /Loading official Instagram post/);
   assert.doesNotMatch(page, /instagram\.com\/embed\.js/);
   assert.doesNotMatch(page, /data-instgrm-permalink/);
   assert.match(page, /\/share\/ 短連結無法直接嵌入/);
@@ -117,6 +122,9 @@ test("bundles six static languages and translates fan posts only", async () => {
   assert.match(cmsMigration, /customSections/);
   assert.match(albumMigration, /'albums'/);
   assert.match(relaxedMigration, /drop constraint if exists site_content_key_check/);
+  assert.match(instagramMigration, /'instagramPosts'/);
+  assert.match(instagramMigration, /DbsLtoLmfWh/);
+  assert.match(instagramMigration, /public\.site_content\.value = '\[\]'::jsonb/);
   assert.match(spotifyFunction, /x-client-info/);
   assert.match(spotifyFunction, /access-control-allow-methods/);
   assert.match(spotifyFunction, /\/albums\/\$\{item\.id\}\?market=US/);
