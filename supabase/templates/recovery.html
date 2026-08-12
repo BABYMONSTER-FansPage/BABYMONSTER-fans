@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="dark light">
+    <meta name="supported-color-schemes" content="dark light">
+    <title>重設你的 Monstiez 密碼</title>
+    <style>
+      @media only screen and (max-width: 620px) {
+        .email-shell { width: 100% !important; }
+        .email-card { padding: 32px 22px !important; }
+        .email-title { font-size: 28px !important; }
+        .button { display: block !important; width: auto !important; }
+      }
+    </style>
+  </head>
+  <body style="margin:0;padding:0;background:#080808;color:#f7f7f7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;">
+    <div style="display:none;max-height:0;overflow:hidden;opacity:0;">你要求重設 Monstiez 密碼，請使用安全連結繼續。</div>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#080808;">
+      <tr><td align="center" style="padding:36px 14px;">
+        <table role="presentation" class="email-shell" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;">
+          <tr><td style="padding:0 0 18px 4px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+              <td style="vertical-align:middle;"><img src="https://babymonster.fans/favicon.svg" width="42" height="42" alt="Monstiez" style="display:block;width:42px;height:42px;border:0;border-radius:12px;"></td>
+              <td style="padding-left:12px;vertical-align:middle;font-size:20px;font-weight:800;letter-spacing:.4px;color:#ffffff;">Monstiez</td>
+            </tr></table>
+          </td></tr>
+          <tr><td class="email-card" style="padding:46px 44px;background:#141414;border:1px solid #2b2b2b;border-radius:24px;">
+            <div style="font-size:12px;font-weight:800;letter-spacing:1.8px;color:#fb84aa;text-transform:uppercase;">Password reset</div>
+            <h1 class="email-title" style="margin:14px 0 16px;font-size:34px;line-height:1.2;color:#ffffff;">重設你的密碼</h1>
+            <p style="margin:0 0 16px;font-size:16px;line-height:1.75;color:#d5d5d5;">我們收到為 <strong style="color:#ffffff;">{{ .Email }}</strong> 重設 Monstiez 密碼的要求。請使用下方安全連結設定新密碼。</p>
+            <p style="margin:0 0 28px;font-size:16px;line-height:1.75;color:#d5d5d5;">此連結將於 1 小時後失效，且只能使用一次。</p>
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 28px;"><tr><td bgcolor="#fb79a6" style="border-radius:12px;">
+              <a class="button" href="{{ .ConfirmationURL }}" target="_blank" style="display:inline-block;padding:15px 26px;color:#151015;background:#fb79a6;border-radius:12px;font-size:16px;font-weight:800;text-decoration:none;">安全重設密碼</a>
+            </td></tr></table>
+            <div style="padding:18px;background:#0c0c0c;border:1px solid #292929;border-radius:14px;">
+              <p style="margin:0 0 8px;font-size:13px;font-weight:700;color:#ffffff;">按鈕無法開啟？</p>
+              <p style="margin:0;font-size:12px;line-height:1.6;color:#9d9d9d;word-break:break-all;">請將此連結貼到瀏覽器：<br><a href="{{ .ConfirmationURL }}" style="color:#fb84aa;text-decoration:underline;">{{ .ConfirmationURL }}</a></p>
+            </div>
+            <div style="margin-top:28px;padding-top:24px;border-top:1px solid #303030;">
+              <p style="margin:0 0 8px;font-size:13px;font-weight:800;color:#ffffff;">不是你提出的要求？</p>
+              <p style="margin:0;font-size:13px;line-height:1.7;color:#a8a8a8;">請勿點擊連結，也不要將本信轉寄給任何人；你的密碼目前不會因此自動變更。Monstiez 不會向你索取密碼或驗證連結。如有疑慮，請聯絡 <a href="mailto:support@babymonster.fans" style="color:#fb84aa;">support@babymonster.fans</a>。</p>
+            </div>
+          </td></tr>
+          <tr><td style="padding:22px 12px 0;text-align:center;font-size:12px;line-height:1.7;color:#777777;">
+            Monstiez｜BABYMONSTER Fans Club<br>
+            <a href="https://babymonster.fans" style="color:#aaaaaa;text-decoration:none;">babymonster.fans</a> · <a href="mailto:support@babymonster.fans" style="color:#aaaaaa;text-decoration:none;">support@babymonster.fans</a><br>
+            此為帳號安全通知，不是行銷郵件。Monstiez 為非官方粉絲社群。
+          </td></tr>
+        </table>
+      </td></tr>
+    </table>
+  </body>
+</html>
