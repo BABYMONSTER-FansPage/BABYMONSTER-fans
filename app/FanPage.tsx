@@ -1551,7 +1551,7 @@ function AdminPanel({ content, onSaved, onClose }: { content: SiteContent; onSav
             <button type="button" onClick={addEvent} className="px-3 py-2 border border-white/15 text-white/60 text-xs hover:text-white">新增活動</button>
           </div>
           <div className="grid gap-4">
-            {events.map((event, index) => <div key={`${event.title}-${index}`} className="border border-white/8 p-4">
+            {events.map((event, index) => <div key={event.id ?? index} className="border border-white/8 p-4">
               <div className="grid md:grid-cols-2 gap-3">
                 <label className={labelClass}>標題<input value={event.title} onChange={e => updateEvent(index, "title", e.target.value)} className={inputClass} /></label>
                 <label className={labelClass}>副標<input value={event.sub} onChange={e => updateEvent(index, "sub", e.target.value)} className={inputClass} /></label>

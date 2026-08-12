@@ -7,6 +7,7 @@ export type FanPost = {
   likes: number; comments: number; liked: boolean; canEdit: boolean; createdAt: string;
 };
 export type EditableEvent = {
+  id?: string | number;
   title: string; sub: string; dates: string; locations: string; type: string;
   status: "upcoming" | "past"; desc: string;
 };
