@@ -159,7 +159,7 @@ const DEFAULT_SITE_CONTENT: Required<Pick<SiteContent, "siteTagline">> = {
 };
 
 const OFFICIAL_BRAND_NAME = "Monstiez";
-const SITE_BROWSER_TITLE = "Monstiez";
+const SITE_BROWSER_TITLE = "Monstiez｜BABYMONSTER Fan Community";
 const FIXED_FAVICON_URL = "/favicon.svg";
 const PRIVACY_POLICY_URL = "https://babymonster.fans/privacy.html";
 const TERMS_OF_SERVICE_URL = "https://babymonster.fans/terms.html";
@@ -429,7 +429,6 @@ function Nav({ user, locale, onLocale, onLogin, onLogout, onAdmin, onEdit }: {
 
 function Hero({ locale, content }: { locale: Locale; content: SiteContent }) {
   const t = messages[locale];
-  const f = fixedMessages[locale];
   const heroImage = contentUrl(content.heroImageUrl, "");
   const mobile = useMobileViewport();
   return (
@@ -470,16 +469,11 @@ function Hero({ locale, content }: { locale: Locale; content: SiteContent }) {
           </motion.div>
         </div>
 
-        <motion.div initial={mobile ? false : { opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }}
+        <motion.p initial={mobile ? false : { opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 1.1 }}
-          className="mx-auto mt-8 mb-10 max-w-3xl border border-white/10 bg-black/45 px-5 py-4 backdrop-blur-sm">
-          <p className="text-white/65 text-xs md:text-sm leading-relaxed">{f.heroReviewSummary}</p>
-          <p className="mt-2 text-white/42 text-[11px] md:text-xs leading-relaxed">{f.googleDataPurpose}</p>
-          <div className="mt-3 flex flex-wrap items-center justify-center gap-4">
-            <a href={PRIVACY_POLICY_URL} className="text-red-300/85 hover:text-red-200 text-[10px] tracking-[0.18em] uppercase">{f.privacyPolicy}</a>
-            <a href={TERMS_OF_SERVICE_URL} className="text-white/40 hover:text-white text-[10px] tracking-[0.18em] uppercase">{f.termsOfService}</a>
-          </div>
-        </motion.div>
+          className="text-white/50 text-sm md:text-base tracking-[0.35em] uppercase mt-8 mb-14">
+          <EditableText k="heroNote" fallback={contentText(content.heroNote, "")} />
+        </motion.p>
 
         {/* Stat row */}
         <motion.div initial={mobile ? false : { opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
@@ -515,7 +509,6 @@ function AppPurposeSection({ locale }: { locale: Locale }) {
       <div className="max-w-7xl mx-auto px-6">
         <div className="mx-auto max-w-4xl border border-white/10 bg-white/[0.025] p-6 text-center md:p-10">
           <p className="text-white/35 text-[10px] tracking-[0.35em] uppercase mb-3">{f.officialAppNameLabel}</p>
-          <img src={FIXED_FAVICON_URL} alt="Monstiez logo" className="mx-auto mb-4 h-16 w-16 rounded-2xl" />
           <h2 id="official-app-name" className="text-white text-4xl md:text-5xl font-black tracking-wide leading-none"
             style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>
             Monstiez
@@ -525,9 +518,6 @@ function AppPurposeSection({ locale }: { locale: Locale }) {
           </p>
           <p className="mx-auto mt-5 max-w-3xl text-white/58 text-sm md:text-base leading-relaxed">
             {f.appPurpose}
-          </p>
-          <p className="mx-auto mt-3 max-w-3xl text-white/45 text-xs md:text-sm leading-relaxed">
-            {f.googleDataPurpose}
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
             <a href={PRIVACY_POLICY_URL} className="inline-flex items-center gap-2 text-red-300 hover:text-red-200 text-xs tracking-[0.25em] uppercase">{f.privacyPolicy}<ExternalLink size={12} aria-hidden="true" /></a>
@@ -1978,12 +1968,12 @@ function AuthModal({ locale, mode, onMode, onClose, onAuthenticated, onPasswordR
   const t = messages[locale];
   const f = fixedMessages[locale];
   const authCopy = {
-    "zh-TW": { verify: "6 位數驗證碼已寄出。若未收到，請查看垃圾郵件匣。", forgot: "忘記密碼？", resetTitle: "重設密碼", resetSent: "6 位數重設驗證碼已寄出，請查看收件匣與垃圾郵件匣。", send: "寄送驗證碼", back: "返回登入", google: "使用 Google 繼續" },
-    "zh-CN": { verify: "6 位数验证码已发送。若未收到，请查看垃圾邮件文件夹。", forgot: "忘记密码？", resetTitle: "重设密码", resetSent: "6 位数重设验证码已发送，请查看收件箱和垃圾邮件文件夹。", send: "发送验证码", back: "返回登录", google: "使用 Google 继续" },
-    th: { verify: "ส่งรหัสยืนยัน 6 หลักแล้ว หากไม่พบ โปรดตรวจสอบโฟลเดอร์สแปมหรือจดหมายขยะ", forgot: "ลืมรหัสผ่าน?", resetTitle: "รีเซ็ตรหัสผ่าน", resetSent: "ส่งรหัสรีเซ็ต 6 หลักแล้ว โปรดตรวจสอบกล่องจดหมายและโฟลเดอร์สแปม", send: "ส่งรหัสยืนยัน", back: "กลับไปเข้าสู่ระบบ", google: "ดำเนินการต่อด้วย Google" },
-    en: { verify: "A six-digit verification code was sent. If it is missing, check your spam or junk folder.", forgot: "Forgot password?", resetTitle: "Reset password", resetSent: "A six-digit reset code was sent. Check your inbox and spam or junk folder.", send: "Send verification code", back: "Back to sign in", google: "Continue with Google" },
-    ko: { verify: "6자리 인증 코드를 보냈습니다. 보이지 않으면 스팸 메일함도 확인해 주세요.", forgot: "비밀번호를 잊으셨나요?", resetTitle: "비밀번호 재설정", resetSent: "6자리 재설정 코드를 보냈습니다. 받은편지함과 스팸 메일함을 확인해 주세요.", send: "인증 코드 보내기", back: "로그인으로 돌아가기", google: "Google로 계속하기" },
-    ja: { verify: "6桁の確認コードを送信しました。届かない場合は迷惑メールフォルダもご確認ください。", forgot: "パスワードを忘れた場合", resetTitle: "パスワードを再設定", resetSent: "6桁の再設定コードを送信しました。受信トレイと迷惑メールフォルダをご確認ください。", send: "確認コードを送信", back: "ログインに戻る", google: "Googleで続行" },
+    "zh-TW": { verify: "6 位數驗證碼已寄出。若未收到，請查看垃圾郵件匣。", forgot: "忘記密碼？", resetTitle: "重設密碼", resetSent: "6 位數重設驗證碼已寄出，請查看收件匣與垃圾郵件匣。", send: "寄送驗證碼", back: "返回登入" },
+    "zh-CN": { verify: "6 位数验证码已发送。若未收到，请查看垃圾邮件文件夹。", forgot: "忘记密码？", resetTitle: "重设密码", resetSent: "6 位数重设验证码已发送，请查看收件箱和垃圾邮件文件夹。", send: "发送验证码", back: "返回登录" },
+    th: { verify: "ส่งรหัสยืนยัน 6 หลักแล้ว หากไม่พบ โปรดตรวจสอบโฟลเดอร์สแปมหรือจดหมายขยะ", forgot: "ลืมรหัสผ่าน?", resetTitle: "รีเซ็ตรหัสผ่าน", resetSent: "ส่งรหัสรีเซ็ต 6 หลักแล้ว โปรดตรวจสอบกล่องจดหมายและโฟลเดอร์สแปม", send: "ส่งรหัสยืนยัน", back: "กลับไปเข้าสู่ระบบ" },
+    en: { verify: "A six-digit verification code was sent. If it is missing, check your spam or junk folder.", forgot: "Forgot password?", resetTitle: "Reset password", resetSent: "A six-digit reset code was sent. Check your inbox and spam or junk folder.", send: "Send verification code", back: "Back to sign in" },
+    ko: { verify: "6자리 인증 코드를 보냈습니다. 보이지 않으면 스팸 메일함도 확인해 주세요.", forgot: "비밀번호를 잊으셨나요?", resetTitle: "비밀번호 재설정", resetSent: "6자리 재설정 코드를 보냈습니다. 받은편지함과 스팸 메일함을 확인해 주세요.", send: "인증 코드 보내기", back: "로그인으로 돌아가기" },
+    ja: { verify: "6桁の確認コードを送信しました。届かない場合は迷惑メールフォルダもご確認ください。", forgot: "パスワードを忘れた場合", resetTitle: "パスワードを再設定", resetSent: "6桁の再設定コードを送信しました。受信トレイと迷惑メールフォルダをご確認ください。", send: "確認コードを送信", back: "ログインに戻る" },
   }[locale];
   const otpCopy = {
     "zh-TW": { signupTitle: "輸入驗證碼", recoveryTitle: "驗證你的身分", sentTo: "我們已將 6 位數驗證碼寄到", label: "6 位數驗證碼", verify: "驗證", resend: "重新寄送驗證碼", resent: "新的驗證碼已寄出，請查看收件匣與垃圾郵件匣。", invalid: "請輸入完整的 6 位數驗證碼。", change: "更改電子信箱" },
@@ -2077,15 +2067,7 @@ function AuthModal({ locale, mode, onMode, onClose, onAuthenticated, onPasswordR
         <button type="submit" disabled={pending} className="p-4 bg-[#E01020] text-white text-xs tracking-[.2em] uppercase disabled:opacity-50">{pending ? "…" : authCopy.send}</button>
         <button type="button" onClick={() => { setForgotPassword(false); setFeedback(""); }} className="text-xs text-white/45 hover:text-white">{authCopy.back}</button>
       </form> : <>
-      <button onClick={() => void oauth("google")} disabled={pending} className="flex w-full min-h-11 items-center justify-center gap-3 rounded-sm border border-[#747775] bg-white px-4 py-3 text-center text-[#1f1f1f] text-sm font-medium hover:bg-[#f8faff] disabled:opacity-50">
-        <svg viewBox="0 0 18 18" className="h-[18px] w-[18px] shrink-0" aria-hidden="true">
-          <path fill="#EA4335" d="M17.64 9.205c0-.638-.057-1.252-.164-1.841H9v3.482h4.844a4.14 4.14 0 0 1-1.797 2.715v2.258h2.909c1.702-1.567 2.684-3.875 2.684-6.614Z" />
-          <path fill="#4285F4" d="M9 18c2.43 0 4.467-.806 5.956-2.181l-2.909-2.258c-.806.54-1.835.859-3.047.859-2.344 0-4.328-1.585-5.037-3.715H.956v2.332A9 9 0 0 0 9 18Z" />
-          <path fill="#FBBC05" d="M3.963 10.705A5.41 5.41 0 0 1 3.682 9c0-.592.102-1.168.281-1.705V4.963H.956A9 9 0 0 0 0 9c0 1.452.347 2.827.956 4.037l3.007-2.332Z" />
-          <path fill="#34A853" d="M9 3.58c1.321 0 2.507.454 3.44 1.345l2.581-2.581C13.463.892 11.426 0 9 0A9 9 0 0 0 .956 4.963l3.007 2.332C4.672 5.165 6.656 3.58 9 3.58Z" />
-        </svg>
-        <span>{pending ? "Connecting…" : authCopy.google}</span>
-      </button>
+      <button onClick={() => void oauth("google")} disabled={pending} className="w-full min-h-11 border border-white/15 p-3 text-center text-white/60 text-xs disabled:opacity-50">{pending ? "Connecting…" : "Google"}</button>
       <div className="text-center text-white/25 text-xs my-5">— {t.orEmail} —</div>
       <form onSubmit={submit} className="grid gap-4">
         {mode === "register" && <label className="text-white/45 text-xs">{t.nickname}<input name="nickname" required minLength={2} maxLength={24} className="block w-full mt-2 p-3 bg-black border border-white/15 text-white focus:outline-none focus:border-red-600/60" /></label>}
@@ -2263,7 +2245,6 @@ export default function App() {
       <AnimatePresence>{booting && <OpeningLoader locale={locale} />}</AnimatePresence>
       <Nav user={user} locale={locale} onLocale={changeLocale} onLogin={() => setAuthOpen(true)} onLogout={logout} onAdmin={() => setAdminOpen(true)} onEdit={() => setEditMode(true)} />
       <Hero locale={locale} content={siteContent} />
-      <AppPurposeSection locale={locale} />
       <AboutSection locale={locale} content={siteContent} />
       <MembersSection locale={locale} content={siteContent} />
       <MusicSection locale={locale} content={siteContent} />
@@ -2272,6 +2253,7 @@ export default function App() {
       <CommunitySection user={user} locale={locale} onLogin={() => setAuthOpen(true)} />
       <FanVoices locale={locale} user={user} />
       <Announcements locale={locale} />
+      <AppPurposeSection locale={locale} />
       <Footer locale={locale} content={siteContent} />
       {authOpen && <AuthModal locale={locale} mode={authMode} onMode={setAuthMode} onClose={() => setAuthOpen(false)} onAuthenticated={setUser} onPasswordRecoveryVerified={() => setPasswordRecoveryOpen(true)} />}
       {passwordRecoveryOpen && <ResetPasswordModal locale={locale} onClose={() => setPasswordRecoveryOpen(false)} />}

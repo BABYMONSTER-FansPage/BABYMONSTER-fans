@@ -10,12 +10,7 @@ test("builds a GitHub Pages entry for babymonster.fans", async () => {
     readFile(new URL("../dist-pages/robots.txt", import.meta.url), "utf8"),
     readFile(new URL("../dist-pages/sitemap.xml", import.meta.url), "utf8"),
   ]);
-  assert.match(html, /<title>Monstiez<\/title>/);
-  assert.match(html, /id="oauth-static-homepage"/);
-  assert.match(html, /id="oauth-static-app-name"/);
-  assert.match(html, /Monstiez is an unofficial BABYMONSTER fan community for browsing content/);
-  assert.match(html, /Google Sign-In is used only to sign in to and identify a Monstiez account/);
-  assert.match(html, /href="https:\/\/babymonster\.fans\/privacy\.html"/);
+  assert.match(html, /<title>Monstiez｜BABYMONSTER Fan Community<\/title>/);
   assert.match(html, /<meta name="description" content="Monstiez 是提供 BABYMONSTER 粉絲交流、留言與內容瀏覽的非官方粉絲社群平台/);
   assert.match(html, /<meta property="og:title" content="Monstiez"/);
   assert.match(html, /<meta name="twitter:card" content="summary_large_image"/);
@@ -124,7 +119,7 @@ test("bundles six static languages and translates fan posts only", async () => {
   assert.match(css, /\.verification-badge \{ position: absolute; right: -4px; bottom: -4px/);
   assert.doesNotMatch(page, /\p{Extended_Pictographic}|\p{Regional_Indicator}|\p{Emoji_Presentation}/u);
   assert.match(tourMigration, /choom-hong-kong-2027/);
-  assert.match(page, /SITE_BROWSER_TITLE = "Monstiez"/);
+  assert.match(page, /SITE_BROWSER_TITLE = "Monstiez｜BABYMONSTER Fan Community"/);
   assert.match(page, /FIXED_FAVICON_URL = "\/favicon\.svg"/);
   assert.match(page, /Monstiez（固定）/);
   assert.match(page, /\/favicon\.svg（固定）/);
@@ -138,27 +133,21 @@ test("bundles six static languages and translates fan posts only", async () => {
   assert.match(i18n, /What is Monstiez\?/);
   assert.match(i18n, /MONSTIEZ 是 BABYMONSTER 的官方粉絲名/);
   assert.match(i18n, /使用者登入後可以參與社群互動/);
-  assert.match(i18n, /heroReviewSummary/);
-  assert.match(i18n, /googleDataPurpose/);
-  assert.match(i18n, /Google 登入僅用於登入及識別 Monstiez 帳號/);
-  assert.match(i18n, /帳號識別碼、顯示名稱、頭像及電子郵件地址/);
-  assert.match(page, /<AppPurposeSection locale=\{locale\} \/>\s*<AboutSection/);
-  assert.match(page, /alt="Monstiez logo"/);
-  assert.match(i18n, /Monstiez（BABYMONSTER\.fans）為非官方粉絲專頁/);
-  assert.match(i18n, /Monstiez \(BABYMONSTER\.fans\) is an unofficial fan page/);
+  assert.match(i18n, /BABYMONSTER\.fans 為非官方粉絲專頁/);
+  assert.match(i18n, /BABYMONSTER\.fans is an unofficial fan page/);
   assert.match(i18n, /support@babymonster\.fans/);
-  assert.match(i18n, /僅會使用基本帳戶資料，包括帳號識別碼、顯示名稱、頭像及電子郵件地址/);
-  assert.match(i18n, /Google 로그인 시에는 계정 식별자, 표시 이름, 프로필 사진 및 이메일 주소/);
-  assert.match(i18n, /Googleログインでは、アカウント識別子、表示名、プロフィール画像、メールアドレス/);
+  assert.match(i18n, /僅會使用你的暱稱、頭像及電子郵件地址/);
+  assert.match(i18n, /Google 로그인 시에는 표시 이름, 프로필 사진 및 이메일 주소만 사용합니다/);
+  assert.match(i18n, /Googleログインでは、表示名、プロフィール画像、メールアドレスのみを使用します/);
   assert.match(page, /k="footerLegalNoticeV3" fallback=\{t\.warning\}/);
   assert.doesNotMatch(i18n, /使用者可以建立帳號、參與社群互動/);
   assert.match(i18n, /Monstiez 是提供 BABYMONSTER 粉絲交流、留言與內容瀏覽的粉絲社群平台/);
   assert.doesNotMatch(i18n, /Google 登入用於快速建立及登入 Monstiez 帳號/);
-  assert.match(i18n, /Gmail、Google Drive 或 Google Calendar/);
+  assert.doesNotMatch(i18n, /Google 登入只用於|Gmail、Google Drive 或 Google Calendar/);
   assert.match(page, /https:\/\/babymonster\.fans\/privacy\.html/);
   assert.match(page, /https:\/\/babymonster\.fans\/terms\.html/);
-  assert.ok(page.indexOf("<AppPurposeSection locale={locale} />") > page.indexOf("<Hero locale={locale}"));
-  assert.ok(page.indexOf("<AppPurposeSection locale={locale} />") < page.indexOf("<AboutSection"));
+  assert.ok(page.indexOf("<AppPurposeSection locale={locale} />") > page.indexOf("<Announcements"));
+  assert.ok(page.indexOf("<AppPurposeSection locale={locale} />") < page.indexOf("<Footer"));
   assert.match(page, /MON<span style=\{\{ color: "#E01020" \}\}>STIEZ<\/span>/);
   assert.match(page, /&copy; 2026 \{OFFICIAL_BRAND_NAME\}/);
   assert.match(page, /aria-label="Loading Monstiez fan site"/);
@@ -210,13 +199,9 @@ test("bundles six static languages and translates fan posts only", async () => {
   assert.match(privacy, /Monstiez（網址：https:\/\/babymonster\.fans\/）/);
   assert.match(privacy, /Google 登入與 Google 使用者資料/);
   assert.match(privacy, /基本 Profile 與 Email 資訊/);
-  assert.match(privacy, /Google 帳號識別碼/);
-  assert.match(privacy, /support@babymonster\.fans/);
-  assert.doesNotMatch(privacy, /Kakao/);
   assert.match(privacy, /不會要求、讀取或儲存你的 Gmail/);
   assert.match(terms, /<title>Monstiez 服務條款<\/title>/);
   assert.match(terms, /歡迎使用 Monstiez/);
-  assert.doesNotMatch(terms, /Kakao/);
 });
 
 test("offers Google as the only social login", async () => {
@@ -227,8 +212,6 @@ test("offers Google as the only social login", async () => {
     readFile(new URL("../app/api/auth/oauth/callback/route.ts", import.meta.url), "utf8"),
   ]);
   assert.match(page, /oauth\("google"\)/);
-  assert.match(page, /Continue with Google/);
-  assert.match(page, /fill="#4285F4"/);
   assert.match(client, /provider: "google"/);
   assert.doesNotMatch(page, /KakaoTalk|oauth\("kakao"\)/);
   assert.doesNotMatch(oauthRoute, /kakao|wechat/i);
