@@ -185,3 +185,24 @@ test("offers Google as the only social login", async () => {
   assert.doesNotMatch(oauthRoute, /kakao|wechat/i);
   assert.doesNotMatch(oauthCallback, /kakao|wechat/i);
 });
+
+test("auth emails and delivery notices cover all six languages", async () => {
+  const [page, confirmation, recovery, passwordChanged] = await Promise.all([
+    readFile(new URL("../app/FanPage.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../supabase/templates/confirmation.html", import.meta.url), "utf8"),
+    readFile(new URL("../supabase/templates/recovery.html", import.meta.url), "utf8"),
+    readFile(new URL("../supabase/templates/password_changed_notification.html", import.meta.url), "utf8"),
+  ]);
+  for (const notice of ["垃圾郵件匣", "垃圾邮件文件夹", "สแปม", "spam or junk folder", "스팸 메일함", "迷惑メールフォルダ"]) {
+    assert.match(page, new RegExp(notice));
+    assert.match(confirmation, new RegExp(notice));
+    assert.match(recovery, new RegExp(notice));
+  }
+  for (const template of [confirmation, recovery, passwordChanged]) {
+    assert.match(template, /support@babymonster\.fans/);
+    assert.match(template, /https:\/\/babymonster\.fans\/favicon\.svg/);
+    for (const language of ["zh-Hans", "th", "en", "ko", "ja"]) {
+      assert.match(template, new RegExp(`lang="${language}"`));
+    }
+  }
+});

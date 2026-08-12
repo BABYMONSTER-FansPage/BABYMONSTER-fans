@@ -1856,12 +1856,12 @@ function AuthModal({ locale, mode, onMode, onClose, onAuthenticated }: {
   const t = messages[locale];
   const f = fixedMessages[locale];
   const authCopy = {
-    "zh-TW": { verify: "驗證信已寄出，請到信箱點擊連結後再登入。", forgot: "忘記密碼？", resetTitle: "重設密碼", resetSent: "重設密碼信已寄出，請查看信箱。", send: "寄送重設連結", back: "返回登入" },
-    "zh-CN": { verify: "验证邮件已发送，请点击邮件中的链接后再登录。", forgot: "忘记密码？", resetTitle: "重设密码", resetSent: "重设密码邮件已发送。", send: "发送重设链接", back: "返回登录" },
-    th: { verify: "ส่งอีเมลยืนยันแล้ว โปรดกดลิงก์ในอีเมลก่อนเข้าสู่ระบบ", forgot: "ลืมรหัสผ่าน?", resetTitle: "รีเซ็ตรหัสผ่าน", resetSent: "ส่งอีเมลรีเซ็ตรหัสผ่านแล้ว", send: "ส่งลิงก์รีเซ็ต", back: "กลับไปเข้าสู่ระบบ" },
-    en: { verify: "Verification email sent. Open the link in your inbox before signing in.", forgot: "Forgot password?", resetTitle: "Reset password", resetSent: "Password reset email sent.", send: "Send reset link", back: "Back to sign in" },
-    ko: { verify: "인증 메일을 보냈습니다. 메일의 링크를 연 후 로그인하세요.", forgot: "비밀번호를 잊으셨나요?", resetTitle: "비밀번호 재설정", resetSent: "비밀번호 재설정 메일을 보냈습니다.", send: "재설정 링크 보내기", back: "로그인으로 돌아가기" },
-    ja: { verify: "確認メールを送信しました。メール内のリンクを開いてからログインしてください。", forgot: "パスワードを忘れた場合", resetTitle: "パスワードを再設定", resetSent: "再設定メールを送信しました。", send: "再設定リンクを送る", back: "ログインに戻る" },
+    "zh-TW": { verify: "驗證信已寄出，請到信箱點擊連結後再登入。若未收到，請查看垃圾郵件匣。", forgot: "忘記密碼？", resetTitle: "重設密碼", resetSent: "重設密碼信已寄出，請查看收件匣與垃圾郵件匣。", send: "寄送重設連結", back: "返回登入" },
+    "zh-CN": { verify: "验证邮件已发送，请点击邮件中的链接后再登录。若未收到，请查看垃圾邮件文件夹。", forgot: "忘记密码？", resetTitle: "重设密码", resetSent: "重设密码邮件已发送，请查看收件箱和垃圾邮件文件夹。", send: "发送重设链接", back: "返回登录" },
+    th: { verify: "ส่งอีเมลยืนยันแล้ว โปรดกดลิงก์ในอีเมลก่อนเข้าสู่ระบบ หากไม่พบ โปรดตรวจสอบโฟลเดอร์สแปมหรือจดหมายขยะ", forgot: "ลืมรหัสผ่าน?", resetTitle: "รีเซ็ตรหัสผ่าน", resetSent: "ส่งอีเมลรีเซ็ตรหัสผ่านแล้ว โปรดตรวจสอบกล่องจดหมายรวมถึงโฟลเดอร์สแปมหรือจดหมายขยะ", send: "ส่งลิงก์รีเซ็ต", back: "กลับไปเข้าสู่ระบบ" },
+    en: { verify: "Verification email sent. Open the link before signing in. If it is not in your inbox, check your spam or junk folder.", forgot: "Forgot password?", resetTitle: "Reset password", resetSent: "Password reset email sent. Check your inbox, including your spam or junk folder.", send: "Send reset link", back: "Back to sign in" },
+    ko: { verify: "인증 메일을 보냈습니다. 메일의 링크를 연 후 로그인하세요. 보이지 않으면 스팸 메일함도 확인해 주세요.", forgot: "비밀번호를 잊으셨나요?", resetTitle: "비밀번호 재설정", resetSent: "비밀번호 재설정 메일을 보냈습니다. 받은편지함과 스팸 메일함을 확인해 주세요.", send: "재설정 링크 보내기", back: "로그인으로 돌아가기" },
+    ja: { verify: "確認メールを送信しました。メール内のリンクを開いてからログインしてください。届かない場合は迷惑メールフォルダもご確認ください。", forgot: "パスワードを忘れた場合", resetTitle: "パスワードを再設定", resetSent: "再設定メールを送信しました。受信トレイと迷惑メールフォルダをご確認ください。", send: "再設定リンクを送る", back: "ログインに戻る" },
   }[locale];
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setFeedback("");
