@@ -1,7 +1,7 @@
 "use client";
 
-import { createContext, FormEvent, type CSSProperties, type ReactNode, useContext, useState, useEffect, useRef, useCallback } from "react";
-import { motion, useInView, useReducedMotion, useScroll, useTransform } from "motion/react";
+import { createContext, FormEvent, type CSSProperties, type MouseEvent, type ReactNode, useContext, useState, useEffect, useRef, useCallback } from "react";
+import { AnimatePresence, motion, useInView, useReducedMotion, useScroll, useTransform } from "motion/react";
 import {
   Play, Heart, MessageCircle,
   ChevronDown, Menu, X, Calendar, MapPin, Music, Send, Disc3, Settings, Save,
@@ -27,6 +27,18 @@ const HERO_PARTICLES = Array.from({ length: 18 }, (_, i) => ({
   delay: (i * 0.29) % 4.5,
   size: i % 3 === 0 ? 3 : 1.5,
 }));
+
+function useMobileViewport() {
+  const [mobile, setMobile] = useState(() => typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches);
+  useEffect(() => {
+    const query = window.matchMedia("(max-width: 767px)");
+    const update = () => setMobile(query.matches);
+    update();
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
+  return mobile;
+}
 
 // ─────────────────────────────────────────────
 // DATA
@@ -318,6 +330,7 @@ function Nav({ user, locale, onLocale, onLogin, onLogout, onAdmin, onEdit }: {
 }) {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const mobile = useMobileViewport();
 
   useEffect(() => {
     let frame = 0;
@@ -335,13 +348,19 @@ function Nav({ user, locale, onLocale, onLogin, onLogout, onAdmin, onEdit }: {
     { id: "members", label: t.nav[1] }, { id: "music", label: t.nav[2] },
     { id: "events", label: t.nav[3] }, { id: "community", label: t.nav[4] },
   ];
+  function navigateTo(event: MouseEvent<HTMLAnchorElement>, id: string) {
+    event.preventDefault();
+    setOpen(false);
+    window.history.replaceState(null, "", `#${id}`);
+    window.requestAnimationFrame(() => document.getElementById(id)?.scrollIntoView({ behavior: mobile ? "auto" : "smooth", block: "start" }));
+  }
 
   return (
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+      className={`fixed top-0 left-0 right-0 z-[150] transition-colors duration-200 ${
         scrolled ? "border-b border-white/5" : ""
       }`}
-      style={{ background: scrolled ? "rgba(5,5,5,0.92)" : "transparent", backdropFilter: scrolled ? "blur(20px)" : "none" }}
+      style={{ background: scrolled || mobile || open ? "rgba(5,5,5,0.97)" : "transparent", backdropFilter: scrolled && !mobile ? "blur(20px)" : "none" }}
     >
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         <a href="#top" className="font-black text-xl tracking-[0.12em] text-white" style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>
@@ -368,19 +387,19 @@ function Nav({ user, locale, onLocale, onLogin, onLogout, onAdmin, onEdit }: {
             : <button onClick={onLogin} className="hidden sm:block text-white/50 hover:text-white text-xs tracking-widest uppercase">{messages[locale].login}</button>}
           {user?.role === "admin" && <button onClick={onEdit} className="text-red-400/80 hover:text-red-300" aria-label="Edit mode">✎</button>}
           {user?.role === "admin" && <button onClick={onAdmin} className="text-red-400/80 hover:text-red-300" aria-label="Admin dashboard"><Settings size={16} /></button>}
-          <button className="md:hidden text-white/70 hover:text-white" onClick={() => setOpen(!open)}>
+          <button type="button" className="md:hidden relative z-10 grid min-w-11 place-items-center text-white/70 hover:text-white" onClick={() => setOpen(!open)} aria-label={open ? "Close menu" : "Open menu"} aria-expanded={open} aria-controls="mobile-navigation">
             {open ? <X size={20} /> : <Menu size={20} />}
           </button>
         </div>
       </div>
 
       {open && (
-        <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
-          className="md:hidden border-t border-white/8 px-6 py-5 flex flex-col gap-4"
+        <motion.div id="mobile-navigation" initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+          className="md:hidden fixed inset-x-0 top-16 max-h-[calc(100dvh-4rem)] overflow-y-auto border-t border-white/8 px-6 py-5 flex flex-col gap-4 shadow-2xl"
           style={{ background: "rgba(5,5,5,0.97)" }}>
           {links.map(link => (
-            <a key={link.id} href={`#${link.id}`} onClick={() => setOpen(false)}
-              className="text-white/60 hover:text-white text-sm tracking-[0.25em] uppercase">
+            <a key={link.id} href={`#${link.id}`} onClick={event => navigateTo(event, link.id)}
+              className="flex min-h-12 items-center border-b border-white/5 text-white/70 hover:text-white text-sm tracking-[0.25em] uppercase">
               {link.label}
             </a>
           ))}
@@ -402,8 +421,9 @@ function Nav({ user, locale, onLocale, onLogin, onLogout, onAdmin, onEdit }: {
 function Hero({ locale, content }: { locale: Locale; content: SiteContent }) {
   const t = messages[locale];
   const heroImage = contentUrl(content.heroImageUrl, "");
+  const mobile = useMobileViewport();
   return (
-    <section id="top" className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-black">
+    <section id="top" className="relative min-h-[100svh] flex flex-col items-center justify-center overflow-hidden bg-black">
       {/* Concert bg */}
       <div className="absolute inset-0">
         {heroImage && <img src={heroImage} alt="Hero visual" className="w-full h-full object-cover opacity-20" />}
@@ -414,8 +434,8 @@ function Hero({ locale, content }: { locale: Locale; content: SiteContent }) {
       </div>
 
       {/* Floating particles */}
-      {HERO_PARTICLES.map(p => (
-        <motion.div key={p.id} className="absolute rounded-full pointer-events-none"
+      {!mobile && HERO_PARTICLES.map(p => (
+        <motion.div key={p.id} className="hero-particle absolute rounded-full pointer-events-none"
           style={{ left: p.left, top: p.top, width: p.size, height: p.size, background: "#E01020" }}
           animate={{ y: [0, -18, 0], opacity: [0.2, 0.9, 0.2], scale: [1, 1.6, 1] }}
           transition={{ duration: p.dur, repeat: Infinity, delay: p.delay, ease: "easeInOut" }} />
@@ -423,7 +443,7 @@ function Hero({ locale, content }: { locale: Locale; content: SiteContent }) {
 
       {/* Main content */}
       <div className="relative z-10 text-center px-4">
-        <motion.p initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+        <motion.p initial={mobile ? false : { opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.3 }}
           className="text-white/35 text-xs tracking-[0.45em] uppercase mb-8">
           <EditableText k="heroKicker" fallback={contentText(content.heroKicker, "")} />
@@ -431,7 +451,7 @@ function Hero({ locale, content }: { locale: Locale; content: SiteContent }) {
 
         {/* BABY — slides up from mask */}
         <div className="overflow-hidden leading-none">
-          <motion.div initial={{ y: "110%" }} animate={{ y: 0 }}
+          <motion.div initial={mobile ? false : { y: "110%" }} animate={{ y: 0 }}
             transition={{ duration: 1, delay: 0.45, ease: [0.16, 1, 0.3, 1] }}>
             <span className="font-black text-white block leading-[0.88]"
               style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: "clamp(4.5rem, 18vw, 16rem)" }}>
@@ -442,7 +462,7 @@ function Hero({ locale, content }: { locale: Locale; content: SiteContent }) {
 
         {/* MONSTER — slides up with offset */}
         <div className="overflow-hidden leading-none -mt-2">
-          <motion.div initial={{ y: "110%" }} animate={{ y: 0 }}
+          <motion.div initial={mobile ? false : { y: "110%" }} animate={{ y: 0 }}
             transition={{ duration: 1, delay: 0.62, ease: [0.16, 1, 0.3, 1] }}>
             <span className="font-black block leading-[0.88]"
               style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: "clamp(4.5rem, 18vw, 16rem)", color: "#E01020" }}>
@@ -451,14 +471,14 @@ function Hero({ locale, content }: { locale: Locale; content: SiteContent }) {
           </motion.div>
         </div>
 
-        <motion.p initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }}
+        <motion.p initial={mobile ? false : { opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 1.1 }}
           className="text-white/50 text-sm md:text-base tracking-[0.35em] uppercase mt-8 mb-14">
           <EditableText k="heroNote" fallback={contentText(content.heroNote, "")} />
         </motion.p>
 
         {/* Stat row */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+        <motion.div initial={mobile ? false : { opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 1.35 }}
           className="flex items-center justify-center gap-10 md:gap-20 mb-16">
           {[{ v: "7", l: t.membersLabel }, { v: "3", l: t.nationalities }, { v: "2024", l: t.debut }].map(({ v, l }) => (
@@ -473,7 +493,7 @@ function Hero({ locale, content }: { locale: Locale; content: SiteContent }) {
       </div>
 
       {/* Scroll indicator */}
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+      <motion.div initial={mobile ? false : { opacity: 0 }} animate={{ opacity: 1 }}
         transition={{ delay: 2.4 }}
         className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2">
         <span className="text-white/25 text-xl" aria-hidden="true">↓</span>
@@ -522,6 +542,9 @@ function AboutSection({ locale, content }: { locale: Locale; content: SiteConten
   const t = messages[locale];
   const f = fixedMessages[locale];
   const [detailOpen, setDetailOpen] = useState(false);
+  const mobile = useMobileViewport();
+  const editor = useContext(InlineEditContext);
+  const showAboutVisual = Boolean(contentUrl(content.aboutImageUrl, "") || editor.editing);
 
   return (
     <section ref={ref} className="py-32 md:py-44 bg-black relative overflow-hidden">
@@ -531,9 +554,9 @@ function AboutSection({ locale, content }: { locale: Locale; content: SiteConten
         style={{ background: "#E01020" }} />
 
       <div className="max-w-7xl mx-auto px-6">
-        <div className="grid md:grid-cols-2 gap-16 md:gap-24 items-center">
+        <div className={`grid gap-16 md:gap-24 items-center ${showAboutVisual ? "md:grid-cols-2" : "mx-auto max-w-3xl"}`}>
           {/* Image */}
-          <motion.div initial={{ opacity: 0, scale: 0.93, x: -40 }}
+          {showAboutVisual && <motion.div initial={mobile ? false : { opacity: 0, scale: 0.93, x: -40 }}
             animate={isInView ? { opacity: 1, scale: 1, x: 0 } : {}}
             transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1], delay: 0.15 }}
             className="relative">
@@ -553,18 +576,18 @@ function AboutSection({ locale, content }: { locale: Locale; content: SiteConten
               transition={{ duration: 0.5, delay: 0.6 }}
               className="absolute -top-4 -right-4 w-8 h-8 rounded-full"
               style={{ background: "#E01020" }} />
-          </motion.div>
+          </motion.div>}
 
           {/* Text */}
           <div>
-            <motion.span initial={{ opacity: 0, x: 20 }} animate={isInView ? { opacity: 1, x: 0 } : {}}
+            <motion.span initial={mobile ? false : { opacity: 0, x: 20 }} animate={isInView ? { opacity: 1, x: 0 } : {}}
               transition={{ duration: 0.6, delay: 0.1 }}
               className="text-xs tracking-[0.4em] uppercase font-medium" style={{ color: "#E01020" }}>
               {t.storyLabel}
             </motion.span>
 
             <div className="overflow-hidden mt-4 mb-8">
-              <motion.h2 initial={{ y: 80 }} animate={isInView ? { y: 0 } : {}}
+              <motion.h2 initial={mobile ? false : { y: 80 }} animate={isInView ? { y: 0 } : {}}
                 transition={{ duration: 0.9, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
                 className="text-white font-black leading-none"
                 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: "clamp(3.5rem, 8vw, 7rem)" }}>
@@ -572,19 +595,19 @@ function AboutSection({ locale, content }: { locale: Locale; content: SiteConten
               </motion.h2>
             </div>
 
-            <motion.p initial={{ opacity: 0, y: 28 }} animate={isInView ? { opacity: 1, y: 0 } : {}}
+            <motion.p initial={mobile ? false : { opacity: 0, y: 28 }} animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.8, delay: 0.4 }}
               className="text-white/60 leading-relaxed text-sm md:text-base mb-5">
               <EditableText k="storyLead" fallback={contentText(content.storyLead, "")} />
             </motion.p>
 
-            <motion.p initial={{ opacity: 0, y: 28 }} animate={isInView ? { opacity: 1, y: 0 } : {}}
+            <motion.p initial={mobile ? false : { opacity: 0, y: 28 }} animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.8, delay: 0.52 }}
               className="text-white/40 leading-relaxed text-sm mb-12">
               <EditableText k="storyBody" fallback={contentText(content.storyBody, "")} />
             </motion.p>
 
-            <motion.div initial={{ opacity: 0, y: 28 }} animate={isInView ? { opacity: 1, y: 0 } : {}}
+            <motion.div initial={mobile ? false : { opacity: 0, y: 28 }} animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.8, delay: 0.66 }}
               className="grid grid-cols-4 gap-4">
               {[
@@ -626,6 +649,8 @@ function MemberSpotlight({ member, index, photoUrl, locale, instagramPosts = [] 
   const [detailOpen, setDetailOpen] = useState(false);
   const f = fixedMessages[locale];
   const reduceMotion = useReducedMotion();
+  const mobile = useMobileViewport();
+  const disableCinematicMotion = Boolean(reduceMotion || mobile);
 
   return (
     <div ref={ref} className="cinematic-member min-h-[145vh] md:min-h-[175vh] relative overflow-clip border-t border-white/5">
@@ -645,7 +670,7 @@ function MemberSpotlight({ member, index, photoUrl, locale, instagramPosts = [] 
       <div className="cinematic-frame sticky top-0 min-h-screen max-w-7xl mx-auto px-5 sm:px-6 w-full flex items-center py-20">
         <div className={`grid md:grid-cols-2 gap-12 md:gap-20 items-center ${!isEven ? "md:[grid-template-areas:'info_photo']" : ""}`}>
           {/* Portrait */}
-          <motion.div style={reduceMotion ? undefined : { scale: visualScale, opacity: visualOpacity }}
+          <motion.div style={disableCinematicMotion ? undefined : { scale: visualScale, opacity: visualOpacity }}
             className={!isEven ? "md:order-last" : ""}>
             <div className="aspect-[3/4] max-w-sm mx-auto relative overflow-hidden rounded-sm bg-neutral-900 group">
               <EditableImage
@@ -681,7 +706,7 @@ function MemberSpotlight({ member, index, photoUrl, locale, instagramPosts = [] 
           </motion.div>
 
           {/* Info */}
-          <motion.div style={reduceMotion ? undefined : { y: copyY, opacity: copyOpacity }}>
+          <motion.div style={disableCinematicMotion ? undefined : { y: copyY, opacity: copyOpacity }}>
             {/* Index + divider */}
             <motion.div initial={{ opacity: 0, y: 16 }}
               animate={isInView ? { opacity: 1, y: 0 } : {}}
@@ -1424,57 +1449,29 @@ function OpeningLoader({ locale }: { locale: Locale }) {
   const f = fixedMessages[locale];
   return <motion.div
     initial={{ opacity: 1 }}
-    exit={{ opacity: 0, transition: { duration: 0.65, ease: [0.16, 1, 0.3, 1] } }}
-    className="fixed inset-0 z-[200] bg-black overflow-hidden grid place-items-center"
+    exit={{ opacity: 0, transition: { duration: 0.12, ease: "easeOut" } }}
+    className="opening-loader fixed inset-0 z-[200] bg-black overflow-hidden grid place-items-center"
     role="status"
     aria-live="polite"
     aria-label="Loading Monstiez fan site">
-    <div className="absolute inset-0">
-      <motion.div
-        className="absolute left-0 right-0 top-1/2 h-px bg-[#E01020]"
-        initial={{ scaleX: 0, opacity: 0 }}
-        animate={{ scaleX: [0, 1, 1], opacity: [0, 1, 0.35] }}
-        transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1] }}
-        style={{ transformOrigin: "left" }} />
-      <motion.div
-        className="absolute -left-1/4 top-0 h-full w-1/2 bg-gradient-to-r from-transparent via-red-700/18 to-transparent skew-x-[-18deg]"
-        animate={{ x: ["0%", "260%"] }}
-        transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }} />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_45%,rgba(224,16,32,0.18),transparent_34%),linear-gradient(180deg,transparent,rgba(0,0,0,0.88))]" />
-    </div>
+    <div className="opening-loader__glow absolute inset-0" />
 
     <div className="relative z-10 text-center px-6">
-      <motion.p
-        initial={{ opacity: 0, y: 14 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.55 }}
-        className="text-white/35 text-xs tracking-[0.5em] uppercase mb-5">
+      <p className="opening-loader__signal text-white/35 text-xs tracking-[0.5em] uppercase mb-5">
         {f.loadingSignal}
-      </motion.p>
+      </p>
       <div className="overflow-hidden">
-        <motion.h1
-          initial={{ y: "110%" }}
-          animate={{ y: 0 }}
-          transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-          className="text-white font-black leading-[0.82]"
+        <h1 className="opening-loader__title text-white font-black leading-[0.82]"
           style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: "clamp(3.8rem, 14vw, 12rem)" }}>
           Monstiez
-        </motion.h1>
+        </h1>
       </div>
       <div className="mt-9 h-1 w-56 mx-auto bg-white/10 overflow-hidden">
-        <motion.div
-          className="h-full bg-[#E01020]"
-          initial={{ x: "-100%" }}
-          animate={{ x: ["-100%", "120%"] }}
-          transition={{ duration: 1.05, repeat: Infinity, ease: [0.65, 0, 0.35, 1] }} />
+        <div className="opening-loader__bar h-full bg-[#E01020]" />
       </div>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: [0.25, 0.8, 0.25] }}
-        transition={{ duration: 1.2, repeat: Infinity }}
-        className="mt-5 text-white/28 text-xs tracking-[0.35em] uppercase">
+      <div className="opening-loader__status mt-5 text-white/28 text-xs tracking-[0.35em] uppercase">
         {f.loadingStatus}
-      </motion.div>
+      </div>
     </div>
   </motion.div>;
 }
@@ -2068,7 +2065,7 @@ export default function App() {
     const next = getInitialLocale(navigator.languages, localStorage.getItem("monstiez-locale"));
     queueMicrotask(() => setLocale(next)); document.documentElement.lang = next;
     let active = true;
-    const loaderTimer = window.setTimeout(() => { if (active) setBooting(false); }, 700);
+    const loaderTimer = window.setTimeout(() => { if (active) setBooting(false); }, 420);
     void currentFanUser().then(nextUser => { if (active) setUser(nextUser); }).catch(() => {});
     void loadSiteContent().then(nextContent => {
       if (!active || !Object.keys(nextContent).length) return;
@@ -2175,7 +2172,7 @@ export default function App() {
   return (
     <InlineEditContext.Provider value={{ editing: editMode, locale, text: readText, image: readImage, openTextEditor, updateImage }}>
     <div className="bg-black min-h-screen" style={{ fontFamily: "'Inter', sans-serif" }}>
-      {booting && <OpeningLoader locale={locale} />}
+      <AnimatePresence>{booting && <OpeningLoader locale={locale} />}</AnimatePresence>
       <Nav user={user} locale={locale} onLocale={changeLocale} onLogin={() => setAuthOpen(true)} onLogout={logout} onAdmin={() => setAdminOpen(true)} onEdit={() => setEditMode(true)} />
       <Hero locale={locale} content={siteContent} />
       <AboutSection locale={locale} content={siteContent} />

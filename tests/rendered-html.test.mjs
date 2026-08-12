@@ -105,9 +105,13 @@ test("bundles six static languages and translates fan posts only", async () => {
   assert.match(page, /忘記密碼/);
   assert.match(page, /needsEmailConfirmation/);
   assert.match(page, /SITE_CONTENT_CACHE_KEY/);
-  assert.match(page, /setTimeout\(\(\) => \{ if \(active\) setBooting\(false\); \}, 700\)/);
+  assert.match(page, /setTimeout\(\(\) => \{ if \(active\) setBooting\(false\); \}, 420\)/);
   assert.match(client, /withTimeout/);
-  assert.match(css, /content-visibility: auto/);
+  assert.doesNotMatch(css, /content-visibility: auto/);
+  assert.match(page, /<AnimatePresence>\{booting && <OpeningLoader/);
+  assert.match(page, /aria-controls="mobile-navigation"/);
+  assert.match(page, /scrollIntoView\(\{ behavior: mobile \? "auto" : "smooth"/);
+  assert.match(page, /disableCinematicMotion/);
   assert.match(tourMigration, /choom-hong-kong-2027/);
   assert.match(page, /SITE_BROWSER_TITLE = "Monstiez｜BABYMONSTER Fans Club"/);
   assert.match(page, /FIXED_FAVICON_URL = "\/favicon\.svg"/);
@@ -131,7 +135,7 @@ test("bundles six static languages and translates fan posts only", async () => {
   assert.ok(page.indexOf("<AppPurposeSection locale={locale} />") < page.indexOf("<Footer"));
   assert.match(page, /MON<span style=\{\{ color: "#E01020" \}\}>STIEZ<\/span>/);
   assert.match(page, /aria-label="Loading Monstiez fan site"/);
-  assert.match(page, />\s*Monstiez\s*<\/motion\.h1>/);
+  assert.match(page, />\s*Monstiez\s*<\/h1>/);
   assert.doesNotMatch(page, /Loading BABYMONSTER fan site/);
   assert.doesNotMatch(page, /\{messages\[locale\]\.streamsLabel\}<\/div>/);
   assert.match(page, /fetchSpotifyReleaseStatus/);
