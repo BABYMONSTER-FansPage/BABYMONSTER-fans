@@ -74,6 +74,17 @@ export function supabaseClient() {
 
 export function supabaseConfigured() { return Boolean(supabaseClient()); }
 
+async function assertNicknameAvailable(nickname: string) {
+  const client = supabaseClient();
+  if (!client) throw new Error("SUPABASE_NOT_CONFIGURED");
+  const clean = nickname.trim();
+  const { data, error } = await withTimeout(client.rpc("nickname_availability", { candidate: clean }));
+  if (error) throw error;
+  const status = String(data || "invalid");
+  if (status !== "available") throw new Error(`NICKNAME_${status.toUpperCase()}`);
+  return clean;
+}
+
 async function profileFor(authUser: AuthUser): Promise<FanUser> {
   const client = supabaseClient();
   const fallbackNickname = String(authUser.user_metadata?.nickname || authUser.user_metadata?.full_name || authUser.email?.split("@")[0] || "MONSTIEZ").slice(0, 24);
@@ -110,11 +121,12 @@ export async function emailAuth(mode: "login" | "register", email: string, passw
   const client = supabaseClient();
   if (!client) throw new Error("SUPABASE_NOT_CONFIGURED");
   if (mode === "register") {
+    const cleanNickname = await assertNicknameAvailable(nickname || "");
     const { data, error } = await withTimeout(client.auth.signUp({
       email,
       password,
       options: {
-        data: { nickname },
+        data: { nickname: cleanNickname },
       },
     }));
     if (error) throw error;
@@ -190,6 +202,7 @@ export async function updateFanNickname(nickname: string) {
   if (!client) throw new Error("SUPABASE_NOT_CONFIGURED");
   const clean = nickname.trim().slice(0, 24);
   if (clean.length < 2) throw new Error("Nickname must be at least 2 characters.");
+  await assertNicknameAvailable(clean);
   const { data: authData } = await client.auth.getUser();
   if (!authData.user) throw new Error("NOT_SIGNED_IN");
   const { error } = await client.from("profiles").update({ nickname: clean }).eq("id", authData.user.id);
@@ -199,6 +212,33 @@ export async function updateFanNickname(nickname: string) {
   const next = { ...user, nickname: clean, needsNickname: false };
   writeFanCookie(next);
   return next;
+}
+
+export type NicknameBlacklistEntry = { id: number; name: string };
+
+export async function listNicknameBlacklist(): Promise<NicknameBlacklistEntry[]> {
+  const client = supabaseClient();
+  if (!client) throw new Error("SUPABASE_NOT_CONFIGURED");
+  const { data, error } = await withTimeout(client.from("nickname_blacklist").select("id,name").order("name"));
+  if (error) throw error;
+  return (data || []).map(row => ({ id: Number(row.id), name: String(row.name) }));
+}
+
+export async function addNicknameBlacklist(name: string): Promise<NicknameBlacklistEntry> {
+  const client = supabaseClient();
+  if (!client) throw new Error("SUPABASE_NOT_CONFIGURED");
+  const clean = name.trim();
+  if (clean.length < 2 || clean.length > 24) throw new Error("NICKNAME_INVALID");
+  const { data, error } = await withTimeout(client.from("nickname_blacklist").insert({ name: clean }).select("id,name").single());
+  if (error) throw error;
+  return { id: Number(data.id), name: String(data.name) };
+}
+
+export async function removeNicknameBlacklist(id: number) {
+  const client = supabaseClient();
+  if (!client) throw new Error("SUPABASE_NOT_CONFIGURED");
+  const { error } = await withTimeout(client.from("nickname_blacklist").delete().eq("id", id));
+  if (error) throw error;
 }
 
 export async function listFanPosts(viewer: FanUser | null): Promise<FanPost[]> {

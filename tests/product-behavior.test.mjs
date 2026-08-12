@@ -16,13 +16,30 @@ test("translation failure always falls back to original", async () => {
 
 test("role permissions are enforced by Supabase RLS", async () => {
   const { readFile } = await import("node:fs/promises");
-  const [sql, nicknamePolicy] = await Promise.all([
+  const [sql, nicknamePolicy, nicknameRules] = await Promise.all([
     readFile(new URL("../supabase/migrations/202608100001_monstiez_community.sql", import.meta.url), "utf8"),
     readFile(new URL("../supabase/migrations/202608100004_profile_nickname_policy.sql", import.meta.url), "utf8"),
+    readFile(new URL("../supabase/migrations/202608120004_unique_nickname_blacklist.sql", import.meta.url), "utf8"),
   ]);
   assert.match(sql, /alter table public\.posts enable row level security/i);
   assert.match(sql, /user_id = auth\.uid\(\) or public\.is_admin\(\)/i);
   assert.match(sql, /role public\.fan_role not null default 'monstiez'/i);
   assert.doesNotMatch(sql, /service_role.*grant/i);
   assert.match(nicknamePolicy, /grant update \(nickname\) on public\.profiles to authenticated/i);
+  assert.match(nicknameRules, /create unique index if not exists profiles_nickname_normalized_unique/i);
+  assert.match(nicknameRules, /lower\(btrim\(nickname\)\)/i);
+  assert.match(nicknameRules, /values \('ahyeon'\)/i);
+  assert.match(nicknameRules, /normalized_name = normalized/i);
+  assert.match(nicknameRules, /create trigger enforce_profile_nickname_rules/i);
+  assert.match(nicknameRules, /admins manage nickname blacklist/i);
+});
+
+test("nickname blacklist uses exact case-insensitive matches", () => {
+  const normalizedBlacklist = new Set(["ahyeon"]);
+  const isBlocked = nickname => normalizedBlacklist.has(nickname.trim().toLocaleLowerCase("en-US"));
+  assert.equal(isBlocked("ahyeon"), true);
+  assert.equal(isBlocked("Ahyeon"), true);
+  assert.equal(isBlocked("AHYEON"), true);
+  assert.equal(isBlocked("ahyeon lover"), false);
+  assert.equal(isBlocked("aheyno"), false);
 });

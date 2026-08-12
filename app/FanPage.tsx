@@ -8,11 +8,11 @@ import {
 } from "lucide-react";
 import { fixedMessages, getInitialLocale, localeLabels, messages, supportedLocales, type Locale } from "./i18n";
 import {
-  createFanPost, currentFanUser, deleteFanPost, editFanPost, emailAuth, listFanPosts,
+  addNicknameBlacklist, createFanPost, currentFanUser, deleteFanPost, editFanPost, emailAuth, listFanPosts, listNicknameBlacklist,
   fetchSpotifyReleaseStatus, listAnnouncements, loadSiteContent, moderateFanPost, observeFanUser, reportFanPost,
-  requestPasswordReset, resendSignupOtp, saveSiteContent, signOutFan, socialAuth, toggleFanLike, translateFanPost, updateFanNickname, updateFanPassword,
+  removeNicknameBlacklist, requestPasswordReset, resendSignupOtp, saveSiteContent, signOutFan, socialAuth, toggleFanLike, translateFanPost, updateFanNickname, updateFanPassword,
   verifyEmailOtp, verifyPasswordRecoveryOtp,
-  type EditableEvent, type FanPost as ApiPost, type FanUser as User, type SiteContent, type SpotifyRelease,
+  type EditableEvent, type FanPost as ApiPost, type FanUser as User, type NicknameBlacklistEntry, type SiteContent, type SpotifyRelease,
 } from "./lib/supabase-browser";
 
 // ─────────────────────────────────────────────
@@ -1504,6 +1504,44 @@ function AdminPanel({ content, onSaved, onClose }: { content: SiteContent; onSav
     instagramPosts: normalizeMemberInstagramPosts(content.instagramPosts),
   }));
   const [feedback, setFeedback] = useState("");
+  const [nicknameBlacklist, setNicknameBlacklist] = useState<NicknameBlacklistEntry[]>([]);
+  const [blacklistName, setBlacklistName] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    void listNicknameBlacklist()
+      .then(entries => { if (active) setNicknameBlacklist(entries); })
+      .catch(error => { if (active) setFeedback(error instanceof Error ? `暱稱黑名單載入失敗：${error.message}` : "暱稱黑名單載入失敗。"); });
+    return () => { active = false; };
+  }, []);
+
+  async function addBlockedNickname() {
+    const clean = blacklistName.trim();
+    if (!clean) return;
+    setFeedback("正在新增暱稱黑名單…");
+    try {
+      const entry = await addNicknameBlacklist(clean);
+      setNicknameBlacklist(current => [...current, entry].sort((a, b) => a.name.localeCompare(b.name)));
+      setBlacklistName("");
+      setFeedback(`已封鎖暱稱「${entry.name}」（不分大小寫）。`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "UNKNOWN_ERROR";
+      setFeedback(message.includes("duplicate") || message.includes("unique")
+        ? "這個暱稱已在黑名單中。"
+        : `新增暱稱黑名單失敗：${message}`);
+    }
+  }
+
+  async function removeBlockedNickname(entry: NicknameBlacklistEntry) {
+    setFeedback(`正在移除「${entry.name}」…`);
+    try {
+      await removeNicknameBlacklist(entry.id);
+      setNicknameBlacklist(current => current.filter(item => item.id !== entry.id));
+      setFeedback(`已從黑名單移除「${entry.name}」。`);
+    } catch (error) {
+      setFeedback(error instanceof Error ? `移除暱稱黑名單失敗：${error.message}` : "移除暱稱黑名單失敗。");
+    }
+  }
 
   function update<K extends keyof SiteContent>(key: K, value: SiteContent[K]) {
     setDraft(current => ({ ...current, [key]: value }));
@@ -1688,6 +1726,21 @@ function AdminPanel({ content, onSaved, onClose }: { content: SiteContent; onSav
         </section>
 
         <section className="border-t border-white/8 pt-6">
+          <h3 className="text-white font-bold mb-2">暱稱黑名單</h3>
+          <p className="text-white/35 text-xs leading-relaxed mb-4">只封鎖完全相同的暱稱，不分大小寫。例如封鎖 ahyeon 後，Ahyeon 與 AHYEON 都不能使用，但 ahyeon lover 與 aheyno 仍可使用。</p>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <input value={blacklistName} onChange={event => setBlacklistName(event.target.value)} maxLength={24} placeholder="輸入要封鎖的完整暱稱" className={`${inputClass} mt-0`} />
+            <button type="button" onClick={() => void addBlockedNickname()} className="shrink-0 px-4 py-3 border border-red-500/40 bg-red-600/10 text-red-200 text-xs hover:bg-red-600/20">加入黑名單</button>
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {nicknameBlacklist.length ? nicknameBlacklist.map(entry => <div key={entry.id} className="inline-flex items-center gap-2 border border-white/10 px-3 py-2 text-white/65 text-xs">
+              <span>{entry.name}</span>
+              <button type="button" onClick={() => void removeBlockedNickname(entry)} className="text-red-400 hover:text-red-300" aria-label={`從黑名單移除 ${entry.name}`}><X size={13} aria-hidden="true" /></button>
+            </div>) : <p className="text-white/30 text-xs">目前沒有黑名單名稱。</p>}
+          </div>
+        </section>
+
+        <section className="border-t border-white/8 pt-6">
           <div className="flex items-center justify-between gap-4 mb-4">
             <h3 className="text-white font-bold">近期活動</h3>
             <button type="button" onClick={addEvent} className="px-3 py-2 border border-white/15 text-white/60 text-xs hover:text-white">新增活動</button>
@@ -1830,6 +1883,22 @@ function TextEditModal({ editKey, values, fallback, onSave, onClose }: {
   </div>;
 }
 
+function nicknameErrorMessage(error: unknown, locale: Locale, fallback: string) {
+  const message = error instanceof Error ? error.message : "";
+  const copy = {
+    "zh-TW": { taken: "這個暱稱已被使用，請選擇其他暱稱。", blocked: "這個暱稱無法使用，請選擇其他暱稱。", invalid: "暱稱必須為 2 至 24 個字元。" },
+    "zh-CN": { taken: "这个昵称已被使用，请选择其他昵称。", blocked: "这个昵称无法使用，请选择其他昵称。", invalid: "昵称必须为 2 至 24 个字符。" },
+    th: { taken: "ชื่อเล่นนี้ถูกใช้แล้ว โปรดเลือกชื่ออื่น", blocked: "ไม่สามารถใช้ชื่อเล่นนี้ได้ โปรดเลือกชื่ออื่น", invalid: "ชื่อเล่นต้องมีความยาว 2 ถึง 24 ตัวอักษร" },
+    en: { taken: "This nickname is already in use. Choose another one.", blocked: "This nickname is not available. Choose another one.", invalid: "Your nickname must be 2 to 24 characters." },
+    ko: { taken: "이미 사용 중인 닉네임입니다. 다른 닉네임을 선택해 주세요.", blocked: "사용할 수 없는 닉네임입니다. 다른 닉네임을 선택해 주세요.", invalid: "닉네임은 2자 이상 24자 이하여야 합니다." },
+    ja: { taken: "このニックネームは既に使用されています。別の名前を選んでください。", blocked: "このニックネームは使用できません。別の名前を選んでください。", invalid: "ニックネームは2文字以上24文字以内で入力してください。" },
+  }[locale];
+  if (/NICKNAME_TAKEN|duplicate key|profiles_nickname_normalized_unique/i.test(message)) return copy.taken;
+  if (/NICKNAME_BLOCKED/i.test(message)) return copy.blocked;
+  if (/NICKNAME_INVALID|at least 2 characters/i.test(message)) return copy.invalid;
+  return message && message !== "SUPABASE_NOT_CONFIGURED" ? message : fallback;
+}
+
 function NicknameModal({ locale, onSaved }: { locale: Locale; onSaved: (user: User) => void }) {
   const [feedback, setFeedback] = useState("");
   const t = messages[locale];
@@ -1840,9 +1909,7 @@ function NicknameModal({ locale, onSaved }: { locale: Locale; onSaved: (user: Us
     try {
       const user = await updateFanNickname(nickname);
       onSaved(user);
-    } catch (error) {
-      setFeedback(error instanceof Error ? error.message : t.genericError);
-    }
+    } catch (error) { setFeedback(nicknameErrorMessage(error, locale, t.genericError)); }
   }
   return <div className="fixed inset-0 z-[115] bg-black/90 grid place-items-center p-5" role="dialog" aria-modal="true" aria-label={t.nickname}>
     <form onSubmit={submit} className="w-full max-w-md bg-[#090909] border border-white/15 p-7 shadow-2xl">
@@ -1940,7 +2007,7 @@ function AuthModal({ locale, mode, onMode, onClose, onAuthenticated, onPasswordR
         setOtpRequest({ type: "signup", email: String(payload.email || "") });
         setFeedback(authCopy.verify);
       }
-    } catch (error) { setFeedback(error instanceof Error && error.message !== "SUPABASE_NOT_CONFIGURED" ? error.message : t.genericError); }
+    } catch (error) { setFeedback(mode === "register" ? nicknameErrorMessage(error, locale, t.genericError) : error instanceof Error && error.message !== "SUPABASE_NOT_CONFIGURED" ? error.message : t.genericError); }
     finally { setPending(false); }
   }
   async function sendReset(event: FormEvent<HTMLFormElement>) {

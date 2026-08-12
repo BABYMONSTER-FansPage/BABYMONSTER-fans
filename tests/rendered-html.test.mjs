@@ -160,6 +160,10 @@ test("bundles six static languages and translates fan posts only", async () => {
   assert.doesNotMatch(page, /tracks\.length\s*\+\s*["'`]\s*tracks/i);
   assert.match(page, /AllPostsModal/);
   assert.match(page, /updateFanNickname/);
+  assert.match(client, /nickname_availability/);
+  assert.match(client, /listNicknameBlacklist/);
+  assert.match(page, /暱稱黑名單/);
+  assert.match(page, /ahyeon lover/);
   assert.match(page, /useScroll/); assert.match(page, /useTransform/);
   assert.match(client, /translateFanPost/); assert.match(client, /functions\.invoke\("translate-comment"/);
   assert.doesNotMatch(client, /wechat/i);

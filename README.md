@@ -34,6 +34,10 @@ npm run build
    - `supabase/migrations/202608100005_site_content_albums.sql`
    - `supabase/migrations/202608110001_relax_site_content_keys.sql`
    - `supabase/migrations/202608110002_set_monstiez_site_name.sql`
+   - `supabase/migrations/202608120001_instagram_posts_content.sql`
+   - `supabase/migrations/202608120002_choom_tour_after_chiba.sql`
+   - `supabase/migrations/202608120003_oauth_unlink_events.sql`
+   - `supabase/migrations/202608120004_unique_nickname_blacklist.sql`
 3. 部署 `supabase/functions/translate-comment`。若要自動抓 Spotify 最新專輯／單曲，也部署 `supabase/functions/spotify-releases`；若未部署或未設定 Spotify secrets，管理員仍可在後台手動新增專輯資料。
 4. 在 Supabase Auth 的 URL Configuration 設定：
    - Site URL：`https://babymonster.fans`
