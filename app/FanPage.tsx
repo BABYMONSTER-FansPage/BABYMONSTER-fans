@@ -908,23 +908,36 @@ function eventStatusLabel(status: EditableEvent["status"], locale: Locale) {
   return labels[locale][status];
 }
 
-function eventDateTimestamp(event: EditableEvent) {
-  const source = event.startDate || event.dates.match(/\d{4}-\d{2}-\d{2}/)?.[0] || "";
+function eventDateTimestamp(event: EditableEvent, boundary: "start" | "end" = "start") {
+  const fallback = event.dates.match(/\d{4}[.-]\d{2}[.-]\d{2}/)?.[0]?.replaceAll(".", "-") || "";
+  const source = boundary === "end" ? event.endDate || event.startDate || fallback : event.startDate || fallback;
   if (!/^\d{4}-\d{2}-\d{2}$/.test(source)) return Number.POSITIVE_INFINITY;
   const [year, month, day] = source.split("-").map(Number);
   return new Date(year, month - 1, day).setHours(0, 0, 0, 0);
 }
 
+function eventDisplayDate(event: EditableEvent) {
+  const start = event.startDate;
+  const end = event.endDate || start;
+  if (!start) return event.dates || "TBA";
+  const dottedStart = start.replaceAll("-", ".");
+  if (!end || end === start) return dottedStart;
+  const [startYear] = start.split("-");
+  const [endYear, endMonth, endDay] = end.split("-");
+  return startYear === endYear ? `${dottedStart}–${endMonth}.${endDay}` : `${dottedStart}–${end.replaceAll("-", ".")}`;
+}
+
 function classifyEventsByDate(events: EditableEvent[], now = new Date()) {
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-  const dated = events.map((event, index) => ({ event, index, timestamp: eventDateTimestamp(event) }));
+  const dated = events.map((event, index) => ({ event, index, timestamp: eventDateTimestamp(event), endTimestamp: eventDateTimestamp(event, "end") }));
   const next = dated
-    .filter(item => item.timestamp >= today)
+    .filter(item => item.endTimestamp >= today)
     .sort((a, b) => a.timestamp - b.timestamp || a.index - b.index)[0];
 
   return dated.map(item => ({
     ...item.event,
-    status: item.timestamp < today ? "past" : item.index === next?.index ? "upcoming" : "future",
+    dates: eventDisplayDate(item.event),
+    status: item.endTimestamp < today ? "past" : item.index === next?.index ? "upcoming" : "future",
   } as EditableEvent));
 }
 
@@ -983,7 +996,7 @@ function EventCard({ event, index, locale, onOpen }: { event: EditableEvent; ind
         <div className="flex flex-wrap gap-5 text-xs text-white/35">
           <span className="flex items-center gap-1.5">
             <Calendar size={11} style={{ color: "rgba(224,16,32,0.6)" }} />
-            {event.dates}
+            {eventDisplayDate(event)}
           </span>
           <span className="flex items-center gap-1.5">
             <MapPin size={11} style={{ color: "rgba(224,16,32,0.6)" }} />
@@ -1051,7 +1064,7 @@ function EventDetailModal({ event, locale, onClose }: { event: EditableEvent; lo
         <button onClick={onClose} className="text-2xl text-white/50 hover:text-white" aria-label="Close">×</button>
       </div>
       <div className="mb-6 flex flex-wrap gap-5 text-sm text-white/45">
-        <span className="flex items-center gap-2"><Calendar size={14} className="text-red-400" />{event.dates}</span>
+        <span className="flex items-center gap-2"><Calendar size={14} className="text-red-400" />{eventDisplayDate(event)}</span>
         <span className="flex items-center gap-2"><MapPin size={14} className="text-red-400" />{event.locations}</span>
         {event.type && <span>{event.type}</span>}
       </div>
@@ -1454,7 +1467,7 @@ function AdminPanel({ content, onSaved, onClose }: { content: SiteContent; onSav
   function addEvent() {
     setDraft(current => ({
       ...current,
-      events: [...(current.events || EVENTS), { title: "New activity", sub: "Official update", startDate: "", dates: "", locations: "Official channels", type: "News", status: "future", desc: "Confirm details with official announcements." }],
+      events: [...(current.events || EVENTS), { title: "New activity", sub: "Official update", startDate: "", endDate: "", dates: "", locations: "Official channels", type: "News", status: "future", desc: "Confirm details with official announcements." }],
     }));
   }
 
@@ -1623,8 +1636,8 @@ function AdminPanel({ content, onSaved, onClose }: { content: SiteContent; onSav
               <div className="grid md:grid-cols-2 gap-3">
                 <label className={labelClass}>標題<input value={event.title} onChange={e => updateEvent(index, "title", e.target.value)} className={inputClass} /></label>
                 <label className={labelClass}>副標<input value={event.sub} onChange={e => updateEvent(index, "sub", e.target.value)} className={inputClass} /></label>
-                <label className={labelClass}>活動日期<input type="date" value={event.startDate || ""} onChange={e => updateEvent(index, "startDate", e.target.value)} className={inputClass} /></label>
-                <label className={labelClass}>顯示日期文字<input value={event.dates} onChange={e => updateEvent(index, "dates", e.target.value)} className={inputClass} /></label>
+                <label className={labelClass}>開始日期<input type="date" value={event.startDate || ""} onChange={e => updateEvent(index, "startDate", e.target.value)} className={inputClass} /></label>
+                <label className={labelClass}>結束日期<input type="date" min={event.startDate || undefined} value={event.endDate || event.startDate || ""} onChange={e => updateEvent(index, "endDate", e.target.value)} className={inputClass} /></label>
                 <label className={labelClass}>地點<input value={event.locations} onChange={e => updateEvent(index, "locations", e.target.value)} className={inputClass} /></label>
                 <div className={labelClass}>自動狀態<div className="mt-2 border border-white/10 bg-white/[0.025] p-3 text-white/55 text-sm">{eventStatusLabel(classifiedEvents[index]?.status || "future", "zh-TW")}</div></div>
                 <label className={labelClass}>類型<input value={event.type} onChange={e => updateEvent(index, "type", e.target.value)} className={inputClass} /></label>

@@ -9,6 +9,7 @@ export type FanPost = {
 export type EditableEvent = {
   id?: string | number;
   startDate?: string;
+  endDate?: string;
   title: string; sub: string; dates: string; locations: string; type: string;
   status: "upcoming" | "future" | "past"; desc: string;
 };

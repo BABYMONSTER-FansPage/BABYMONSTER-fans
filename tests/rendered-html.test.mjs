@@ -31,7 +31,7 @@ test("builds a GitHub Pages entry for babymonster.fans", async () => {
 });
 
 test("bundles six static languages and translates fan posts only", async () => {
-  const [page, i18n, client, oauthRoute, css, envExample, migration, cmsMigration, albumMigration, relaxedMigration, instagramMigration, spotifyFunction, translateFunction, privacy, terms] = await Promise.all([
+  const [page, i18n, client, oauthRoute, css, envExample, migration, cmsMigration, albumMigration, relaxedMigration, instagramMigration, tourMigration, spotifyFunction, translateFunction, privacy, terms] = await Promise.all([
     readFile(new URL("../app/FanPage.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/i18n.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/lib/supabase-browser.ts", import.meta.url), "utf8"),
@@ -43,6 +43,7 @@ test("bundles six static languages and translates fan posts only", async () => {
     readFile(new URL("../supabase/migrations/202608100005_site_content_albums.sql", import.meta.url), "utf8"),
     readFile(new URL("../supabase/migrations/202608110001_relax_site_content_keys.sql", import.meta.url), "utf8"),
     readFile(new URL("../supabase/migrations/202608120001_instagram_posts_content.sql", import.meta.url), "utf8"),
+    readFile(new URL("../supabase/migrations/202608120002_choom_tour_after_chiba.sql", import.meta.url), "utf8"),
     readFile(new URL("../supabase/functions/spotify-releases/index.ts", import.meta.url), "utf8"),
     readFile(new URL("../supabase/functions/translate-comment/index.ts", import.meta.url), "utf8"),
     readFile(new URL("../public/privacy.html", import.meta.url), "utf8"),
@@ -76,12 +77,17 @@ test("bundles six static languages and translates fan posts only", async () => {
   assert.match(page, /eventDateTimestamp/);
   assert.match(page, /EventDetailModal/);
   assert.match(page, /type="date"/);
+  assert.match(page, /開始日期/);
+  assert.match(page, /結束日期/);
+  assert.match(page, /eventDisplayDate/);
+  assert.doesNotMatch(page, /顯示日期文字/);
   assert.match(page, /自動狀態/);
   assert.doesNotMatch(page, /value="ongoing">進行中/);
   assert.match(page, /儲存 Instagram/);
   assert.match(page, /saveInstagramPostsOnly/);
   assert.match(page, /saveSiteContent\(\{ instagramPosts: posts \}\)/);
   assert.match(page, /OFFICIAL_BRAND_NAME = "Monstiez"/);
+  assert.match(tourMigration, /choom-hong-kong-2027/);
   assert.match(page, /SITE_BROWSER_TITLE = "Monstiez｜BABYMONSTER Fans Club"/);
   assert.match(page, /FIXED_FAVICON_URL = "\/favicon\.svg"/);
   assert.match(page, /Monstiez（固定）/);
