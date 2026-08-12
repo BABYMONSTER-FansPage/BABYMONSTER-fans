@@ -58,13 +58,14 @@ test("bundles six static languages and translates fan posts only", async () => {
   assert.match(page, /DbsLtoLmfWh/);
   assert.match(page, /savedPosts\.length \? savedPosts : FEATURED_INSTAGRAM_POSTS/);
   assert.match(page, /instagramEmbedUrl/);
-  assert.match(page, /embed\/captioned\//);
+  assert.match(page, /return `\$\{url\}embed\/`/);
   assert.match(page, /<iframe/);
   assert.match(page, /normalizeInstagramUrl/);
   assert.match(page, /raw\.match\(/);
   assert.match(page, /embeddedUrl/);
   assert.match(page, /referrerPolicy="strict-origin-when-cross-origin"/);
-  assert.match(page, /Loading official Instagram post/);
+  assert.match(page, /h-\[760px\]/);
+  assert.match(page, /loading="eager"/);
   assert.doesNotMatch(page, /instagram\.com\/embed\.js/);
   assert.doesNotMatch(page, /data-instgrm-permalink/);
   assert.match(page, /\/share\/ 短連結無法直接嵌入/);

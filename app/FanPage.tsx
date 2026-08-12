@@ -205,31 +205,19 @@ function normalizeInstagramPosts(value: unknown) {
 }
 
 function instagramEmbedUrl(url: string) {
-  return `${url}embed/captioned/`;
+  return `${url}embed/`;
 }
 
 function InstagramEmbedFrame({ url, index, label }: { url: string; index: number; label: string }) {
-  const [loaded, setLoaded] = useState(false);
-
   return (
-    <div className="relative min-h-[560px] overflow-hidden bg-neutral-950">
-      {!loaded && (
-        <div className="absolute inset-0 grid place-items-center bg-[radial-gradient(circle_at_50%_0%,rgba(225,16,32,.24),transparent_34%),#080808] px-6 text-center">
-          <div>
-            <div className="mx-auto mb-5 h-10 w-10 animate-spin rounded-full border border-white/15 border-t-red-500" />
-            <p className="text-white/70 text-sm tracking-[0.18em] uppercase">Loading official Instagram post</p>
-            <p className="mt-3 text-white/35 text-xs leading-relaxed">如果 Instagram 阻擋第三方嵌入，請使用下方官方連結開啟原貼文。</p>
-          </div>
-        </div>
-      )}
+    <div className="relative h-[760px] overflow-hidden bg-white">
       <iframe
         title={`Instagram official post ${index + 1}`}
         src={instagramEmbedUrl(url)}
-        className="relative z-10 h-[560px] w-full border-0 bg-black"
-        loading="lazy"
+        className="h-full w-full border-0 bg-white"
+        loading="eager"
         allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
         referrerPolicy="strict-origin-when-cross-origin"
-        onLoad={() => setLoaded(true)}
       />
       <a
         href={url}
