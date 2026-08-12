@@ -150,7 +150,6 @@ const SITE_BROWSER_TITLE = "Monstiez｜BABYMONSTER Fans Club";
 const FIXED_FAVICON_URL = "/favicon.svg";
 const PRIVACY_POLICY_URL = "https://babymonster.fans/privacy.html";
 const TERMS_OF_SERVICE_URL = "https://babymonster.fans/terms.html";
-const FEATURED_INSTAGRAM_POSTS = ["https://www.instagram.com/p/DbsLtoLmfWh/"];
 
 function contentText(value: unknown, fallback: string) {
   return typeof value === "string" && value.trim() ? value : fallback;
@@ -204,13 +203,22 @@ function normalizeInstagramPosts(value: unknown) {
   return Array.from(new Set(value.map(normalizeInstagramUrl).filter(Boolean)));
 }
 
+function normalizeMemberInstagramPosts(value: unknown) {
+  if (!value || Array.isArray(value) || typeof value !== "object") return {};
+  return MEMBERS.reduce<Record<string, string[]>>((posts, member) => {
+    const normalized = normalizeInstagramPosts((value as Record<string, unknown>)[member.id]);
+    if (normalized.length) posts[member.id] = normalized;
+    return posts;
+  }, {});
+}
+
 function instagramEmbedUrl(url: string) {
   return `${url}embed/`;
 }
 
 function InstagramEmbedFrame({ url, index, label }: { url: string; index: number; label: string }) {
   return (
-    <div className="relative h-[760px] overflow-hidden bg-white">
+    <div className="relative h-[560px] overflow-hidden bg-white">
       <iframe
         title={`Instagram official post ${index + 1}`}
         src={instagramEmbedUrl(url)}
@@ -587,7 +595,7 @@ function AboutSection({ locale, content }: { locale: Locale; content: SiteConten
 // MEMBER SPOTLIGHT (individual)
 // ─────────────────────────────────────────────
 
-function MemberSpotlight({ member, index, photoUrl, locale }: { member: typeof MEMBERS[0]; index: number; photoUrl?: string; locale: Locale }) {
+function MemberSpotlight({ member, index, photoUrl, locale, instagramPosts = [] }: { member: typeof MEMBERS[0]; index: number; photoUrl?: string; locale: Locale; instagramPosts?: string[] }) {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, amount: 0.08 });
   const isEven = index % 2 === 0;
@@ -696,6 +704,12 @@ function MemberSpotlight({ member, index, photoUrl, locale }: { member: typeof M
             </motion.p>
             <button onClick={() => setDetailOpen(true)} className="text-red-400/80 hover:text-red-300 text-xs tracking-[0.25em] uppercase">{f.detailIntro}</button>
 
+            {instagramPosts.length > 0 && <div className="mt-8 flex gap-4 overflow-x-auto pb-3">
+              {instagramPosts.map((url, postIndex) => <div key={`${member.id}-${url}`} className="w-[280px] shrink-0 border border-white/10 bg-white p-1 sm:w-[320px]">
+                <InstagramEmbedFrame url={url} index={postIndex} label={f.openInstagramPost} />
+              </div>)}
+            </div>}
+
           </motion.div>
         </div>
       </div>
@@ -708,6 +722,7 @@ function MembersSection({ locale, content }: { locale: Locale; content: SiteCont
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, amount: 0.2 });
   const t = messages[locale];
+  const memberInstagramPosts = normalizeMemberInstagramPosts(content.instagramPosts);
 
   return (
     <section id="members" className="bg-black">
@@ -739,7 +754,7 @@ function MembersSection({ locale, content }: { locale: Locale; content: SiteCont
         </motion.p>
       </div>
 
-      {MEMBERS.map((m, i) => <MemberSpotlight key={m.id} member={m} index={i} photoUrl={content.memberPhotos?.[m.id]} locale={locale} />)}
+      {MEMBERS.map((m, i) => <MemberSpotlight key={m.id} member={m} index={i} photoUrl={content.memberPhotos?.[m.id]} locale={locale} instagramPosts={memberInstagramPosts[m.id]} />)}
     </section>
   );
 }
@@ -871,50 +886,6 @@ function MusicSection({ locale, content }: { locale: Locale; content: SiteConten
               <span className="text-white/35 text-xs tracking-[.3em] uppercase"><EditableText k="instagramLabel" fallback={t.officialProfile} /></span><strong className="text-white text-3xl" style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>INSTAGRAM ↗</strong>
             </a>
           </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function InstagramSignalSection({ locale, content }: { locale: Locale; content: SiteContent }) {
-  const savedPosts = normalizeInstagramPosts(content.instagramPosts);
-  const posts = savedPosts.length ? savedPosts : FEATURED_INSTAGRAM_POSTS;
-  const f = fixedMessages[locale];
-
-  if (!posts.length) return null;
-
-  return (
-    <section id="yg-instagram" className="bg-black border-t border-white/5 py-24 md:py-36 overflow-hidden">
-      <div className="max-w-7xl mx-auto px-6">
-        <div className="grid md:grid-cols-[0.85fr_1.15fr] gap-10 md:gap-16 items-end mb-12">
-          <div>
-            <p className="text-xs tracking-[0.4em] uppercase text-[#E01020]">{f.instagramFeedKicker}</p>
-            <h2 className="mt-4 text-white font-black leading-none"
-              style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: "clamp(3.4rem, 9vw, 8rem)" }}>
-              {f.instagramFeedTitle}
-            </h2>
-          </div>
-          <p className="text-white/40 text-sm md:text-base leading-relaxed md:max-w-xl">{f.instagramFeedBody}</p>
-        </div>
-
-        <div className="grid auto-cols-[minmax(280px,380px)] grid-flow-col md:grid-flow-row md:grid-cols-3 gap-5 overflow-x-auto md:overflow-visible pb-4">
-          {posts.map((url, index) => (
-            <article key={`${url}-${index}`} className="group relative min-w-0 border border-white/10 bg-white/[0.025] p-3 transition-colors hover:border-red-600/35">
-              <div className="mb-3 flex items-center justify-between gap-4">
-                <span className="text-white/25 text-xs tracking-[0.25em] uppercase">#{String(index + 1).padStart(2, "0")} · Official post</span>
-                <span className="h-px flex-1 bg-red-600/30" />
-              </div>
-              <div className="relative overflow-hidden bg-neutral-950">
-                <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-px bg-red-600/70 opacity-0 transition-opacity group-hover:opacity-100" />
-                <InstagramEmbedFrame url={url} index={index} label={f.openInstagramPost} />
-              </div>
-              <a href={url} target="_blank" rel="noreferrer"
-                className="mt-4 inline-block text-red-300/80 hover:text-red-200 text-xs tracking-[0.25em] uppercase">
-                {f.openInstagramPost} ↗
-              </a>
-            </article>
-          ))}
         </div>
       </div>
     </section>
@@ -1393,7 +1364,7 @@ function AdminPanel({ content, onSaved, onClose }: { content: SiteContent; onSav
     uiText: { ...(content.uiText || {}) },
     events: Array.isArray(content.events) ? content.events : [],
     albums: Array.isArray(content.albums) ? content.albums : [],
-    instagramPosts: Array.isArray(content.instagramPosts) ? content.instagramPosts : [],
+    instagramPosts: normalizeMemberInstagramPosts(content.instagramPosts),
   }));
   const [feedback, setFeedback] = useState("");
 
@@ -1451,36 +1422,26 @@ function AdminPanel({ content, onSaved, onClose }: { content: SiteContent; onSav
     setDraft(current => ({ ...current, albums: (current.albums || []).filter((_, albumIndex) => albumIndex !== index) }));
   }
 
-  function updateInstagramPost(index: number, value: string) {
-    setDraft(current => {
-      const instagramPosts = [...(current.instagramPosts || [])];
-      instagramPosts[index] = value;
-      return { ...current, instagramPosts };
-    });
-  }
-
-  function addInstagramPost() {
-    setDraft(current => ({ ...current, instagramPosts: [...(current.instagramPosts || []), ""] }));
-  }
-
-  function removeInstagramPost(index: number) {
-    setDraft(current => ({ ...current, instagramPosts: (current.instagramPosts || []).filter((_, postIndex) => postIndex !== index) }));
+  function updateMemberInstagramPosts(memberId: string, value: string) {
+    setDraft(current => ({
+      ...current,
+      instagramPosts: {
+        ...normalizeMemberInstagramPosts(current.instagramPosts),
+        [memberId]: value.split("\n").map(item => item.trim()).filter(Boolean),
+      },
+    }));
   }
 
   async function saveInstagramPostsOnly() {
-    const rawPosts = draft.instagramPosts || [];
-    const posts = normalizeInstagramPosts(rawPosts);
-    if (rawPosts.some(value => String(value || "").trim()) && !posts.length) {
-      setFeedback("Instagram 網址格式不正確，請貼上 /p/、/reel/ 或 /tv/ 的完整貼文網址。");
-      return;
-    }
+    const posts = normalizeMemberInstagramPosts(draft.instagramPosts);
 
     setFeedback("正在儲存 Instagram 貼文…");
     try {
       await saveSiteContent({ instagramPosts: posts });
       setDraft(current => ({ ...current, instagramPosts: posts }));
       onSaved({ ...content, instagramPosts: posts, siteName: OFFICIAL_BRAND_NAME, faviconUrl: FIXED_FAVICON_URL });
-      setFeedback(`Instagram 貼文已獨立儲存到 Supabase（${posts.length} 則）。`);
+      const count = Object.values(posts).reduce((total, memberPosts) => total + memberPosts.length, 0);
+      setFeedback(`Instagram 貼文已儲存（${count} 則）。`);
     } catch (error) {
       setFeedback(error instanceof Error
         ? `Instagram 儲存失敗：${error.message}`
@@ -1513,7 +1474,7 @@ function AdminPanel({ content, onSaved, onClose }: { content: SiteContent; onSav
     setFeedback("Saving...");
     try {
       const { siteName: _siteName, faviconUrl: _faviconUrl, ...editableDraft } = draft;
-      const nextContent = { ...editableDraft, instagramPosts: normalizeInstagramPosts(editableDraft.instagramPosts) };
+      const nextContent = { ...editableDraft, instagramPosts: normalizeMemberInstagramPosts(editableDraft.instagramPosts) };
       await saveSiteContent(nextContent);
       onSaved({ ...nextContent, siteName: OFFICIAL_BRAND_NAME, faviconUrl: FIXED_FAVICON_URL });
       setFeedback("Saved. Public pages will use the new content immediately.");
@@ -1526,7 +1487,7 @@ function AdminPanel({ content, onSaved, onClose }: { content: SiteContent; onSav
   const labelClass = "block text-white/45 text-xs tracking-wider";
   const events = draft.events || [];
   const albums = draft.albums || [];
-  const instagramPosts = draft.instagramPosts || [];
+  const instagramPosts = normalizeMemberInstagramPosts(draft.instagramPosts);
   const uiText = draft.uiText || {};
 
   return <div className="fixed inset-0 z-[105] bg-black/88 grid place-items-center p-4" role="dialog" aria-modal="true" aria-label="Admin dashboard">
@@ -1607,27 +1568,14 @@ function AdminPanel({ content, onSaved, onClose }: { content: SiteContent; onSav
 
         <section className="border-t border-white/8 pt-6">
           <div className="flex items-center justify-between gap-4 mb-4">
-            <h3 className="text-white font-bold">Instagram 官方貼文</h3>
-            <div className="flex flex-wrap justify-end gap-2">
-              <button type="button" onClick={addInstagramPost} className="px-3 py-2 border border-white/15 text-white/60 text-xs hover:text-white">新增 IG URL</button>
-              <button type="button" onClick={() => void saveInstagramPostsOnly()} className="px-3 py-2 border border-red-500/40 bg-red-600/10 text-red-200 text-xs hover:bg-red-600/20">儲存 Instagram</button>
-            </div>
+            <h3 className="text-white font-bold">成員 Instagram 貼文</h3>
+            <button type="button" onClick={() => void saveInstagramPostsOnly()} className="px-3 py-2 border border-red-500/40 bg-red-600/10 text-red-200 text-xs hover:bg-red-600/20">儲存 Instagram</button>
           </div>
-          <p className="text-white/35 text-xs leading-relaxed mb-4">
-            只貼 Instagram 官方貼文或 Reel URL，例如 https://www.instagram.com/p/... 或 https://www.instagram.com/reel/...。網站只做官方 embed，不下載、不重傳、不把圖片存進 Supabase 或 GitHub。
-          </p>
           <div className="grid gap-3">
-            {instagramPosts.map((url, index) => <div key={index} className="border border-white/8 p-4">
-              <label className={labelClass}>Instagram URL<input value={url || ""} onChange={e => updateInstagramPost(index, e.target.value)} placeholder="https://www.instagram.com/p/..." className={inputClass} /></label>
-              <p className={`mt-2 text-xs ${url && !normalizeInstagramUrl(url) ? "text-red-300/75" : "text-white/28"}`}>
-                {url && !normalizeInstagramUrl(url) ? "請貼 Instagram 貼文 /p/、Reel /reel/ 或 TV /tv/ 的網址；/share/ 短連結無法直接嵌入。" : "儲存時會自動清除追蹤參數，只保留官方 permalink。"}
-              </p>
-              {normalizeInstagramUrl(url) && <div className="mt-4 max-w-sm overflow-hidden border border-white/10 bg-white">
-                <iframe title={`Instagram preview ${index + 1}`} src={instagramEmbedUrl(normalizeInstagramUrl(url))} className="h-[560px] w-full border-0 bg-white" loading="eager" />
-              </div>}
-              <button type="button" onClick={() => removeInstagramPost(index)} className="mt-3 text-red-400/70 hover:text-red-300 text-xs">刪除這則 IG</button>
-            </div>)}
-            {!instagramPosts.length && <p className="text-white/28 text-xs">尚未新增 Instagram 貼文 URL。新增後才會在前台顯示 IG 區塊。</p>}
+            {MEMBERS.map(member => <label key={member.id} className={`${labelClass} border border-white/8 p-4`}>
+              {member.name}（每行一個貼文網址）
+              <textarea rows={3} value={(instagramPosts[member.id] || []).join("\n")} onChange={event => updateMemberInstagramPosts(member.id, event.target.value)} placeholder="https://www.instagram.com/p/..." className={inputClass} />
+            </label>)}
           </div>
         </section>
 
@@ -1934,7 +1882,6 @@ export default function App() {
       <AboutSection locale={locale} content={siteContent} />
       <MembersSection locale={locale} content={siteContent} />
       <MusicSection locale={locale} content={siteContent} />
-      <InstagramSignalSection locale={locale} content={siteContent} />
       <EventsSection locale={locale} content={siteContent} />
       <CustomSections sections={siteContent.customSections || []} />
       <CommunitySection user={user} locale={locale} onLogin={() => setAuthOpen(true)} />

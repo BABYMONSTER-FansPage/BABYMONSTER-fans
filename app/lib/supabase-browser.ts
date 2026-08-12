@@ -31,7 +31,7 @@ export type SiteContent = {
   uiText?: Record<string, string>;
   customSections?: Array<{ id: string; title?: string; body?: string; imageUrl?: string; kind: "text" | "image" | "mixed" }>;
   albums?: SpotifyRelease[];
-  instagramPosts?: string[];
+  instagramPosts?: Record<string, string[]>;
 };
 
 let browserClient: SupabaseClient | null | undefined;
