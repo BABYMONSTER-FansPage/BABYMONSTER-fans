@@ -72,9 +72,12 @@ test("bundles six static languages and translates fan posts only", async () => {
   assert.match(page, /成員 Instagram 貼文/);
   assert.match(page, /key=\{event\.id \?\? index\}/);
   assert.match(page, /visibleEvents/);
-  assert.match(page, /event\.status === "ongoing"/);
+  assert.match(page, /classifyEventsByDate/);
+  assert.match(page, /eventDateTimestamp/);
   assert.match(page, /EventDetailModal/);
-  assert.match(page, /value="ongoing">進行中/);
+  assert.match(page, /type="date"/);
+  assert.match(page, /自動狀態/);
+  assert.doesNotMatch(page, /value="ongoing">進行中/);
   assert.match(page, /儲存 Instagram/);
   assert.match(page, /saveInstagramPostsOnly/);
   assert.match(page, /saveSiteContent\(\{ instagramPosts: posts \}\)/);

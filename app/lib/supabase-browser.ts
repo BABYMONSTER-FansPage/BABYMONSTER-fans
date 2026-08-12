@@ -8,8 +8,9 @@ export type FanPost = {
 };
 export type EditableEvent = {
   id?: string | number;
+  startDate?: string;
   title: string; sub: string; dates: string; locations: string; type: string;
-  status: "upcoming" | "ongoing" | "past"; desc: string;
+  status: "upcoming" | "future" | "past"; desc: string;
 };
 export type SpotifyRelease = {
   id: string; title: string; year: string; type: string; releaseDate?: string; imageUrl?: string; spotifyUrl?: string; tracks: string[];

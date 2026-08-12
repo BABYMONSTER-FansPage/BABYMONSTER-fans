@@ -898,14 +898,34 @@ function MusicSection({ locale, content }: { locale: Locale; content: SiteConten
 
 function eventStatusLabel(status: EditableEvent["status"], locale: Locale) {
   const labels: Record<Locale, Record<EditableEvent["status"], string>> = {
-    "zh-TW": { past: "過去", ongoing: "進行中", upcoming: "即將舉行" },
-    "zh-CN": { past: "过去", ongoing: "进行中", upcoming: "即将举行" },
-    th: { past: "ที่ผ่านมา", ongoing: "กำลังดำเนินการ", upcoming: "เร็ว ๆ นี้" },
-    en: { past: "Past", ongoing: "Ongoing", upcoming: "Upcoming" },
-    ko: { past: "지난 일정", ongoing: "진행 중", upcoming: "예정" },
-    ja: { past: "終了", ongoing: "開催中", upcoming: "開催予定" },
+    "zh-TW": { past: "過去", upcoming: "即將舉行", future: "未來" },
+    "zh-CN": { past: "过去", upcoming: "即将举行", future: "未来" },
+    th: { past: "ที่ผ่านมา", upcoming: "เร็ว ๆ นี้", future: "อนาคต" },
+    en: { past: "Past", upcoming: "Upcoming", future: "Future" },
+    ko: { past: "지난 일정", upcoming: "곧 예정", future: "향후 일정" },
+    ja: { past: "終了", upcoming: "近日開催", future: "今後" },
   };
   return labels[locale][status];
+}
+
+function eventDateTimestamp(event: EditableEvent) {
+  const source = event.startDate || event.dates.match(/\d{4}-\d{2}-\d{2}/)?.[0] || "";
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(source)) return Number.POSITIVE_INFINITY;
+  const [year, month, day] = source.split("-").map(Number);
+  return new Date(year, month - 1, day).setHours(0, 0, 0, 0);
+}
+
+function classifyEventsByDate(events: EditableEvent[], now = new Date()) {
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const dated = events.map((event, index) => ({ event, index, timestamp: eventDateTimestamp(event) }));
+  const next = dated
+    .filter(item => item.timestamp >= today)
+    .sort((a, b) => a.timestamp - b.timestamp || a.index - b.index)[0];
+
+  return dated.map(item => ({
+    ...item.event,
+    status: item.timestamp < today ? "past" : item.index === next?.index ? "upcoming" : "future",
+  } as EditableEvent));
 }
 
 function EventCard({ event, index, locale, onOpen }: { event: EditableEvent; index: number; locale: Locale; onOpen: () => void }) {
@@ -928,7 +948,7 @@ function EventCard({ event, index, locale, onOpen }: { event: EditableEvent; ind
         className="absolute left-0 md:left-1/2 top-8 -translate-x-1/2">
         <div className={`w-3 h-3 rounded-full ${event.status === "past" ? "bg-white/20" : ""}`}
           style={event.status !== "past" ? { background: "#E01020" } : {}} />
-        {event.status === "ongoing" && (
+        {event.status === "upcoming" && (
           <div className="absolute inset-0 rounded-full animate-ping opacity-40" style={{ background: "#E01020" }} />
         )}
       </motion.div>
@@ -980,12 +1000,12 @@ function EventsSection({ locale, content }: { locale: Locale; content: SiteConte
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, amount: 0.15 });
   const t = messages[locale];
-  const events = Array.isArray(content.events) ? content.events : [];
+  const events = classifyEventsByDate(Array.isArray(content.events) ? content.events : []);
   const [selectedEvent, setSelectedEvent] = useState<EditableEvent | null>(null);
   const visibleEvents = [
-    events.filter(event => event.status === "past").at(-1),
-    events.find(event => event.status === "ongoing"),
+    events.filter(event => event.status === "past").sort((a, b) => eventDateTimestamp(b) - eventDateTimestamp(a))[0],
     events.find(event => event.status === "upcoming"),
+    events.filter(event => event.status === "future").sort((a, b) => eventDateTimestamp(a) - eventDateTimestamp(b))[0],
   ].filter((event): event is EditableEvent => Boolean(event));
 
   return (
@@ -1434,7 +1454,7 @@ function AdminPanel({ content, onSaved, onClose }: { content: SiteContent; onSav
   function addEvent() {
     setDraft(current => ({
       ...current,
-      events: [...(current.events || EVENTS), { title: "New activity", sub: "Official update", dates: "TBA", locations: "Official channels", type: "News", status: "upcoming", desc: "Confirm details with official announcements." }],
+      events: [...(current.events || EVENTS), { title: "New activity", sub: "Official update", startDate: "", dates: "", locations: "Official channels", type: "News", status: "future", desc: "Confirm details with official announcements." }],
     }));
   }
 
@@ -1517,7 +1537,11 @@ function AdminPanel({ content, onSaved, onClose }: { content: SiteContent; onSav
     setFeedback("Saving...");
     try {
       const { siteName: _siteName, faviconUrl: _faviconUrl, ...editableDraft } = draft;
-      const nextContent = { ...editableDraft, instagramPosts: normalizeMemberInstagramPosts(editableDraft.instagramPosts) };
+      const nextContent = {
+        ...editableDraft,
+        events: classifyEventsByDate(editableDraft.events || []),
+        instagramPosts: normalizeMemberInstagramPosts(editableDraft.instagramPosts),
+      };
       await saveSiteContent(nextContent);
       onSaved({ ...nextContent, siteName: OFFICIAL_BRAND_NAME, faviconUrl: FIXED_FAVICON_URL });
       setFeedback("Saved. Public pages will use the new content immediately.");
@@ -1529,6 +1553,7 @@ function AdminPanel({ content, onSaved, onClose }: { content: SiteContent; onSav
   const inputClass = "mt-2 w-full bg-black border border-white/15 p-3 text-white/75 text-sm focus:outline-none focus:border-red-600/60";
   const labelClass = "block text-white/45 text-xs tracking-wider";
   const events = draft.events || [];
+  const classifiedEvents = classifyEventsByDate(events);
   const albums = draft.albums || [];
   const instagramPosts = normalizeMemberInstagramPosts(draft.instagramPosts);
   const uiText = draft.uiText || {};
@@ -1598,9 +1623,10 @@ function AdminPanel({ content, onSaved, onClose }: { content: SiteContent; onSav
               <div className="grid md:grid-cols-2 gap-3">
                 <label className={labelClass}>標題<input value={event.title} onChange={e => updateEvent(index, "title", e.target.value)} className={inputClass} /></label>
                 <label className={labelClass}>副標<input value={event.sub} onChange={e => updateEvent(index, "sub", e.target.value)} className={inputClass} /></label>
-                <label className={labelClass}>日期<input value={event.dates} onChange={e => updateEvent(index, "dates", e.target.value)} className={inputClass} /></label>
+                <label className={labelClass}>活動日期<input type="date" value={event.startDate || ""} onChange={e => updateEvent(index, "startDate", e.target.value)} className={inputClass} /></label>
+                <label className={labelClass}>顯示日期文字<input value={event.dates} onChange={e => updateEvent(index, "dates", e.target.value)} className={inputClass} /></label>
                 <label className={labelClass}>地點<input value={event.locations} onChange={e => updateEvent(index, "locations", e.target.value)} className={inputClass} /></label>
-                <label className={labelClass}>狀態<select value={event.status} onChange={e => updateEvent(index, "status", e.target.value)} className={inputClass}><option value="past">過去</option><option value="ongoing">進行中</option><option value="upcoming">未來</option></select></label>
+                <div className={labelClass}>自動狀態<div className="mt-2 border border-white/10 bg-white/[0.025] p-3 text-white/55 text-sm">{eventStatusLabel(classifiedEvents[index]?.status || "future", "zh-TW")}</div></div>
                 <label className={labelClass}>類型<input value={event.type} onChange={e => updateEvent(index, "type", e.target.value)} className={inputClass} /></label>
                 <label className={`${labelClass} md:col-span-2`}>說明<textarea rows={3} value={event.desc} onChange={e => updateEvent(index, "desc", e.target.value)} className={inputClass} /></label>
               </div>
