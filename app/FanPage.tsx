@@ -896,7 +896,19 @@ function MusicSection({ locale, content }: { locale: Locale; content: SiteConten
 // EVENT CARD
 // ─────────────────────────────────────────────
 
-function EventCard({ event, index, locale }: { event: EditableEvent; index: number; locale: Locale }) {
+function eventStatusLabel(status: EditableEvent["status"], locale: Locale) {
+  const labels: Record<Locale, Record<EditableEvent["status"], string>> = {
+    "zh-TW": { past: "過去", ongoing: "進行中", upcoming: "即將舉行" },
+    "zh-CN": { past: "过去", ongoing: "进行中", upcoming: "即将举行" },
+    th: { past: "ที่ผ่านมา", ongoing: "กำลังดำเนินการ", upcoming: "เร็ว ๆ นี้" },
+    en: { past: "Past", ongoing: "Ongoing", upcoming: "Upcoming" },
+    ko: { past: "지난 일정", ongoing: "진행 중", upcoming: "예정" },
+    ja: { past: "終了", ongoing: "開催中", upcoming: "開催予定" },
+  };
+  return labels[locale][status];
+}
+
+function EventCard({ event, index, locale, onOpen }: { event: EditableEvent; index: number; locale: Locale; onOpen: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, amount: 0.2 });
   const isLeft = index % 2 === 0;
@@ -914,27 +926,31 @@ function EventCard({ event, index, locale }: { event: EditableEvent; index: numb
       <motion.div initial={{ scale: 0 }} animate={isInView ? { scale: 1 } : {}}
         transition={{ duration: 0.4, delay: 0.1 }}
         className="absolute left-0 md:left-1/2 top-8 -translate-x-1/2">
-        <div className={`w-3 h-3 rounded-full ${event.status === "upcoming" ? "" : "bg-white/20"}`}
-          style={event.status === "upcoming" ? { background: "#E01020" } : {}} />
-        {event.status === "upcoming" && (
+        <div className={`w-3 h-3 rounded-full ${event.status === "past" ? "bg-white/20" : ""}`}
+          style={event.status !== "past" ? { background: "#E01020" } : {}} />
+        {event.status === "ongoing" && (
           <div className="absolute inset-0 rounded-full animate-ping opacity-40" style={{ background: "#E01020" }} />
         )}
       </motion.div>
 
       <motion.div
+        role="button"
+        tabIndex={0}
+        onClick={onOpen}
+        onKeyDown={eventKey => { if (eventKey.key === "Enter" || eventKey.key === " ") onOpen(); }}
         initial={{ opacity: 0, y: 38, x: isLeft ? -24 : 24 }}
         animate={isInView ? { opacity: 1, y: 0, x: 0 } : {}}
         transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1], delay: 0.15 }}
-        className={`border border-white/8 rounded-sm p-6 hover:border-red-600/25 transition-colors duration-300 group ${isLeft ? "md:mr-8" : "md:ml-8"}`}
+        className={`cursor-pointer border border-white/8 rounded-sm p-6 hover:border-red-600/25 transition-colors duration-300 group ${isLeft ? "md:mr-8" : "md:ml-8"}`}
         style={{ background: "rgba(255,255,255,0.018)" }}>
         <div className="flex items-start justify-between gap-4 mb-3">
           <span className={`text-xs tracking-[0.3em] uppercase px-2 py-0.5 rounded ${
-            event.status === "upcoming"
+            event.status !== "past"
               ? "text-red-400 border border-red-800/30"
               : "text-white/30 bg-white/5"
           }`}
-            style={event.status === "upcoming" ? { background: "rgba(224,16,32,0.1)" } : {}}>
-            {event.status === "upcoming" ? messages[locale].latestNews : messages[locale].verifyOfficial}
+            style={event.status !== "past" ? { background: "rgba(224,16,32,0.1)" } : {}}>
+            {eventStatusLabel(event.status, locale)}
           </span>
           <span className="text-white/25 text-xs tracking-wider">{messages[locale].eventsLabel}</span>
         </div>
@@ -944,8 +960,6 @@ function EventCard({ event, index, locale }: { event: EditableEvent; index: numb
           {contentText(event.title, localizedTitle)}
         </h3>
         <p className="text-white/35 text-xs tracking-widest uppercase mb-4">{contentText(event.sub, t.verifyOfficial)}</p>
-        <p className="text-white/50 text-sm mb-5">{contentText(event.desc, messages[locale].eventsLead)}</p>
-
         <div className="flex flex-wrap gap-5 text-xs text-white/35">
           <span className="flex items-center gap-1.5">
             <Calendar size={11} style={{ color: "rgba(224,16,32,0.6)" }} />
@@ -956,6 +970,7 @@ function EventCard({ event, index, locale }: { event: EditableEvent; index: numb
             {event.locations}
           </span>
         </div>
+        <span className="mt-5 inline-block text-xs tracking-[0.2em] uppercase text-red-300/80">{fixedMessages[locale].detailIntro} ↗</span>
       </motion.div>
     </div>
   );
@@ -966,6 +981,12 @@ function EventsSection({ locale, content }: { locale: Locale; content: SiteConte
   const isInView = useInView(ref, { once: true, amount: 0.15 });
   const t = messages[locale];
   const events = Array.isArray(content.events) ? content.events : [];
+  const [selectedEvent, setSelectedEvent] = useState<EditableEvent | null>(null);
+  const visibleEvents = [
+    events.filter(event => event.status === "past").at(-1),
+    events.find(event => event.status === "ongoing"),
+    events.find(event => event.status === "upcoming"),
+  ].filter((event): event is EditableEvent => Boolean(event));
 
   return (
     <section id="events" className="bg-black py-24 md:py-44 border-t border-white/5">
@@ -989,12 +1010,34 @@ function EventsSection({ locale, content }: { locale: Locale; content: SiteConte
           {/* Timeline line */}
           <div className="absolute left-4 md:left-1/2 top-0 bottom-0 w-px bg-white/8" />
           <div className="space-y-14">
-            {events.map((e, i) => <EventCard key={`${e.title}-${i}`} event={e} index={i} locale={locale} />)}
+            {visibleEvents.map((event, index) => <EventCard key={event.id ?? `${event.status}-${index}`} event={event} index={index} locale={locale} onOpen={() => setSelectedEvent(event)} />)}
           </div>
         </div>
       </div>
+      {selectedEvent && <EventDetailModal event={selectedEvent} locale={locale} onClose={() => setSelectedEvent(null)} />}
     </section>
   );
+}
+
+function EventDetailModal({ event, locale, onClose }: { event: EditableEvent; locale: Locale; onClose: () => void }) {
+  return <div className="fixed inset-0 z-[115] grid place-items-center bg-black/88 p-5" role="dialog" aria-modal="true" aria-label={event.title}>
+    <div className="w-full max-w-3xl max-h-[86vh] overflow-auto border border-white/15 bg-[#090909] p-7 shadow-2xl">
+      <div className="mb-6 flex items-start justify-between gap-5">
+        <div>
+          <span className="text-xs tracking-[0.25em] uppercase text-red-400">{eventStatusLabel(event.status, locale)}</span>
+          <h2 className="mt-2 text-4xl font-black leading-none text-white md:text-5xl" style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>{event.title}</h2>
+          {event.sub && <p className="mt-3 text-xs tracking-widest uppercase text-white/40">{event.sub}</p>}
+        </div>
+        <button onClick={onClose} className="text-2xl text-white/50 hover:text-white" aria-label="Close">×</button>
+      </div>
+      <div className="mb-6 flex flex-wrap gap-5 text-sm text-white/45">
+        <span className="flex items-center gap-2"><Calendar size={14} className="text-red-400" />{event.dates}</span>
+        <span className="flex items-center gap-2"><MapPin size={14} className="text-red-400" />{event.locations}</span>
+        {event.type && <span>{event.type}</span>}
+      </div>
+      <p className="whitespace-pre-wrap text-sm leading-7 text-white/65">{event.desc}</p>
+    </div>
+  </div>;
 }
 
 // ─────────────────────────────────────────────
@@ -1383,7 +1426,7 @@ function AdminPanel({ content, onSaved, onClose }: { content: SiteContent; onSav
   function updateEvent(index: number, key: keyof EditableEvent, value: string) {
     setDraft(current => {
       const events = [...(current.events || EVENTS)];
-      events[index] = { ...events[index], [key]: key === "status" && value !== "past" ? "upcoming" : value } as EditableEvent;
+      events[index] = { ...events[index], [key]: value } as EditableEvent;
       return { ...current, events };
     });
   }
@@ -1557,7 +1600,7 @@ function AdminPanel({ content, onSaved, onClose }: { content: SiteContent; onSav
                 <label className={labelClass}>副標<input value={event.sub} onChange={e => updateEvent(index, "sub", e.target.value)} className={inputClass} /></label>
                 <label className={labelClass}>日期<input value={event.dates} onChange={e => updateEvent(index, "dates", e.target.value)} className={inputClass} /></label>
                 <label className={labelClass}>地點<input value={event.locations} onChange={e => updateEvent(index, "locations", e.target.value)} className={inputClass} /></label>
-                <label className={labelClass}>狀態<select value={event.status} onChange={e => updateEvent(index, "status", e.target.value)} className={inputClass}><option value="upcoming">upcoming</option><option value="past">past</option></select></label>
+                <label className={labelClass}>狀態<select value={event.status} onChange={e => updateEvent(index, "status", e.target.value)} className={inputClass}><option value="past">過去</option><option value="ongoing">進行中</option><option value="upcoming">未來</option></select></label>
                 <label className={labelClass}>類型<input value={event.type} onChange={e => updateEvent(index, "type", e.target.value)} className={inputClass} /></label>
                 <label className={`${labelClass} md:col-span-2`}>說明<textarea rows={3} value={event.desc} onChange={e => updateEvent(index, "desc", e.target.value)} className={inputClass} /></label>
               </div>

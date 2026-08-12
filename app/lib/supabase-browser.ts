@@ -9,7 +9,7 @@ export type FanPost = {
 export type EditableEvent = {
   id?: string | number;
   title: string; sub: string; dates: string; locations: string; type: string;
-  status: "upcoming" | "past"; desc: string;
+  status: "upcoming" | "ongoing" | "past"; desc: string;
 };
 export type SpotifyRelease = {
   id: string; title: string; year: string; type: string; releaseDate?: string; imageUrl?: string; spotifyUrl?: string; tracks: string[];
