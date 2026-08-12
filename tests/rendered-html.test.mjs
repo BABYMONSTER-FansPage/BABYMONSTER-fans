@@ -89,11 +89,19 @@ test("bundles six static languages and translates fan posts only", async () => {
   assert.match(page, /saveInstagramPostsOnly/);
   assert.match(page, /saveSiteContent\(\{ instagramPosts: posts \}\)/);
   assert.match(page, /OFFICIAL_BRAND_NAME = "Monstiez"/);
-  assert.match(client, /emailRedirectTo/);
+  assert.match(client, /verifyEmailOtp/);
+  assert.match(client, /type: "signup"/);
   assert.match(client, /resetPasswordForEmail/);
-  assert.match(client, /PASSWORD_RECOVERY/);
+  assert.match(client, /verifyPasswordRecoveryOtp/);
+  assert.match(client, /type: "recovery"/);
+  assert.doesNotMatch(client, /emailRedirectTo|redirectTo:.*reset-password/);
   assert.match(client, /updateUser\(\{ password \}\)/);
   assert.match(page, /ResetPasswordModal/);
+  assert.match(page, /function OtpCodeInput/);
+  assert.match(page, /autoComplete="one-time-code"/);
+  assert.match(page, /inputMode="numeric"/);
+  assert.match(page, /grid-cols-6/);
+  assert.match(page, /value\.slice\(0, -1\)/);
   assert.match(page, /忘記密碼/);
   assert.match(page, /needsEmailConfirmation/);
   assert.match(page, /SITE_CONTENT_CACHE_KEY/);
@@ -186,12 +194,13 @@ test("offers Google as the only social login", async () => {
   assert.doesNotMatch(oauthCallback, /kakao|wechat/i);
 });
 
-test("auth delivery notices cover six languages and emails use English", async () => {
-  const [page, confirmation, recovery, passwordChanged] = await Promise.all([
+test("auth delivery notices cover six languages and emails use six-digit codes", async () => {
+  const [page, confirmation, recovery, passwordChanged, config] = await Promise.all([
     readFile(new URL("../app/FanPage.tsx", import.meta.url), "utf8"),
     readFile(new URL("../supabase/templates/confirmation.html", import.meta.url), "utf8"),
     readFile(new URL("../supabase/templates/recovery.html", import.meta.url), "utf8"),
     readFile(new URL("../supabase/templates/password_changed_notification.html", import.meta.url), "utf8"),
+    readFile(new URL("../supabase/config.toml", import.meta.url), "utf8"),
   ]);
   for (const notice of ["垃圾郵件匣", "垃圾邮件文件夹", "สแปม", "spam or junk folder", "스팸 메일함", "迷惑メールフォルダ"]) {
     assert.match(page, new RegExp(notice));
@@ -207,4 +216,9 @@ test("auth delivery notices cover six languages and emails use English", async (
   assert.match(confirmation, /Confirm your email address/);
   assert.match(recovery, /Reset your password/);
   assert.match(passwordChanged, /Your password was changed/);
+  assert.match(config, /otp_length = 6/);
+  for (const template of [confirmation, recovery]) {
+    assert.match(template, /\{\{ \.Token \}\}/);
+    assert.doesNotMatch(template, /ConfirmationURL|href="\{\{/);
+  }
 });

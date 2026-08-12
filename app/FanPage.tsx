@@ -10,7 +10,8 @@ import { fixedMessages, getInitialLocale, localeLabels, messages, supportedLocal
 import {
   createFanPost, currentFanUser, deleteFanPost, editFanPost, emailAuth, listFanPosts,
   fetchSpotifyReleaseStatus, listAnnouncements, loadSiteContent, moderateFanPost, observeFanUser, reportFanPost,
-  observePasswordRecovery, requestPasswordReset, saveSiteContent, signOutFan, socialAuth, toggleFanLike, translateFanPost, updateFanNickname, updateFanPassword,
+  requestPasswordReset, resendSignupOtp, saveSiteContent, signOutFan, socialAuth, toggleFanLike, translateFanPost, updateFanNickname, updateFanPassword,
+  verifyEmailOtp, verifyPasswordRecoveryOtp,
   type EditableEvent, type FanPost as ApiPost, type FanUser as User, type SiteContent, type SpotifyRelease,
 } from "./lib/supabase-browser";
 
@@ -1846,12 +1847,56 @@ function NicknameModal({ locale, onSaved }: { locale: Locale; onSaved: (user: Us
   </div>;
 }
 
-function AuthModal({ locale, mode, onMode, onClose, onAuthenticated }: {
+function OtpCodeInput({ value, onChange, label, disabled = false }: {
+  value: string; onChange: (value: string) => void; label: string; disabled?: boolean;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [focused, setFocused] = useState(false);
+  const focusInput = () => {
+    inputRef.current?.focus();
+    window.setTimeout(() => inputRef.current?.setSelectionRange(value.length, value.length), 0);
+  };
+  return <div className="relative" onClick={focusInput}>
+    <div className="grid grid-cols-6 gap-2" aria-hidden="true">
+      {Array.from({ length: 6 }, (_, index) => <div
+        key={index}
+        className={`grid aspect-square place-items-center border bg-black text-2xl font-black tabular-nums transition-colors ${focused && index === Math.min(value.length, 5) ? "border-[#f079a2]" : value[index] ? "border-white/35 text-white" : "border-white/15 text-white/20"}`}
+      >{value[index] || ""}</div>)}
+    </div>
+    <input
+      ref={inputRef}
+      type="text"
+      name="one-time-code"
+      value={value}
+      maxLength={6}
+      inputMode="numeric"
+      pattern="[0-9]*"
+      autoComplete="one-time-code"
+      enterKeyHint="done"
+      aria-label={label}
+      disabled={disabled}
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
+      onChange={event => onChange(event.currentTarget.value.replace(/\D/g, "").slice(0, 6))}
+      onKeyDown={event => {
+        if (event.key === "Backspace" && value) {
+          event.preventDefault();
+          onChange(value.slice(0, -1));
+        }
+      }}
+      className="absolute inset-0 h-full w-full cursor-text opacity-0 disabled:cursor-not-allowed"
+    />
+  </div>;
+}
+
+function AuthModal({ locale, mode, onMode, onClose, onAuthenticated, onPasswordRecoveryVerified }: {
   locale: Locale; mode: "login" | "register"; onMode: (mode: "login" | "register") => void;
-  onClose: () => void; onAuthenticated: (user: User) => void;
+  onClose: () => void; onAuthenticated: (user: User) => void; onPasswordRecoveryVerified: () => void;
 }) {
   const [feedback, setFeedback] = useState("");
   const [forgotPassword, setForgotPassword] = useState(false);
+  const [otpRequest, setOtpRequest] = useState<{ type: "signup" | "recovery"; email: string } | null>(null);
+  const [otpCode, setOtpCode] = useState("");
   const [pending, setPending] = useState(false);
   const t = messages[locale];
   const f = fixedMessages[locale];
@@ -1863,6 +1908,14 @@ function AuthModal({ locale, mode, onMode, onClose, onAuthenticated }: {
     ko: { verify: "인증 메일을 보냈습니다. 메일의 링크를 연 후 로그인하세요. 보이지 않으면 스팸 메일함도 확인해 주세요.", forgot: "비밀번호를 잊으셨나요?", resetTitle: "비밀번호 재설정", resetSent: "비밀번호 재설정 메일을 보냈습니다. 받은편지함과 스팸 메일함을 확인해 주세요.", send: "재설정 링크 보내기", back: "로그인으로 돌아가기" },
     ja: { verify: "確認メールを送信しました。メール内のリンクを開いてからログインしてください。届かない場合は迷惑メールフォルダもご確認ください。", forgot: "パスワードを忘れた場合", resetTitle: "パスワードを再設定", resetSent: "再設定メールを送信しました。受信トレイと迷惑メールフォルダをご確認ください。", send: "再設定リンクを送る", back: "ログインに戻る" },
   }[locale];
+  const otpCopy = {
+    "zh-TW": { signupTitle: "輸入驗證碼", recoveryTitle: "驗證你的身分", sentTo: "我們已將 6 位數驗證碼寄到", label: "6 位數驗證碼", verify: "驗證", resend: "重新寄送驗證碼", resent: "新的驗證碼已寄出，請查看收件匣與垃圾郵件匣。", invalid: "請輸入完整的 6 位數驗證碼。", change: "更改電子信箱" },
+    "zh-CN": { signupTitle: "输入验证码", recoveryTitle: "验证你的身份", sentTo: "我们已将 6 位数验证码发送至", label: "6 位数验证码", verify: "验证", resend: "重新发送验证码", resent: "新的验证码已发送，请查看收件箱和垃圾邮件文件夹。", invalid: "请输入完整的 6 位数验证码。", change: "更改电子邮箱" },
+    th: { signupTitle: "กรอกรหัสยืนยัน", recoveryTitle: "ยืนยันตัวตนของคุณ", sentTo: "เราได้ส่งรหัส 6 หลักไปที่", label: "รหัสยืนยัน 6 หลัก", verify: "ยืนยัน", resend: "ส่งรหัสอีกครั้ง", resent: "ส่งรหัสใหม่แล้ว โปรดตรวจสอบกล่องจดหมายและโฟลเดอร์สแปม", invalid: "โปรดกรอกรหัสยืนยัน 6 หลักให้ครบ", change: "เปลี่ยนอีเมล" },
+    en: { signupTitle: "Enter verification code", recoveryTitle: "Verify your identity", sentTo: "We sent a six-digit code to", label: "Six-digit verification code", verify: "Verify code", resend: "Resend code", resent: "A new code was sent. Check your inbox and spam or junk folder.", invalid: "Enter the complete six-digit code.", change: "Change email" },
+    ko: { signupTitle: "인증 코드 입력", recoveryTitle: "본인 확인", sentTo: "6자리 인증 코드를 다음 주소로 보냈습니다", label: "6자리 인증 코드", verify: "코드 확인", resend: "코드 다시 보내기", resent: "새 코드를 보냈습니다. 받은편지함과 스팸 메일함을 확인해 주세요.", invalid: "6자리 인증 코드를 모두 입력해 주세요.", change: "이메일 변경" },
+    ja: { signupTitle: "確認コードを入力", recoveryTitle: "本人確認", sentTo: "6桁の確認コードを次のアドレスへ送信しました", label: "6桁の確認コード", verify: "コードを確認", resend: "コードを再送信", resent: "新しいコードを送信しました。受信トレイと迷惑メールフォルダをご確認ください。", invalid: "6桁の確認コードをすべて入力してください。", change: "メールアドレスを変更" },
+  }[locale];
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setFeedback("");
     if (pending) return;
@@ -1871,7 +1924,11 @@ function AuthModal({ locale, mode, onMode, onClose, onAuthenticated }: {
     try {
       const result = await emailAuth(mode, String(payload.email || ""), String(payload.password || ""), String(payload.nickname || ""));
       if (result.user) { onAuthenticated(result.user); onClose(); }
-      else if (result.needsEmailConfirmation) setFeedback(authCopy.verify);
+      else if (result.needsEmailConfirmation) {
+        setOtpCode("");
+        setOtpRequest({ type: "signup", email: String(payload.email || "") });
+        setFeedback(authCopy.verify);
+      }
     } catch (error) { setFeedback(error instanceof Error && error.message !== "SUPABASE_NOT_CONFIGURED" ? error.message : t.genericError); }
     finally { setPending(false); }
   }
@@ -1880,8 +1937,43 @@ function AuthModal({ locale, mode, onMode, onClose, onAuthenticated }: {
     if (pending) return;
     setPending(true);
     const email = String(new FormData(event.currentTarget).get("email") || "");
-    try { await requestPasswordReset(email); setFeedback(authCopy.resetSent); }
+    try {
+      await requestPasswordReset(email);
+      setOtpCode("");
+      setOtpRequest({ type: "recovery", email });
+      setFeedback(authCopy.resetSent);
+    }
     catch (error) { setFeedback(error instanceof Error ? error.message : t.genericError); }
+    finally { setPending(false); }
+  }
+  async function verifyOtp(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault(); setFeedback("");
+    if (!otpRequest || otpCode.length !== 6) { setFeedback(otpCopy.invalid); return; }
+    if (pending) return;
+    setPending(true);
+    try {
+      if (otpRequest.type === "signup") {
+        const verifiedUser = await verifyEmailOtp(otpRequest.email, otpCode);
+        if (!verifiedUser) throw new Error(t.genericError);
+        onAuthenticated(verifiedUser);
+        onClose();
+      } else {
+        await verifyPasswordRecoveryOtp(otpRequest.email, otpCode);
+        onClose();
+        onPasswordRecoveryVerified();
+      }
+    } catch (error) { setFeedback(error instanceof Error ? error.message : t.genericError); }
+    finally { setPending(false); }
+  }
+  async function resendOtp() {
+    if (!otpRequest || pending) return;
+    setPending(true); setFeedback("");
+    try {
+      if (otpRequest.type === "signup") await resendSignupOtp(otpRequest.email);
+      else await requestPasswordReset(otpRequest.email);
+      setOtpCode("");
+      setFeedback(otpCopy.resent);
+    } catch (error) { setFeedback(error instanceof Error ? error.message : t.genericError); }
     finally { setPending(false); }
   }
   async function oauth(provider: "google") {
@@ -1896,8 +1988,13 @@ function AuthModal({ locale, mode, onMode, onClose, onAuthenticated }: {
       <p className="text-white/42 text-xs leading-relaxed mt-4">
         {f.authPurpose}
       </p>
-      {!forgotPassword && <div className="grid grid-cols-2 border-b border-white/10 my-6"><button onClick={() => onMode("login")} className={`py-3 text-sm ${mode === "login" ? "text-white border-b-2 border-red-600" : "text-white/35"}`}>{t.loginTab}</button><button onClick={() => onMode("register")} className={`py-3 text-sm ${mode === "register" ? "text-white border-b-2 border-red-600" : "text-white/35"}`}>{t.registerTab}</button></div>}
-      {forgotPassword ? <form onSubmit={sendReset} className="mt-6 grid gap-4">
+      {!forgotPassword && !otpRequest && <div className="grid grid-cols-2 border-b border-white/10 my-6"><button onClick={() => onMode("login")} className={`py-3 text-sm ${mode === "login" ? "text-white border-b-2 border-red-600" : "text-white/35"}`}>{t.loginTab}</button><button onClick={() => onMode("register")} className={`py-3 text-sm ${mode === "register" ? "text-white border-b-2 border-red-600" : "text-white/35"}`}>{t.registerTab}</button></div>}
+      {otpRequest ? <form onSubmit={verifyOtp} className="mt-7 grid gap-5">
+        <div><h3 className="text-3xl font-black text-white">{otpRequest.type === "signup" ? otpCopy.signupTitle : otpCopy.recoveryTitle}</h3><p className="mt-3 text-sm leading-relaxed text-white/50">{otpCopy.sentTo}<br /><strong className="text-white/80">{otpRequest.email}</strong></p></div>
+        <OtpCodeInput value={otpCode} onChange={setOtpCode} label={otpCopy.label} disabled={pending} />
+        <button type="submit" disabled={pending || otpCode.length !== 6} className="p-4 bg-[#E01020] text-white text-xs tracking-[.2em] uppercase disabled:opacity-40">{pending ? "…" : otpCopy.verify}</button>
+        <div className="flex items-center justify-between gap-4 text-xs"><button type="button" disabled={pending} onClick={() => void resendOtp()} className="text-[#f079a2] disabled:opacity-40">{otpCopy.resend}</button><button type="button" onClick={() => { setOtpRequest(null); setOtpCode(""); setFeedback(""); }} className="text-white/45 hover:text-white">{otpCopy.change}</button></div>
+      </form> : forgotPassword ? <form onSubmit={sendReset} className="mt-6 grid gap-4">
         <h3 className="text-2xl font-black text-white">{authCopy.resetTitle}</h3>
         <label className="text-white/45 text-xs">{t.email}<input name="email" type="email" required className="block w-full mt-2 p-3 bg-black border border-white/15 text-white focus:outline-none focus:border-red-600/60" /></label>
         <button type="submit" disabled={pending} className="p-4 bg-[#E01020] text-white text-xs tracking-[.2em] uppercase disabled:opacity-50">{pending ? "…" : authCopy.send}</button>
@@ -1980,11 +2077,6 @@ export default function App() {
     }).catch(() => {});
     const unsubscribe = observeFanUser(value => { if (active) setUser(value); });
     return () => { active = false; window.clearTimeout(loaderTimer); unsubscribe(); };
-  }, []);
-
-  useEffect(() => {
-    if (new URLSearchParams(window.location.search).get("mode") === "reset-password") setPasswordRecoveryOpen(true);
-    return observePasswordRecovery(() => setPasswordRecoveryOpen(true));
   }, []);
 
   useEffect(() => {
@@ -2096,7 +2188,7 @@ export default function App() {
       <Announcements locale={locale} />
       <AppPurposeSection locale={locale} />
       <Footer locale={locale} content={siteContent} />
-      {authOpen && <AuthModal locale={locale} mode={authMode} onMode={setAuthMode} onClose={() => setAuthOpen(false)} onAuthenticated={setUser} />}
+      {authOpen && <AuthModal locale={locale} mode={authMode} onMode={setAuthMode} onClose={() => setAuthOpen(false)} onAuthenticated={setUser} onPasswordRecoveryVerified={() => setPasswordRecoveryOpen(true)} />}
       {passwordRecoveryOpen && <ResetPasswordModal locale={locale} onClose={() => setPasswordRecoveryOpen(false)} />}
       {adminOpen && user?.role === "admin" && <AdminPanel content={siteContent} onSaved={setSiteContent} onClose={() => setAdminOpen(false)} />}
       {editMode && user?.role === "admin" && <EditToolbar dirty={dirty} locale={locale} onSave={() => void saveEdits()} onAddSection={addSection} onOpenAdmin={() => setAdminOpen(true)} onStop={() => setEditMode(false)} />}

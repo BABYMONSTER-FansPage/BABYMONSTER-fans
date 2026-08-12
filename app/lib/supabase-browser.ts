@@ -115,7 +115,6 @@ export async function emailAuth(mode: "login" | "register", email: string, passw
       password,
       options: {
         data: { nickname },
-        emailRedirectTo: `${window.location.origin}/?auth=confirmed`,
       },
     }));
     if (error) throw error;
@@ -134,9 +133,31 @@ export async function emailAuth(mode: "login" | "register", email: string, passw
 export async function requestPasswordReset(email: string) {
   const client = supabaseClient();
   if (!client) throw new Error("SUPABASE_NOT_CONFIGURED");
-  const { error } = await withTimeout(client.auth.resetPasswordForEmail(email, {
-    redirectTo: `${window.location.origin}/?mode=reset-password`,
-  }));
+  const { error } = await withTimeout(client.auth.resetPasswordForEmail(email));
+  if (error) throw error;
+}
+
+export async function verifyEmailOtp(email: string, token: string) {
+  const client = supabaseClient();
+  if (!client) throw new Error("SUPABASE_NOT_CONFIGURED");
+  const { data, error } = await withTimeout(client.auth.verifyOtp({ email, token, type: "signup" }));
+  if (error) throw error;
+  const user = data.user ? await profileFor(data.user) : null;
+  writeFanCookie(user);
+  return user;
+}
+
+export async function verifyPasswordRecoveryOtp(email: string, token: string) {
+  const client = supabaseClient();
+  if (!client) throw new Error("SUPABASE_NOT_CONFIGURED");
+  const { error } = await withTimeout(client.auth.verifyOtp({ email, token, type: "recovery" }));
+  if (error) throw error;
+}
+
+export async function resendSignupOtp(email: string) {
+  const client = supabaseClient();
+  if (!client) throw new Error("SUPABASE_NOT_CONFIGURED");
+  const { error } = await withTimeout(client.auth.resend({ email, type: "signup" }));
   if (error) throw error;
 }
 
@@ -145,15 +166,6 @@ export async function updateFanPassword(password: string) {
   if (!client) throw new Error("SUPABASE_NOT_CONFIGURED");
   const { error } = await withTimeout(client.auth.updateUser({ password }));
   if (error) throw error;
-}
-
-export function observePasswordRecovery(callback: () => void) {
-  const client = supabaseClient();
-  if (!client) return () => {};
-  const { data } = client.auth.onAuthStateChange(event => {
-    if (event === "PASSWORD_RECOVERY") callback();
-  });
-  return () => data.subscription.unsubscribe();
 }
 
 export async function socialAuth(provider: "google") {
