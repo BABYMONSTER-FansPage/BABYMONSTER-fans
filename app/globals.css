@@ -153,6 +153,10 @@ img { display: block; }
 .verified { display: inline-grid; place-items: center; width: 16px; height: 16px; margin-left: 3px; border-radius: 50%; color: white; font-size: 10px; vertical-align: 2px; }
 .verified.admin { background: #e12b35; }
 .verified.artist { background: #287be3; }
+.verification-badge { position: absolute; right: -4px; bottom: -4px; z-index: 2; display: block; width: 18px; height: 18px; filter: drop-shadow(0 0 1.5px #050505); }
+.verification-badge svg { display: block; width: 100%; height: 100%; }
+.verification-badge.admin { color: #ed4956; }
+.verification-badge.artist { color: #0095f6; }
 .translation-note { color: #dfc967; font-size: 12px; }
 .text-button { border: 0; background: transparent; color: var(--acid); padding: 0; cursor: pointer; font-size: 12px; font-weight: 800; }
 .original-copy { margin: 10px 0 0; padding: 12px 14px; border-left: 2px solid #555; color: #8e8982; font-size: 13px; line-height: 1.6; }

@@ -100,6 +100,8 @@ test("bundles six static languages and translates fan posts only", async () => {
   assert.match(page, /function OtpCodeInput/);
   assert.match(page, /autoComplete="one-time-code"/);
   assert.match(page, /inputMode="numeric"/);
+  assert.match(page, /type="tel"/);
+  assert.match(page, /name="otp"/);
   assert.match(page, /grid-cols-6/);
   assert.match(page, /value\.slice\(0, -1\)/);
   assert.match(page, /忘記密碼/);
@@ -112,6 +114,10 @@ test("bundles six static languages and translates fan posts only", async () => {
   assert.match(page, /aria-controls="mobile-navigation"/);
   assert.match(page, /scrollIntoView\(\{ behavior: mobile \? "auto" : "smooth"/);
   assert.match(page, /disableCinematicMotion/);
+  assert.match(page, /function VerificationBadge/);
+  assert.match(page, /verification-badge/);
+  assert.match(css, /\.verification-badge \{ position: absolute; right: -4px; bottom: -4px/);
+  assert.doesNotMatch(page, /\p{Extended_Pictographic}|\p{Regional_Indicator}|\p{Emoji_Presentation}/u);
   assert.match(tourMigration, /choom-hong-kong-2027/);
   assert.match(page, /SITE_BROWSER_TITLE = "Monstiez｜BABYMONSTER Fans Club"/);
   assert.match(page, /FIXED_FAVICON_URL = "\/favicon\.svg"/);
@@ -127,8 +133,8 @@ test("bundles six static languages and translates fan posts only", async () => {
   assert.match(i18n, /Official app name/);
   assert.match(i18n, /Monstiez 是提供 BABYMONSTER 粉絲交流、留言與內容瀏覽的粉絲社群平台/);
   assert.match(i18n, /使用者可以建立帳號、參與社群互動、管理個人資料/);
-  assert.match(i18n, /Google 登入用於快速建立及登入 Monstiez 帳號/);
-  assert.match(i18n, /不會要求 Gmail、Google Drive 或 Google Calendar 權限/);
+  assert.doesNotMatch(i18n, /Google 登入用於快速建立及登入 Monstiez 帳號/);
+  assert.doesNotMatch(i18n, /Google 登入只用於|Gmail、Google Drive 或 Google Calendar/);
   assert.match(page, /https:\/\/babymonster\.fans\/privacy\.html/);
   assert.match(page, /https:\/\/babymonster\.fans\/terms\.html/);
   assert.ok(page.indexOf("<AppPurposeSection locale={locale} />") > page.indexOf("<Announcements"));
@@ -213,7 +219,9 @@ test("auth delivery notices cover six languages and emails use six-digit codes",
     assert.match(template, /<html lang="en">/);
     assert.match(template, /support@babymonster\.fans/);
     assert.match(template, /https:\/\/babymonster\.fans\/favicon\.svg/);
-    assert.match(template, /background:#f079a2/);
+    assert.match(template, /color-scheme" content="light dark"/);
+    assert.match(template, /prefers-color-scheme:\s*dark/);
+    for (const match of template.matchAll(/background\s*:\s*([^;!]+)/g)) assert.equal(match[1].trim(), "transparent");
     assert.doesNotMatch(template, /#9185f7|#a99fff|#b8afff/i);
     assert.doesNotMatch(template, /lang="(?:zh-Hans|th|ko|ja)"/);
   }

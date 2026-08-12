@@ -4,7 +4,7 @@ import { createContext, FormEvent, type CSSProperties, type MouseEvent, type Rea
 import { AnimatePresence, motion, useInView, useReducedMotion, useScroll, useTransform } from "motion/react";
 import {
   Play, Heart, MessageCircle,
-  ChevronDown, Menu, X, Calendar, MapPin, Music, Send, Disc3, Settings, Save,
+  ChevronDown, Menu, X, Calendar, MapPin, Music, Send, Disc3, Settings, Save, ExternalLink, Pencil,
 } from "lucide-react";
 import { fixedMessages, getInitialLocale, localeLabels, messages, supportedLocales, type Locale } from "./i18n";
 import {
@@ -47,7 +47,7 @@ function useMobileViewport() {
 const MEMBERS = [
   {
     id: "ruka", num: "01", name: "RUKA", hangul: "루카",
-    birth: "2002 · Mar 20", nationality: "Japan", flag: "🇯🇵",
+    birth: "2002 · Mar 20", nationality: "Japan", flag: "JP",
     position: "Main Vocalist",
     description: "The eldest of BABYMONSTER, Ruka commands the stage with powerhouse vocals and an effortless grace honed through years of rigorous training. Her emotional depth and unwavering presence define the group's vocal identity.",
     traits: ["Main Vocalist", "Eldest Member", "Stage Commander"],
@@ -56,7 +56,7 @@ const MEMBERS = [
   },
   {
     id: "pharita", num: "02", name: "PHARITA", hangul: "파리타",
-    birth: "2005 · Aug 26", nationality: "Thailand", flag: "🇹🇭",
+    birth: "2005 · Aug 26", nationality: "Thailand", flag: "TH",
     position: "Vocalist · Rapper",
     description: "Fierce, fearless, and relentlessly captivating — Pharita brings Thailand's pride to every stage. Her dual mastery of rap and melody makes her one of the most versatile forces in the group.",
     traits: ["Versatile Performer", "High Energy", "Thai Pioneer"],
@@ -65,7 +65,7 @@ const MEMBERS = [
   },
   {
     id: "asa", num: "03", name: "ASA", hangul: "아사",
-    birth: "2006 · Apr 17", nationality: "Japan", flag: "🇯🇵",
+    birth: "2006 · Apr 17", nationality: "Japan", flag: "JP",
     position: "Vocalist · Main Dancer",
     description: "Where precision meets artistry — Asa's dance mastery is a study in technique and emotion. Every gesture intentional, every movement a brushstroke. She is the visual pulse of BABYMONSTER.",
     traits: ["Main Dancer", "Precision Artist", "Visual Icon"],
@@ -74,7 +74,7 @@ const MEMBERS = [
   },
   {
     id: "ahyeon", num: "04", name: "AHYEON", hangul: "아현",
-    birth: "2007 · Apr 11", nationality: "Korea", flag: "🇰🇷",
+    birth: "2007 · Apr 11", nationality: "Korea", flag: "KR",
     position: "Main Rapper · Vocalist",
     description: "Before the official debut, Ahyeon went viral worldwide — proof that true talent cannot be contained. Her rap flows with razor precision while her vocals carry a haunting melodic quality unlike anything in K-pop.",
     traits: ["Main Rapper", "Global Viral", "Genre-Defying"],
@@ -83,7 +83,7 @@ const MEMBERS = [
   },
   {
     id: "rami", num: "05", name: "RAMI", hangul: "라미",
-    birth: "2007 · Oct 17", nationality: "Korea", flag: "🇰🇷",
+    birth: "2007 · Oct 17", nationality: "Korea", flag: "KR",
     position: "Vocalist",
     description: "Rami's voice carries a warmth and emotional sincerity that transcends age. When she sings, you feel every word. Her genuine connection with fans has made her one of the most cherished members.",
     traits: ["Pure Vocalist", "Fan Favorite", "Genuine Heart"],
@@ -92,7 +92,7 @@ const MEMBERS = [
   },
   {
     id: "rora", num: "06", name: "RORA", hangul: "로라",
-    birth: "2008 · Aug 14", nationality: "Korea", flag: "🇰🇷",
+    birth: "2008 · Aug 14", nationality: "Korea", flag: "KR",
     position: "Performer",
     description: "Rora brings a warm and expressive vocal color to the group.",
     traits: ["Vocal Color", "Warm Tone", "Performer"],
@@ -101,7 +101,7 @@ const MEMBERS = [
   },
   {
     id: "chiquita", num: "07", name: "CHIQUITA", hangul: "치키타",
-    birth: "2009 · Feb 17", nationality: "Thailand", flag: "🇹🇭",
+    birth: "2009 · Feb 17", nationality: "Thailand", flag: "TH",
     position: "Performer",
     description: "Chiquita brings bright vocal color and explosive stage energy.",
     traits: ["Bright Energy", "Stage Presence", "Performer"],
@@ -258,7 +258,7 @@ function InstagramEmbedFrame({ url, index, label }: { url: string; index: number
         rel="noreferrer"
         className="absolute inset-x-4 bottom-4 z-20 border border-white/15 bg-black/75 px-4 py-3 text-center text-xs tracking-[0.18em] text-white/70 backdrop-blur transition hover:border-red-500/50 hover:text-white"
       >
-        {label} ↗
+        <span className="inline-flex items-center justify-center gap-2">{label}<ExternalLink size={13} aria-hidden="true" /></span>
       </a>
     </div>
   );
@@ -285,7 +285,16 @@ const InlineEditContext = createContext<InlineEditContextValue>({
 function EditPencil({ onClick, label }: { onClick: () => void; label: string }) {
   return <button type="button" onClick={onClick}
     className="inline-flex items-center justify-center w-7 h-7 rounded-full border border-red-500/45 bg-black/75 text-red-300 hover:text-white hover:border-red-300 align-middle ml-2"
-    aria-label={label}>✎</button>;
+    aria-label={label}><Pencil size={13} aria-hidden="true" /></button>;
+}
+
+function VerificationBadge({ role, label }: { role: "admin" | "artist"; label: string }) {
+  return <span className={`verification-badge ${role}`} title={label} aria-label={label}>
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="currentColor" d="M12 1.7 14.4 3l2.7-.1 1.3 2.4 2.4 1.3-.1 2.7L22 12l-1.3 2.4.1 2.7-2.4 1.3-1.3 2.4-2.7-.1L12 22l-2.4-1.3-2.7.1-1.3-2.4-2.4-1.3.1-2.7L2 12l1.3-2.7-.1-2.7 2.4-1.3 1.3-2.4 2.7.1L12 1.7Z" />
+      <path d="m7.7 12.1 2.7 2.7 5.9-6" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  </span>;
 }
 
 function EditableText({ k, fallback = "", as = "span", className, style, children }: {
@@ -385,7 +394,7 @@ function Nav({ user, locale, onLocale, onLogin, onLogout, onAdmin, onEdit }: {
           {user
             ? <button onClick={onLogout} className="hidden sm:block text-white/50 hover:text-white text-xs tracking-widest uppercase">{user.nickname} · {messages[locale].logout}</button>
             : <button onClick={onLogin} className="hidden sm:block text-white/50 hover:text-white text-xs tracking-widest uppercase">{messages[locale].login}</button>}
-          {user?.role === "admin" && <button onClick={onEdit} className="text-red-400/80 hover:text-red-300" aria-label="Edit mode">✎</button>}
+          {user?.role === "admin" && <button onClick={onEdit} className="text-red-400/80 hover:text-red-300" aria-label="Edit mode"><Pencil size={16} aria-hidden="true" /></button>}
           {user?.role === "admin" && <button onClick={onAdmin} className="text-red-400/80 hover:text-red-300" aria-label="Admin dashboard"><Settings size={16} /></button>}
           <button type="button" className="md:hidden relative z-10 grid min-w-11 place-items-center text-white/70 hover:text-white" onClick={() => setOpen(!open)} aria-label={open ? "Close menu" : "Open menu"} aria-expanded={open} aria-controls="mobile-navigation">
             {open ? <X size={20} /> : <Menu size={20} />}
@@ -496,7 +505,6 @@ function Hero({ locale, content }: { locale: Locale; content: SiteContent }) {
       <motion.div initial={mobile ? false : { opacity: 0 }} animate={{ opacity: 1 }}
         transition={{ delay: 2.4 }}
         className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2">
-        <span className="text-white/25 text-xl" aria-hidden="true">↓</span>
         <motion.div animate={{ y: [0, 7, 0] }} transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}>
           <ChevronDown size={15} className="text-white/25" />
         </motion.div>
@@ -523,8 +531,8 @@ function AppPurposeSection({ locale }: { locale: Locale }) {
             {f.appPurpose}
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
-            <a href={PRIVACY_POLICY_URL} className="text-red-300 hover:text-red-200 text-xs tracking-[0.25em] uppercase">{f.privacyPolicy} ↗</a>
-            <a href={TERMS_OF_SERVICE_URL} className="text-white/35 hover:text-white text-xs tracking-[0.25em] uppercase">{f.termsOfService} ↗</a>
+            <a href={PRIVACY_POLICY_URL} className="inline-flex items-center gap-2 text-red-300 hover:text-red-200 text-xs tracking-[0.25em] uppercase">{f.privacyPolicy}<ExternalLink size={12} aria-hidden="true" /></a>
+            <a href={TERMS_OF_SERVICE_URL} className="inline-flex items-center gap-2 text-white/35 hover:text-white text-xs tracking-[0.25em] uppercase">{f.termsOfService}<ExternalLink size={12} aria-hidden="true" /></a>
           </div>
         </div>
       </div>
@@ -916,7 +924,7 @@ function MusicSection({ locale, content }: { locale: Locale; content: SiteConten
         {albums.length === 0 && spotifyStatus && <div className="border border-white/8 bg-white/[0.018] p-6 text-white/45 text-sm leading-relaxed">
           <p className="text-white/65 mb-2">{f.spotifyUnavailableTitle}</p>
           <p>狀態：<code className="text-red-300">{spotifyStatus}</code>。{f.spotifyUnavailableHelp}</p>
-          <a href="https://open.spotify.com/artist/1SIocsqdEefUTE6XKGUiVS" target="_blank" rel="noreferrer" className="inline-block mt-4 text-red-300 hover:text-red-200 text-xs tracking-[0.25em] uppercase">{f.openSpotifyDiscography} ↗</a>
+          <a href="https://open.spotify.com/artist/1SIocsqdEefUTE6XKGUiVS" target="_blank" rel="noreferrer" className="inline-flex mt-4 items-center gap-2 text-red-300 hover:text-red-200 text-xs tracking-[0.25em] uppercase">{f.openSpotifyDiscography}<ExternalLink size={12} aria-hidden="true" /></a>
         </div>}
 
         <div className="grid md:grid-cols-[1.4fr_.6fr] gap-8 mt-16">
@@ -925,10 +933,10 @@ function MusicSection({ locale, content }: { locale: Locale; content: SiteConten
           </div>
           <div className="grid gap-4">
             <a href="https://www.youtube.com/@BABYMONSTER" target="_blank" rel="noreferrer" className="border border-white/8 rounded-sm p-6 flex flex-col justify-between hover:border-red-600/30 transition-colors">
-              <span className="text-white/35 text-xs tracking-[.3em] uppercase"><EditableText k="youtubeLabel" fallback={t.officialChannel} /></span><strong className="text-white text-3xl" style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>YOUTUBE ↗</strong>
+              <span className="text-white/35 text-xs tracking-[.3em] uppercase"><EditableText k="youtubeLabel" fallback={t.officialChannel} /></span><strong className="inline-flex items-center gap-2 text-white text-3xl" style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>YOUTUBE<ExternalLink size={20} aria-hidden="true" /></strong>
             </a>
             <a href="https://www.instagram.com/babymonster_ygofficial/" target="_blank" rel="noreferrer" className="border border-white/8 rounded-sm p-6 flex flex-col justify-between hover:border-red-600/30 transition-colors">
-              <span className="text-white/35 text-xs tracking-[.3em] uppercase"><EditableText k="instagramLabel" fallback={t.officialProfile} /></span><strong className="text-white text-3xl" style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>INSTAGRAM ↗</strong>
+              <span className="text-white/35 text-xs tracking-[.3em] uppercase"><EditableText k="instagramLabel" fallback={t.officialProfile} /></span><strong className="inline-flex items-center gap-2 text-white text-3xl" style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>INSTAGRAM<ExternalLink size={20} aria-hidden="true" /></strong>
             </a>
           </div>
         </div>
@@ -1048,7 +1056,7 @@ function EventCard({ event, index, locale, onOpen }: { event: EditableEvent; ind
             {event.locations}
           </span>
         </div>
-        <span className="mt-5 inline-block text-xs tracking-[0.2em] uppercase text-red-300/80">{fixedMessages[locale].detailIntro} ↗</span>
+        <span className="mt-5 inline-flex items-center gap-2 text-xs tracking-[0.2em] uppercase text-red-300/80">{fixedMessages[locale].detailIntro}<ExternalLink size={12} aria-hidden="true" /></span>
       </motion.div>
     </div>
   );
@@ -1110,13 +1118,13 @@ function AllEventsModal({ events, locale, onSelect, onClose }: { events: Editabl
     <div className="w-full max-w-4xl max-h-[88vh] overflow-auto border border-white/15 bg-[#090909] p-6 shadow-2xl md:p-8">
       <div className="mb-6 flex items-start justify-between gap-5">
         <h2 className="text-4xl font-black leading-none text-white md:text-5xl" style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>BABYMONSTER EVENTS</h2>
-        <button onClick={onClose} className="text-2xl text-white/50 hover:text-white" aria-label="Close">×</button>
+        <button onClick={onClose} className="text-white/50 hover:text-white" aria-label="Close"><X size={22} aria-hidden="true" /></button>
       </div>
       <div className="grid gap-3">
         {sortedEvents.map(event => <button key={event.id ?? `${event.sub}-${event.startDate}`} onClick={() => onSelect(event)} className="grid gap-2 border border-white/10 p-4 text-left transition hover:border-red-500/40 md:grid-cols-[150px_1fr_auto] md:items-center">
           <span className="text-sm text-red-300">{eventDisplayDate(event)}</span>
           <span><strong className="block text-lg text-white">{event.sub || event.title}</strong><span className="text-xs text-white/40">{event.locations}</span></span>
-          <span className="text-xs uppercase tracking-wider text-white/35">{eventStatusLabel(event.status, locale)} ↗</span>
+          <span className="inline-flex items-center gap-2 text-xs uppercase tracking-wider text-white/35">{eventStatusLabel(event.status, locale)}<ExternalLink size={12} aria-hidden="true" /></span>
         </button>)}
       </div>
     </div>
@@ -1132,7 +1140,7 @@ function EventDetailModal({ event, locale, onClose }: { event: EditableEvent; lo
           <h2 className="mt-2 text-4xl font-black leading-none text-white md:text-5xl" style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>{event.title}</h2>
           {event.sub && <p className="mt-3 text-xs tracking-widest uppercase text-white/40">{event.sub}</p>}
         </div>
-        <button onClick={onClose} className="text-2xl text-white/50 hover:text-white" aria-label="Close">×</button>
+        <button onClick={onClose} className="text-white/50 hover:text-white" aria-label="Close"><X size={22} aria-hidden="true" /></button>
       </div>
       <div className="mb-6 flex flex-wrap gap-5 text-sm text-white/45">
         <span className="flex items-center gap-2"><Calendar size={14} className="text-red-400" />{eventDisplayDate(event)}</span>
@@ -1190,13 +1198,16 @@ function PostCard({
       className="border border-white/8 rounded-sm p-6 hover:border-white/15 transition-colors duration-300"
       style={{ background: "rgba(255,255,255,0.015)" }}>
       <div className="flex items-start gap-4">
-        <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
-          style={{ background: ["#E01020", "#cc0000", "#b30000", "#ff2d2d"][Math.abs(post.id) % 4] }}>
-          {post.nickname.slice(0, 2).toUpperCase()}
+        <div className="relative w-9 h-9 shrink-0">
+          <div className="h-full w-full rounded-full flex items-center justify-center text-white text-xs font-bold"
+            style={{ background: ["#E01020", "#cc0000", "#b30000", "#ff2d2d"][Math.abs(post.id) % 4] }}>
+            {post.nickname.slice(0, 2).toUpperCase()}
+          </div>
+          {post.role !== "monstiez" && <VerificationBadge role={post.role} label={post.role === "admin" ? t.roleAdmin : t.roleArtist} />}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-white font-medium text-sm">{post.nickname}{post.role !== "monstiez" && <span className={`ml-2 ${post.role === "admin" ? "text-red-400" : "text-blue-400"}`} title={post.role === "admin" ? t.roleAdmin : t.roleArtist}>✓<span className="sr-only">{post.role === "admin" ? t.roleAdmin : t.roleArtist}</span></span>}</span>
+            <span className="text-white font-medium text-sm">{post.nickname}</span>
             <span className="text-white/22 text-xs">{post.createdAt} · {post.sourceLanguage}</span>
           </div>
           <p className="text-white/62 text-sm leading-relaxed">{copy}</p>
@@ -1328,7 +1339,7 @@ function AllPostsModal({ posts, onLike, onRefresh, user, locale, onClose }: {
     <div className="w-full max-w-4xl max-h-[90vh] overflow-auto bg-[#090909] border border-white/15 p-6 shadow-2xl">
       <div className="flex items-start justify-between gap-5 mb-6">
         <h2 className="text-white font-black text-5xl leading-none" style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>MONSTIEZ BOARD</h2>
-        <button onClick={onClose} className="text-white/50 hover:text-white text-2xl" aria-label="Close">×</button>
+        <button onClick={onClose} className="text-white/50 hover:text-white" aria-label="Close"><X size={22} aria-hidden="true" /></button>
       </div>
       <div className="space-y-4">
         {posts.map((post, index) => <PostCard key={post.id} post={post} index={index} onLike={onLike} onRefresh={onRefresh} user={user} locale={locale} />)}
@@ -1367,7 +1378,7 @@ function LegalModal({ title, body, onClose }: { title: string; body: string; onC
     <div className="w-full max-w-3xl max-h-[86vh] overflow-auto bg-[#090909] border border-white/15 p-7 shadow-2xl">
       <div className="flex items-start justify-between gap-5 mb-6">
         <h2 className="text-white font-black text-4xl leading-none" style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>{title}</h2>
-        <button onClick={onClose} className="text-white/50 hover:text-white text-2xl" aria-label="Close">×</button>
+        <button onClick={onClose} className="text-white/50 hover:text-white" aria-label="Close"><X size={22} aria-hidden="true" /></button>
       </div>
       <div className="whitespace-pre-wrap text-white/58 text-sm leading-7">{body}</div>
     </div>
@@ -1379,7 +1390,7 @@ function DetailModal({ title, textKey, fallback, onClose }: { title: string; tex
     <div className="w-full max-w-3xl max-h-[86vh] overflow-auto bg-[#090909] border border-white/15 p-7 shadow-2xl">
       <div className="flex items-start justify-between gap-5 mb-6">
         <h2 className="text-white font-black text-5xl leading-none" style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>{title}</h2>
-        <button onClick={onClose} className="text-white/50 hover:text-white text-2xl" aria-label="Close">×</button>
+        <button onClick={onClose} className="text-white/50 hover:text-white" aria-label="Close"><X size={22} aria-hidden="true" /></button>
       </div>
       <EditableText k={textKey} fallback={fallback || ""} as="p" className="whitespace-pre-wrap text-white/58 text-sm leading-7" />
     </div>
@@ -1431,7 +1442,7 @@ function Footer({ locale, content }: { locale: Locale; content: SiteContent }) {
         </div>
 
         <div className="border-t border-white/5 pt-8 flex items-center justify-between">
-          <span className="text-white/18 text-xs">© 2026 {OFFICIAL_BRAND_NAME} · babymonster.fans</span>
+          <span className="text-white/18 text-xs">Copyright 2026 {OFFICIAL_BRAND_NAME} · babymonster.fans</span>
           <div className="flex flex-wrap items-center justify-end gap-4">
             <a href={TERMS_OF_SERVICE_URL} className="text-white/28 hover:text-white text-xs tracking-widest">{f.termsOfService}</a>
             <a href={PRIVACY_POLICY_URL} className="text-white/28 hover:text-white text-xs tracking-widest">{f.privacyPolicy}</a>
@@ -1628,7 +1639,7 @@ function AdminPanel({ content, onSaved, onClose }: { content: SiteContent; onSav
           <p className="text-red-400 text-xs tracking-[0.35em] uppercase mb-2">Admin CMS</p>
           <h2 className="text-white font-black text-4xl md:text-5xl leading-none" style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>SITE CONTENT</h2>
         </div>
-        <button type="button" onClick={onClose} className="text-white/50 hover:text-white text-2xl" aria-label="Close">×</button>
+        <button type="button" onClick={onClose} className="text-white/50 hover:text-white" aria-label="Close"><X size={22} aria-hidden="true" /></button>
       </div>
 
       <div className="grid gap-8">
@@ -1799,7 +1810,7 @@ function TextEditModal({ editKey, values, fallback, onSave, onClose }: {
           <h2 className="text-white font-black text-4xl md:text-5xl leading-none" style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>EDIT TEXT</h2>
           <p className="text-white/30 text-xs mt-3 break-all">{editKey}</p>
         </div>
-        <button type="button" onClick={onClose} className="text-white/50 hover:text-white text-2xl" aria-label="Close">×</button>
+        <button type="button" onClick={onClose} className="text-white/50 hover:text-white" aria-label="Close"><X size={22} aria-hidden="true" /></button>
       </div>
       <div className="grid md:grid-cols-2 gap-4">
         {supportedLocales.map(item => (
@@ -1862,13 +1873,16 @@ function OtpCodeInput({ value, onChange, label, disabled = false }: {
     </div>
     <input
       ref={inputRef}
-      type="text"
-      name="one-time-code"
+      type="tel"
+      id="monstiez-otp-code"
+      name="otp"
       value={value}
       maxLength={6}
       inputMode="numeric"
       pattern="[0-9]*"
       autoComplete="one-time-code"
+      autoCapitalize="none"
+      spellCheck={false}
       enterKeyHint="done"
       aria-label={label}
       disabled={disabled}
@@ -1898,12 +1912,12 @@ function AuthModal({ locale, mode, onMode, onClose, onAuthenticated, onPasswordR
   const t = messages[locale];
   const f = fixedMessages[locale];
   const authCopy = {
-    "zh-TW": { verify: "驗證信已寄出，請到信箱點擊連結後再登入。若未收到，請查看垃圾郵件匣。", forgot: "忘記密碼？", resetTitle: "重設密碼", resetSent: "重設密碼信已寄出，請查看收件匣與垃圾郵件匣。", send: "寄送重設連結", back: "返回登入" },
-    "zh-CN": { verify: "验证邮件已发送，请点击邮件中的链接后再登录。若未收到，请查看垃圾邮件文件夹。", forgot: "忘记密码？", resetTitle: "重设密码", resetSent: "重设密码邮件已发送，请查看收件箱和垃圾邮件文件夹。", send: "发送重设链接", back: "返回登录" },
-    th: { verify: "ส่งอีเมลยืนยันแล้ว โปรดกดลิงก์ในอีเมลก่อนเข้าสู่ระบบ หากไม่พบ โปรดตรวจสอบโฟลเดอร์สแปมหรือจดหมายขยะ", forgot: "ลืมรหัสผ่าน?", resetTitle: "รีเซ็ตรหัสผ่าน", resetSent: "ส่งอีเมลรีเซ็ตรหัสผ่านแล้ว โปรดตรวจสอบกล่องจดหมายรวมถึงโฟลเดอร์สแปมหรือจดหมายขยะ", send: "ส่งลิงก์รีเซ็ต", back: "กลับไปเข้าสู่ระบบ" },
-    en: { verify: "Verification email sent. Open the link before signing in. If it is not in your inbox, check your spam or junk folder.", forgot: "Forgot password?", resetTitle: "Reset password", resetSent: "Password reset email sent. Check your inbox, including your spam or junk folder.", send: "Send reset link", back: "Back to sign in" },
-    ko: { verify: "인증 메일을 보냈습니다. 메일의 링크를 연 후 로그인하세요. 보이지 않으면 스팸 메일함도 확인해 주세요.", forgot: "비밀번호를 잊으셨나요?", resetTitle: "비밀번호 재설정", resetSent: "비밀번호 재설정 메일을 보냈습니다. 받은편지함과 스팸 메일함을 확인해 주세요.", send: "재설정 링크 보내기", back: "로그인으로 돌아가기" },
-    ja: { verify: "確認メールを送信しました。メール内のリンクを開いてからログインしてください。届かない場合は迷惑メールフォルダもご確認ください。", forgot: "パスワードを忘れた場合", resetTitle: "パスワードを再設定", resetSent: "再設定メールを送信しました。受信トレイと迷惑メールフォルダをご確認ください。", send: "再設定リンクを送る", back: "ログインに戻る" },
+    "zh-TW": { verify: "6 位數驗證碼已寄出。若未收到，請查看垃圾郵件匣。", forgot: "忘記密碼？", resetTitle: "重設密碼", resetSent: "6 位數重設驗證碼已寄出，請查看收件匣與垃圾郵件匣。", send: "寄送驗證碼", back: "返回登入" },
+    "zh-CN": { verify: "6 位数验证码已发送。若未收到，请查看垃圾邮件文件夹。", forgot: "忘记密码？", resetTitle: "重设密码", resetSent: "6 位数重设验证码已发送，请查看收件箱和垃圾邮件文件夹。", send: "发送验证码", back: "返回登录" },
+    th: { verify: "ส่งรหัสยืนยัน 6 หลักแล้ว หากไม่พบ โปรดตรวจสอบโฟลเดอร์สแปมหรือจดหมายขยะ", forgot: "ลืมรหัสผ่าน?", resetTitle: "รีเซ็ตรหัสผ่าน", resetSent: "ส่งรหัสรีเซ็ต 6 หลักแล้ว โปรดตรวจสอบกล่องจดหมายและโฟลเดอร์สแปม", send: "ส่งรหัสยืนยัน", back: "กลับไปเข้าสู่ระบบ" },
+    en: { verify: "A six-digit verification code was sent. If it is missing, check your spam or junk folder.", forgot: "Forgot password?", resetTitle: "Reset password", resetSent: "A six-digit reset code was sent. Check your inbox and spam or junk folder.", send: "Send verification code", back: "Back to sign in" },
+    ko: { verify: "6자리 인증 코드를 보냈습니다. 보이지 않으면 스팸 메일함도 확인해 주세요.", forgot: "비밀번호를 잊으셨나요?", resetTitle: "비밀번호 재설정", resetSent: "6자리 재설정 코드를 보냈습니다. 받은편지함과 스팸 메일함을 확인해 주세요.", send: "인증 코드 보내기", back: "로그인으로 돌아가기" },
+    ja: { verify: "6桁の確認コードを送信しました。届かない場合は迷惑メールフォルダもご確認ください。", forgot: "パスワードを忘れた場合", resetTitle: "パスワードを再設定", resetSent: "6桁の再設定コードを送信しました。受信トレイと迷惑メールフォルダをご確認ください。", send: "確認コードを送信", back: "ログインに戻る" },
   }[locale];
   const otpCopy = {
     "zh-TW": { signupTitle: "輸入驗證碼", recoveryTitle: "驗證你的身分", sentTo: "我們已將 6 位數驗證碼寄到", label: "6 位數驗證碼", verify: "驗證", resend: "重新寄送驗證碼", resent: "新的驗證碼已寄出，請查看收件匣與垃圾郵件匣。", invalid: "請輸入完整的 6 位數驗證碼。", change: "更改電子信箱" },
@@ -1981,7 +1995,7 @@ function AuthModal({ locale, mode, onMode, onClose, onAuthenticated, onPasswordR
   }
   return <div className="fixed inset-0 z-[100] bg-black/85 grid place-items-center p-5" role="dialog" aria-modal="true" aria-label={t.login}>
     <div className="w-full max-w-lg max-h-[92vh] overflow-auto bg-[#090909] border border-white/15 p-7 shadow-2xl">
-      <div className="flex items-center justify-between"><h2 className="text-white font-black text-4xl" style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>JOIN <span className="text-[#E01020]">MONSTIEZ</span></h2><button onClick={onClose} className="text-white/50 hover:text-white text-2xl" aria-label={t.close}>×</button></div>
+      <div className="flex items-center justify-between"><h2 className="text-white font-black text-4xl" style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>JOIN <span className="text-[#E01020]">MONSTIEZ</span></h2><button onClick={onClose} className="text-white/50 hover:text-white" aria-label={t.close}><X size={22} aria-hidden="true" /></button></div>
       <p className="text-white/42 text-xs leading-relaxed mt-4">
         {f.authPurpose}
       </p>
@@ -2036,7 +2050,7 @@ function ResetPasswordModal({ locale, onClose }: { locale: Locale; onClose: () =
   }
   return <div className="fixed inset-0 z-[125] grid place-items-center bg-black/90 p-5" role="dialog" aria-modal="true" aria-label={copy.title}>
     <form onSubmit={submit} className="w-full max-w-md border border-white/15 bg-[#090909] p-7 shadow-2xl">
-      <div className="mb-6 flex justify-between gap-4"><h2 className="text-4xl font-black text-white">{copy.title}</h2><button type="button" onClick={onClose} className="text-2xl text-white/50">×</button></div>
+      <div className="mb-6 flex justify-between gap-4"><h2 className="text-4xl font-black text-white">{copy.title}</h2><button type="button" onClick={onClose} className="text-white/50" aria-label={t.close}><X size={22} aria-hidden="true" /></button></div>
       <div className="grid gap-4">
         <label className="text-xs text-white/45">{t.password}<input name="password" type="password" required minLength={10} className="mt-2 block w-full border border-white/15 bg-black p-3 text-white" /></label>
         <label className="text-xs text-white/45">{copy.confirm}<input name="confirmPassword" type="password" required minLength={10} className="mt-2 block w-full border border-white/15 bg-black p-3 text-white" /></label>
