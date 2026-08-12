@@ -76,6 +76,8 @@ test("bundles six static languages and translates fan posts only", async () => {
   assert.match(page, /classifyEventsByDate/);
   assert.match(page, /eventDateTimestamp/);
   assert.match(page, /EventDetailModal/);
+  assert.match(page, /AllEventsModal/);
+  assert.match(page, /查看全部活動/);
   assert.match(page, /type="date"/);
   assert.match(page, /開始日期/);
   assert.match(page, /結束日期/);

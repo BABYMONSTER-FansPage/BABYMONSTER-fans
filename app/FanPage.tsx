@@ -1015,6 +1015,7 @@ function EventsSection({ locale, content }: { locale: Locale; content: SiteConte
   const t = messages[locale];
   const events = classifyEventsByDate(Array.isArray(content.events) ? content.events : []);
   const [selectedEvent, setSelectedEvent] = useState<EditableEvent | null>(null);
+  const [allEventsOpen, setAllEventsOpen] = useState(false);
   const visibleEvents = [
     events.filter(event => event.status === "past").sort((a, b) => eventDateTimestamp(b) - eventDateTimestamp(a))[0],
     events.find(event => event.status === "upcoming"),
@@ -1046,10 +1047,35 @@ function EventsSection({ locale, content }: { locale: Locale; content: SiteConte
             {visibleEvents.map((event, index) => <EventCard key={event.id ?? `${event.status}-${index}`} event={event} index={index} locale={locale} onOpen={() => setSelectedEvent(event)} />)}
           </div>
         </div>
+        {events.length > 0 && <div className="mt-12 text-center">
+          <button onClick={() => setAllEventsOpen(true)} className="border border-red-500/35 px-6 py-3 text-xs tracking-[0.22em] uppercase text-red-300 transition hover:bg-red-600/10">
+            {locale === "zh-TW" ? "查看全部活動" : locale === "zh-CN" ? "查看全部活动" : locale === "ja" ? "全イベントを見る" : locale === "ko" ? "전체 일정 보기" : locale === "th" ? "ดูกิจกรรมทั้งหมด" : "View all events"}
+          </button>
+        </div>}
       </div>
+      {allEventsOpen && <AllEventsModal events={events} locale={locale} onSelect={event => { setAllEventsOpen(false); setSelectedEvent(event); }} onClose={() => setAllEventsOpen(false)} />}
       {selectedEvent && <EventDetailModal event={selectedEvent} locale={locale} onClose={() => setSelectedEvent(null)} />}
     </section>
   );
+}
+
+function AllEventsModal({ events, locale, onSelect, onClose }: { events: EditableEvent[]; locale: Locale; onSelect: (event: EditableEvent) => void; onClose: () => void }) {
+  const sortedEvents = [...events].sort((a, b) => eventDateTimestamp(a) - eventDateTimestamp(b));
+  return <div className="fixed inset-0 z-[115] grid place-items-center bg-black/88 p-5" role="dialog" aria-modal="true" aria-label="All events">
+    <div className="w-full max-w-4xl max-h-[88vh] overflow-auto border border-white/15 bg-[#090909] p-6 shadow-2xl md:p-8">
+      <div className="mb-6 flex items-start justify-between gap-5">
+        <h2 className="text-4xl font-black leading-none text-white md:text-5xl" style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>BABYMONSTER EVENTS</h2>
+        <button onClick={onClose} className="text-2xl text-white/50 hover:text-white" aria-label="Close">×</button>
+      </div>
+      <div className="grid gap-3">
+        {sortedEvents.map(event => <button key={event.id ?? `${event.sub}-${event.startDate}`} onClick={() => onSelect(event)} className="grid gap-2 border border-white/10 p-4 text-left transition hover:border-red-500/40 md:grid-cols-[150px_1fr_auto] md:items-center">
+          <span className="text-sm text-red-300">{eventDisplayDate(event)}</span>
+          <span><strong className="block text-lg text-white">{event.sub || event.title}</strong><span className="text-xs text-white/40">{event.locations}</span></span>
+          <span className="text-xs uppercase tracking-wider text-white/35">{eventStatusLabel(event.status, locale)} ↗</span>
+        </button>)}
+      </div>
+    </div>
+  </div>;
 }
 
 function EventDetailModal({ event, locale, onClose }: { event: EditableEvent; locale: Locale; onClose: () => void }) {
