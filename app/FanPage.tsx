@@ -159,7 +159,7 @@ const DEFAULT_SITE_CONTENT: Required<Pick<SiteContent, "siteTagline">> = {
 };
 
 const OFFICIAL_BRAND_NAME = "Monstiez";
-const SITE_BROWSER_TITLE = "Monstiez｜BABYMONSTER Fans Club";
+const SITE_BROWSER_TITLE = "Monstiez";
 const FIXED_FAVICON_URL = "/favicon.svg";
 const PRIVACY_POLICY_URL = "https://babymonster.fans/privacy.html";
 const TERMS_OF_SERVICE_URL = "https://babymonster.fans/terms.html";
@@ -458,24 +458,13 @@ function Hero({ locale, content }: { locale: Locale; content: SiteContent }) {
           <EditableText k="heroKicker" fallback={contentText(content.heroKicker, "")} />
         </motion.p>
 
-        {/* BABY — slides up from mask */}
+        {/* MONSTIEZ — official site brand */}
         <div className="overflow-hidden leading-none">
           <motion.div initial={mobile ? false : { y: "110%" }} animate={{ y: 0 }}
             transition={{ duration: 1, delay: 0.45, ease: [0.16, 1, 0.3, 1] }}>
             <span className="font-black text-white block leading-[0.88]"
-              style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: "clamp(4.5rem, 18vw, 16rem)" }}>
-              BABY
-            </span>
-          </motion.div>
-        </div>
-
-        {/* MONSTER — slides up with offset */}
-        <div className="overflow-hidden leading-none -mt-2">
-          <motion.div initial={mobile ? false : { y: "110%" }} animate={{ y: 0 }}
-            transition={{ duration: 1, delay: 0.62, ease: [0.16, 1, 0.3, 1] }}>
-            <span className="font-black block leading-[0.88]"
-              style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: "clamp(4.5rem, 18vw, 16rem)", color: "#E01020" }}>
-              MONSTER
+              style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: "clamp(4rem, 16vw, 14rem)" }}>
+              MON<span style={{ color: "#E01020" }}>STIEZ</span>
             </span>
           </motion.div>
         </div>
@@ -1442,7 +1431,7 @@ function Footer({ locale, content }: { locale: Locale; content: SiteContent }) {
         </div>
 
         <div className="border-t border-white/5 pt-8 flex items-center justify-between">
-          <span className="text-white/18 text-xs">Copyright 2026 {OFFICIAL_BRAND_NAME} · babymonster.fans</span>
+          <span className="inline-flex items-center gap-2 text-white/18 text-xs"><img src={FIXED_FAVICON_URL} alt="" aria-hidden="true" className="h-4 w-4 opacity-50" />&copy; 2026 {OFFICIAL_BRAND_NAME} · babymonster.fans</span>
           <div className="flex flex-wrap items-center justify-end gap-4">
             <a href={TERMS_OF_SERVICE_URL} className="text-white/28 hover:text-white text-xs tracking-widest">{f.termsOfService}</a>
             <a href={PRIVACY_POLICY_URL} className="text-white/28 hover:text-white text-xs tracking-widest">{f.privacyPolicy}</a>

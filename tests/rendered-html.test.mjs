@@ -10,7 +10,7 @@ test("builds a GitHub Pages entry for babymonster.fans", async () => {
     readFile(new URL("../dist-pages/robots.txt", import.meta.url), "utf8"),
     readFile(new URL("../dist-pages/sitemap.xml", import.meta.url), "utf8"),
   ]);
-  assert.match(html, /<title>Monstiez｜BABYMONSTER Fans Club<\/title>/);
+  assert.match(html, /<title>Monstiez<\/title>/);
   assert.match(html, /<meta name="description" content="Monstiez 是提供 BABYMONSTER 粉絲交流、留言與內容瀏覽的非官方粉絲社群平台/);
   assert.match(html, /<meta property="og:title" content="Monstiez"/);
   assert.match(html, /<meta name="twitter:card" content="summary_large_image"/);
@@ -119,7 +119,7 @@ test("bundles six static languages and translates fan posts only", async () => {
   assert.match(css, /\.verification-badge \{ position: absolute; right: -4px; bottom: -4px/);
   assert.doesNotMatch(page, /\p{Extended_Pictographic}|\p{Regional_Indicator}|\p{Emoji_Presentation}/u);
   assert.match(tourMigration, /choom-hong-kong-2027/);
-  assert.match(page, /SITE_BROWSER_TITLE = "Monstiez｜BABYMONSTER Fans Club"/);
+  assert.match(page, /SITE_BROWSER_TITLE = "Monstiez"/);
   assert.match(page, /FIXED_FAVICON_URL = "\/favicon\.svg"/);
   assert.match(page, /Monstiez（固定）/);
   assert.match(page, /\/favicon\.svg（固定）/);
@@ -130,9 +130,11 @@ test("bundles six static languages and translates fan posts only", async () => {
   assert.match(i18n, /detailIntro/);
   assert.match(i18n, /Detailed intro/);
   assert.match(i18n, /詳しい紹介/);
-  assert.match(i18n, /Official app name/);
+  assert.match(i18n, /What is Monstiez\?/);
+  assert.match(i18n, /MONSTIEZ 是 BABYMONSTER 的官方粉絲名/);
+  assert.match(i18n, /使用者登入後可以參與社群互動/);
+  assert.doesNotMatch(i18n, /使用者可以建立帳號、參與社群互動/);
   assert.match(i18n, /Monstiez 是提供 BABYMONSTER 粉絲交流、留言與內容瀏覽的粉絲社群平台/);
-  assert.match(i18n, /使用者可以建立帳號、參與社群互動、管理個人資料/);
   assert.doesNotMatch(i18n, /Google 登入用於快速建立及登入 Monstiez 帳號/);
   assert.doesNotMatch(i18n, /Google 登入只用於|Gmail、Google Drive 或 Google Calendar/);
   assert.match(page, /https:\/\/babymonster\.fans\/privacy\.html/);
@@ -140,6 +142,7 @@ test("bundles six static languages and translates fan posts only", async () => {
   assert.ok(page.indexOf("<AppPurposeSection locale={locale} />") > page.indexOf("<Announcements"));
   assert.ok(page.indexOf("<AppPurposeSection locale={locale} />") < page.indexOf("<Footer"));
   assert.match(page, /MON<span style=\{\{ color: "#E01020" \}\}>STIEZ<\/span>/);
+  assert.match(page, /&copy; 2026 \{OFFICIAL_BRAND_NAME\}/);
   assert.match(page, /aria-label="Loading Monstiez fan site"/);
   assert.match(page, />\s*Monstiez\s*<\/h1>/);
   assert.doesNotMatch(page, /Loading BABYMONSTER fan site/);

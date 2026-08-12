@@ -112,9 +112,9 @@ type FixedCopy = {
 
 export const fixedMessages: Record<Locale, FixedCopy> = {
   "zh-TW": {
-    officialAppNameLabel: "Official app name",
+    officialAppNameLabel: "What is Monstiez?",
     fanCommunityPlatform: "BABYMONSTER fan community platform",
-    appPurpose: "Monstiez 是提供 BABYMONSTER 粉絲交流、留言與內容瀏覽的粉絲社群平台。使用者可以建立帳號、參與社群互動、管理個人資料，並瀏覽官方社群連結、成員介紹與近期活動整理。",
+    appPurpose: "MONSTIEZ 是 BABYMONSTER 的官方粉絲名。Monstiez 是提供 BABYMONSTER 粉絲交流、留言與內容瀏覽的粉絲社群平台。使用者登入後可以參與社群互動、管理個人資料，並瀏覽官方社群連結、成員介紹與近期活動整理。",
     privacyPolicy: "隱私權政策",
     termsOfService: "服務條款",
     spotifyImage: "Spotify 圖片",
@@ -145,9 +145,9 @@ export const fixedMessages: Record<Locale, FixedCopy> = {
     activityManager: "活動管理",
   },
   "zh-CN": {
-    officialAppNameLabel: "Official app name",
+    officialAppNameLabel: "什么是 Monstiez？",
     fanCommunityPlatform: "BABYMONSTER fan community platform",
-    appPurpose: "Monstiez 是提供 BABYMONSTER 粉丝交流、留言与内容浏览的粉丝社区平台。用户可以创建账号、参与社区互动、管理个人资料，并浏览官方社交链接、成员介绍与近期活动整理。",
+    appPurpose: "MONSTIEZ 是 BABYMONSTER 的官方粉丝名。Monstiez 是提供 BABYMONSTER 粉丝交流、留言与内容浏览的粉丝社区平台。用户登录后可以参与社区互动、管理个人资料，并浏览官方社交链接、成员介绍与近期活动整理。",
     privacyPolicy: "隐私权政策",
     termsOfService: "服务条款",
     spotifyImage: "Spotify 图片",
@@ -178,9 +178,9 @@ export const fixedMessages: Record<Locale, FixedCopy> = {
     activityManager: "活动管理",
   },
   th: {
-    officialAppNameLabel: "ชื่อแอปอย่างเป็นทางการ",
+    officialAppNameLabel: "Monstiez คืออะไร?",
     fanCommunityPlatform: "แพลตฟอร์มชุมชนแฟน BABYMONSTER",
-    appPurpose: "Monstiez เป็นแพลตฟอร์มชุมชนแฟนสำหรับการพูดคุย แสดงความคิดเห็น และเรียกดูคอนเทนต์เกี่ยวกับ BABYMONSTER ผู้ใช้สามารถสร้างบัญชี ร่วมโต้ตอบในชุมชน จัดการโปรไฟล์ และดูรวมลิงก์โซเชียลทางการ แนะนำสมาชิก และกิจกรรมล่าสุด",
+    appPurpose: "MONSTIEZ คือชื่อแฟนคลับอย่างเป็นทางการของ BABYMONSTER ส่วน Monstiez เป็นแพลตฟอร์มชุมชนสำหรับแฟน ๆ เพื่อพูดคุย แสดงความคิดเห็น และเรียกดูคอนเทนต์เกี่ยวกับ BABYMONSTER หลังจากเข้าสู่ระบบ ผู้ใช้สามารถร่วมกิจกรรมในชุมชน จัดการโปรไฟล์ และดูรวมลิงก์โซเชียลทางการ แนะนำสมาชิก และกิจกรรมล่าสุด",
     privacyPolicy: "นโยบายความเป็นส่วนตัว",
     termsOfService: "เงื่อนไขการใช้บริการ",
     spotifyImage: "รูปภาพ Spotify",
@@ -211,9 +211,9 @@ export const fixedMessages: Record<Locale, FixedCopy> = {
     activityManager: "จัดการกิจกรรม",
   },
   en: {
-    officialAppNameLabel: "Official app name",
+    officialAppNameLabel: "What is Monstiez?",
     fanCommunityPlatform: "BABYMONSTER fan community platform",
-    appPurpose: "Monstiez is a fan community platform for BABYMONSTER discussions, comments, and content browsing. Users can create accounts, join community interactions, manage their profiles, and browse official social links, member introductions, and recent activity summaries.",
+    appPurpose: "MONSTIEZ is the official fandom name for BABYMONSTER. Monstiez is a fan community platform for BABYMONSTER discussions, comments, and content browsing. After signing in, users can join community interactions, manage their profiles, and browse official social links, member introductions, and recent activity summaries.",
     privacyPolicy: "Privacy Policy",
     termsOfService: "Terms of Service",
     spotifyImage: "Spotify image",
@@ -244,9 +244,9 @@ export const fixedMessages: Record<Locale, FixedCopy> = {
     activityManager: "Activity manager",
   },
   ko: {
-    officialAppNameLabel: "공식 앱 이름",
+    officialAppNameLabel: "Monstiez란?",
     fanCommunityPlatform: "BABYMONSTER 팬 커뮤니티 플랫폼",
-    appPurpose: "Monstiez는 BABYMONSTER 팬들이 교류하고 댓글을 남기며 콘텐츠를 둘러볼 수 있는 팬 커뮤니티 플랫폼입니다. 사용자는 계정을 만들고 커뮤니티 활동에 참여하며 프로필을 관리하고 공식 소셜 링크, 멤버 소개와 최근 활동 정리를 볼 수 있습니다.",
+    appPurpose: "MONSTIEZ는 BABYMONSTER의 공식 팬덤명입니다. Monstiez는 BABYMONSTER 팬들이 교류하고 댓글을 남기며 콘텐츠를 둘러볼 수 있는 팬 커뮤니티 플랫폼입니다. 사용자는 로그인 후 커뮤니티 활동에 참여하고 프로필을 관리하며 공식 소셜 링크, 멤버 소개와 최근 활동 정리를 볼 수 있습니다.",
     privacyPolicy: "개인정보 처리방침",
     termsOfService: "서비스 약관",
     spotifyImage: "Spotify 이미지",
@@ -277,9 +277,9 @@ export const fixedMessages: Record<Locale, FixedCopy> = {
     activityManager: "활동 관리",
   },
   ja: {
-    officialAppNameLabel: "公式アプリ名",
+    officialAppNameLabel: "Monstiezとは？",
     fanCommunityPlatform: "BABYMONSTERファンコミュニティプラットフォーム",
-    appPurpose: "Monstiezは、BABYMONSTERファンの交流、コメント投稿、コンテンツ閲覧のためのファンコミュニティプラットフォームです。ユーザーはアカウントを作成し、コミュニティで交流し、プロフィールを管理し、公式SNSリンク、メンバー紹介、最近の活動まとめを閲覧できます。",
+    appPurpose: "MONSTIEZはBABYMONSTERの公式ファンダム名です。Monstiezは、BABYMONSTERファンの交流、コメント投稿、コンテンツ閲覧のためのファンコミュニティプラットフォームです。ユーザーはログイン後、コミュニティで交流し、プロフィールを管理し、公式SNSリンク、メンバー紹介、最近の活動まとめを閲覧できます。",
     privacyPolicy: "プライバシーポリシー",
     termsOfService: "利用規約",
     spotifyImage: "Spotify画像",
