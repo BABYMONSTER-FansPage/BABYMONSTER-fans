@@ -167,3 +167,18 @@ test("bundles six static languages and translates fan posts only", async () => {
   assert.match(terms, /<title>Monstiez 服務條款<\/title>/);
   assert.match(terms, /歡迎使用 Monstiez/);
 });
+
+test("provides a verified Kakao unlink webhook", async () => {
+  const [webhook, migration, config] = await Promise.all([
+    readFile(new URL("../supabase/functions/kakao-unlink-webhook/index.ts", import.meta.url), "utf8"),
+    readFile(new URL("../supabase/migrations/202608120003_oauth_unlink_events.sql", import.meta.url), "utf8"),
+    readFile(new URL("../supabase/config.toml", import.meta.url), "utf8"),
+  ]);
+  assert.match(webhook, /KAKAO_ADMIN_KEY/);
+  assert.match(webhook, /KAKAO_APP_ID/);
+  assert.match(webhook, /KakaoAK/);
+  assert.match(webhook, /oauth_unlink_events/);
+  assert.match(migration, /admins read oauth unlink events/);
+  assert.match(config, /\[functions\.kakao-unlink-webhook\]/);
+  assert.match(config, /verify_jwt = false/);
+});
