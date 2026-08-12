@@ -1439,7 +1439,7 @@ function Footer({ locale, content }: { locale: Locale; content: SiteContent }) {
             <EditableText k="footerSignal" fallback="MONSTERS FOREVER" as="span" className="text-white/18 text-xs tracking-widest" />
           </div>
         </div>
-        <EditableText k="footerLegalNote" fallback={t.warning} as="p" className="mt-8 pt-6 border-t border-white/5 text-white/25 text-xs leading-relaxed" />
+        <EditableText k="footerLegalNoticeV2" fallback={t.warning} as="p" className="mt-8 pt-6 border-t border-white/5 text-white/25 text-xs leading-relaxed" />
       </div>
     </footer>
   );
