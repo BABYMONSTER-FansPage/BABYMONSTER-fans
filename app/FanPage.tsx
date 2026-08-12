@@ -1467,6 +1467,27 @@ function AdminPanel({ content, onSaved, onClose }: { content: SiteContent; onSav
     setDraft(current => ({ ...current, instagramPosts: (current.instagramPosts || []).filter((_, postIndex) => postIndex !== index) }));
   }
 
+  async function saveInstagramPostsOnly() {
+    const rawPosts = draft.instagramPosts || [];
+    const posts = normalizeInstagramPosts(rawPosts);
+    if (rawPosts.some(value => String(value || "").trim()) && !posts.length) {
+      setFeedback("Instagram 網址格式不正確，請貼上 /p/、/reel/ 或 /tv/ 的完整貼文網址。");
+      return;
+    }
+
+    setFeedback("正在儲存 Instagram 貼文…");
+    try {
+      await saveSiteContent({ instagramPosts: posts });
+      setDraft(current => ({ ...current, instagramPosts: posts }));
+      onSaved({ ...content, instagramPosts: posts, siteName: OFFICIAL_BRAND_NAME, faviconUrl: FIXED_FAVICON_URL });
+      setFeedback(`Instagram 貼文已獨立儲存到 Supabase（${posts.length} 則）。`);
+    } catch (error) {
+      setFeedback(error instanceof Error
+        ? `Instagram 儲存失敗：${error.message}`
+        : "Instagram 儲存失敗，請確認目前帳號具有管理員權限。");
+    }
+  }
+
   async function importSpotifyAlbums() {
     setFeedback("Fetching Spotify releases...");
     try {
@@ -1587,17 +1608,23 @@ function AdminPanel({ content, onSaved, onClose }: { content: SiteContent; onSav
         <section className="border-t border-white/8 pt-6">
           <div className="flex items-center justify-between gap-4 mb-4">
             <h3 className="text-white font-bold">Instagram 官方貼文</h3>
-            <button type="button" onClick={addInstagramPost} className="px-3 py-2 border border-white/15 text-white/60 text-xs hover:text-white">新增 IG URL</button>
+            <div className="flex flex-wrap justify-end gap-2">
+              <button type="button" onClick={addInstagramPost} className="px-3 py-2 border border-white/15 text-white/60 text-xs hover:text-white">新增 IG URL</button>
+              <button type="button" onClick={() => void saveInstagramPostsOnly()} className="px-3 py-2 border border-red-500/40 bg-red-600/10 text-red-200 text-xs hover:bg-red-600/20">儲存 Instagram</button>
+            </div>
           </div>
           <p className="text-white/35 text-xs leading-relaxed mb-4">
             只貼 Instagram 官方貼文或 Reel URL，例如 https://www.instagram.com/p/... 或 https://www.instagram.com/reel/...。網站只做官方 embed，不下載、不重傳、不把圖片存進 Supabase 或 GitHub。
           </p>
           <div className="grid gap-3">
-            {instagramPosts.map((url, index) => <div key={`${index}-${url}`} className="border border-white/8 p-4">
+            {instagramPosts.map((url, index) => <div key={index} className="border border-white/8 p-4">
               <label className={labelClass}>Instagram URL<input value={url || ""} onChange={e => updateInstagramPost(index, e.target.value)} placeholder="https://www.instagram.com/p/..." className={inputClass} /></label>
               <p className={`mt-2 text-xs ${url && !normalizeInstagramUrl(url) ? "text-red-300/75" : "text-white/28"}`}>
                 {url && !normalizeInstagramUrl(url) ? "請貼 Instagram 貼文 /p/、Reel /reel/ 或 TV /tv/ 的網址；/share/ 短連結無法直接嵌入。" : "儲存時會自動清除追蹤參數，只保留官方 permalink。"}
               </p>
+              {normalizeInstagramUrl(url) && <div className="mt-4 max-w-sm overflow-hidden border border-white/10 bg-white">
+                <iframe title={`Instagram preview ${index + 1}`} src={instagramEmbedUrl(normalizeInstagramUrl(url))} className="h-[560px] w-full border-0 bg-white" loading="eager" />
+              </div>}
               <button type="button" onClick={() => removeInstagramPost(index)} className="mt-3 text-red-400/70 hover:text-red-300 text-xs">刪除這則 IG</button>
             </div>)}
             {!instagramPosts.length && <p className="text-white/28 text-xs">尚未新增 Instagram 貼文 URL。新增後才會在前台顯示 IG 區塊。</p>}

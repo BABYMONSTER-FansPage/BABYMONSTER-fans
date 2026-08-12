@@ -71,6 +71,9 @@ test("bundles six static languages and translates fan posts only", async () => {
   assert.match(page, /\/share\/ 短連結無法直接嵌入/);
   assert.match(page, /normalizeInstagramPosts/);
   assert.match(page, /新增 IG URL/);
+  assert.match(page, /儲存 Instagram/);
+  assert.match(page, /saveInstagramPostsOnly/);
+  assert.match(page, /saveSiteContent\(\{ instagramPosts: posts \}\)/);
   assert.match(i18n, /instagramFeedTitle/);
   assert.match(page, /OFFICIAL_BRAND_NAME = "Monstiez"/);
   assert.match(page, /SITE_BROWSER_TITLE = "Monstiez｜BABYMONSTER Fans Club"/);
