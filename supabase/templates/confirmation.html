@@ -15,6 +15,8 @@
       }
       :root { color-scheme: light dark; supported-color-schemes: light dark; }
       .mail-body, .mail-root, .shell, .brand-header, .mail-footer, .mail-panel { background: Canvas !important; }
+      .brand-header { background: #d84f7d !important; }
+      .brand-header .mail-title { color: #ffffff !important; }
       .mail-title, .mail-copy { color: CanvasText !important; }
       .mail-muted { color: GrayText !important; }
       .mail-panel { border: 1px solid GrayText !important; border-left: 3px solid #d84f7d !important; }
@@ -22,14 +24,14 @@
     </style>
   </head>
   <body class="mail-body" style="margin:0;padding:0;background:Canvas;color:CanvasText;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;">
-    <div style="display:none;max-height:0;overflow:hidden;opacity:0;">Your six-digit Monstiez email verification code.</div>
+    <div style="display:none;max-height:0;overflow:hidden;opacity:0;">Your OTP code.</div>
     <table role="presentation" class="mail-root" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:Canvas;">
       <tr><td align="center" style="padding:34px 14px;">
         <table role="presentation" class="shell" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;background:Canvas;border:1px solid GrayText;border-radius:4px;overflow:hidden;">
-          <tr><td class="brand-header mail-rule" style="padding:21px 26px;background:Canvas;border-bottom:1px solid GrayText;">
+          <tr><td class="brand-header mail-rule" style="padding:21px 26px;background:#d84f7d;border-bottom:1px solid #d84f7d;">
             <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
               <td style="vertical-align:middle;"><img src="https://babymonster.fans/favicon.svg" width="34" height="34" alt="Monstiez" style="display:block;width:34px;height:34px;border:0;border-radius:9px;"></td>
-              <td class="mail-title" style="padding-left:11px;vertical-align:middle;font-size:20px;font-weight:800;letter-spacing:.2px;color:CanvasText;">Monstiez</td>
+              <td class="mail-title" style="padding-left:11px;vertical-align:middle;font-size:20px;font-weight:800;letter-spacing:.2px;color:#ffffff;">Monstiez</td>
             </tr></table>
           </td></tr>
           <tr><td class="content" style="padding:52px 42px 44px;">
@@ -37,12 +39,11 @@
             <h1 class="title mail-title" style="margin:0 0 28px;font-size:42px;line-height:1.08;letter-spacing:-1.2px;color:CanvasText;">Confirm your email address</h1>
             <p class="mail-title" style="margin:0 0 18px;font-size:16px;line-height:1.7;color:CanvasText;">Hello,</p>
             <p class="mail-copy" style="margin:0 0 18px;font-size:15px;line-height:1.75;color:CanvasText;">We received a request to create a Monstiez account using <strong class="mail-title" style="color:CanvasText;">{{ .Email }}</strong>. Confirm this address to finish registration and access community features.</p>
-            <p class="mail-copy" style="margin:0 0 28px;font-size:15px;line-height:1.75;color:CanvasText;">Enter this six-digit code on the Monstiez verification screen. Monstiez does not use an email verification link.</p>
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 26px;"><tr><td class="mail-panel" style="padding:18px 20px;background:Canvas;border:1px solid GrayText;border-left:3px solid #d84f7d;">
               <div class="mail-muted" style="font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:GrayText;">Verification code</div>
               <div style="margin-top:7px;font-size:25px;font-weight:800;letter-spacing:5px;color:#ff9abc;">{{ .Token }}</div>
             </td></tr></table>
-            <p class="mail-muted" style="margin:0 0 22px;font-size:13px;line-height:1.7;color:GrayText;">This code expires in 1 hour and can only be used once.</p>
+            <p class="mail-muted" style="margin:0 0 22px;font-size:13px;line-height:1.7;color:GrayText;">This code expires in 10 minutes and can only be used once.</p>
             <div class="mail-rule" style="padding-top:22px;border-top:1px solid GrayText;">
               <p class="mail-title" style="margin:0 0 7px;font-size:13px;font-weight:800;color:CanvasText;">Security notice</p>
               <p class="mail-muted" style="margin:0;font-size:13px;line-height:1.7;color:GrayText;">Do not forward this email or share its code. Monstiez will never ask for your password. If you did not create this account, ignore this message or contact <a href="mailto:support@babymonster.fans" style="color:#d84f7d;">support@babymonster.fans</a>.</p>

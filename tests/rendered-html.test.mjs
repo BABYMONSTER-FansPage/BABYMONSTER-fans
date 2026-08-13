@@ -237,6 +237,8 @@ test("auth delivery notices cover six languages and emails use six-digit codes",
     assert.match(template, /background:\s*Canvas\s*!important/i);
     assert.match(template, /color:\s*CanvasText\s*!important/i);
     assert.match(template, /color:\s*GrayText\s*!important/i);
+    assert.match(template, /\.brand-header\s*\{\s*background:\s*#d84f7d\s*!important/i);
+    assert.match(template, /\.brand-header \.mail-title\s*\{\s*color:\s*#(?:fff|ffffff)\s*!important/i);
     assert.doesNotMatch(template, /prefers-color-scheme/);
     assert.doesNotMatch(template, /\[data-ogs[bc]\]/);
     assert.doesNotMatch(template, /#9185f7|#a99fff|#b8afff/i);
