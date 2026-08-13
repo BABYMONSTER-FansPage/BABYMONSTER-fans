@@ -57,7 +57,7 @@ function useMobileViewport() {
 
 const MEMBERS = [
   {
-    id: "ruka", num: "01", name: "RUKA", hangul: "루카",
+    id: "ruka", num: "01", name: "RUKA",
     birth: "2002 · Mar 20", nationality: "Japan", flag: "JP",
     position: "Main Vocalist",
     description: "The eldest of BABYMONSTER, Ruka commands the stage with powerhouse vocals and an effortless grace honed through years of rigorous training. Her emotional depth and unwavering presence define the group's vocal identity.",
@@ -66,7 +66,7 @@ const MEMBERS = [
     accent: "#E01020",
   },
   {
-    id: "pharita", num: "02", name: "PHARITA", hangul: "파리타",
+    id: "pharita", num: "02", name: "PHARITA",
     birth: "2005 · Aug 26", nationality: "Thailand", flag: "TH",
     position: "Vocalist · Rapper",
     description: "Fierce, fearless, and relentlessly captivating — Pharita brings Thailand's pride to every stage. Her dual mastery of rap and melody makes her one of the most versatile forces in the group.",
@@ -75,7 +75,7 @@ const MEMBERS = [
     accent: "#ff2d2d",
   },
   {
-    id: "asa", num: "03", name: "ASA", hangul: "아사",
+    id: "asa", num: "03", name: "ASA",
     birth: "2006 · Apr 17", nationality: "Japan", flag: "JP",
     position: "Vocalist · Main Dancer",
     description: "Where precision meets artistry — Asa's dance mastery is a study in technique and emotion. Every gesture intentional, every movement a brushstroke. She is the visual pulse of BABYMONSTER.",
@@ -84,7 +84,7 @@ const MEMBERS = [
     accent: "#cc1a1a",
   },
   {
-    id: "ahyeon", num: "04", name: "AHYEON", hangul: "아현",
+    id: "ahyeon", num: "04", name: "AHYEON",
     birth: "2007 · Apr 11", nationality: "Korea", flag: "KR",
     position: "Main Rapper · Vocalist",
     description: "Before the official debut, Ahyeon went viral worldwide — proof that true talent cannot be contained. Her rap flows with razor precision while her vocals carry a haunting melodic quality unlike anything in K-pop.",
@@ -93,7 +93,7 @@ const MEMBERS = [
     accent: "#E01020",
   },
   {
-    id: "rami", num: "05", name: "RAMI", hangul: "라미",
+    id: "rami", num: "05", name: "RAMI",
     birth: "2007 · Oct 17", nationality: "Korea", flag: "KR",
     position: "Vocalist",
     description: "Rami's voice carries a warmth and emotional sincerity that transcends age. When she sings, you feel every word. Her genuine connection with fans has made her one of the most cherished members.",
@@ -102,7 +102,7 @@ const MEMBERS = [
     accent: "#ff4040",
   },
   {
-    id: "rora", num: "06", name: "RORA", hangul: "로라",
+    id: "rora", num: "06", name: "RORA",
     birth: "2008 · Aug 14", nationality: "Korea", flag: "KR",
     position: "Performer",
     description: "Rora brings a warm and expressive vocal color to the group.",
@@ -111,7 +111,7 @@ const MEMBERS = [
     accent: "#b30000",
   },
   {
-    id: "chiquita", num: "07", name: "CHIQUITA", hangul: "치키타",
+    id: "chiquita", num: "07", name: "CHIQUITA",
     birth: "2009 · Feb 17", nationality: "Thailand", flag: "TH",
     position: "Performer",
     description: "Chiquita brings bright vocal color and explosive stage energy.",
@@ -767,8 +767,6 @@ function MemberSpotlight({ member, index, photoUrl, locale, instagramPosts = [] 
               animate={isInView ? { opacity: 1, x: 0 } : {}}
               transition={{ duration: 0.6, delay: 0.38 }}
               className="flex items-center gap-4 mb-7">
-              <span className="text-white/30 text-xl">{member.hangul}</span>
-              <span className="w-1 h-1 rounded-full" style={{ background: member.accent }} />
               <span className="text-white/40 text-sm tracking-wider">{birthDate}</span>
             </motion.div>
 

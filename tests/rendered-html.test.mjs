@@ -85,6 +85,7 @@ test("bundles six static languages and translates fan posts only", async () => {
   assert.match(page, /function AdminLocalizedTextFields/);
   assert.match(page, /supportedLocales\.map\(item/);
   assert.match(page, /initializeLocalizedIntroductions/);
+  assert.doesNotMatch(page, /LOCALIZED_MEMBER_NAMES/);
   assert.match(page, /baseKey="groupDetail" label="團體詳細介紹／彈窗（六種語言）"/);
   assert.match(page, /baseKey=\{`member\.\$\{member\.id\}\.detail`\}/);
   assert.match(page, /成員 Instagram 貼文/);
@@ -239,6 +240,20 @@ test("offers Google as the only social login", async () => {
   assert.doesNotMatch(page, /KakaoTalk|oauth\("kakao"\)/);
   assert.doesNotMatch(oauthRoute, /kakao|wechat/i);
   assert.doesNotMatch(oauthCallback, /kakao|wechat/i);
+});
+
+test("stores six distinct group and member introduction languages", async () => {
+  const migration = await readFile(new URL("../supabase/migrations/202608130001_localize_group_member_introductions.sql", import.meta.url), "utf8");
+  for (const locale of ["zh-TW", "zh-CN", "th", "en", "ko", "ja"]) {
+    assert.match(migration, new RegExp(`storyLead\\.${locale.replace("-", "\\-")}`));
+    assert.match(migration, new RegExp(`storyBody\\.${locale.replace("-", "\\-")}`));
+    assert.match(migration, new RegExp(`groupDetail\\.${locale.replace("-", "\\-")}`));
+    for (const member of ["ruka", "pharita", "asa", "ahyeon", "rami", "rora", "chiquita"]) {
+      assert.match(migration, new RegExp(`member\\.${member}\\.bio\\.${locale.replace("-", "\\-")}`));
+      assert.match(migration, new RegExp(`member\\.${member}\\.detail\\.${locale.replace("-", "\\-")}`));
+    }
+  }
+  assert.doesNotMatch(migration, /露卡|法麗塔|法丽塔|雅賢|雅贤|奇奇塔|루카|파리타|아사|아현|라미|로라|치키타|ルカ|パリタ|アサ|アヒョン|ラミ|ローラ|チキータ/);
 });
 
 test("auth delivery notices cover six languages and emails use six-digit codes", async () => {
