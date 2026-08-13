@@ -1667,7 +1667,7 @@ function AdminPanel({ content, onSaved, onClose }: { content: SiteContent; onSav
       const existing = albums[index] || { id: `manual-${index}`, title: "", year: "", type: "Album", imageUrl: "", spotifyUrl: "", tracks: [] };
       albums[index] = {
         ...existing,
-        [key]: key === "tracks" ? value.split(",").map(item => item.trim()).filter(Boolean) : value,
+        [key]: key === "tracks" ? value.split(/\r?\n/).map(item => item.trim()).filter(Boolean) : value,
       } as SpotifyRelease;
       return { ...current, albums };
     });
@@ -1728,6 +1728,38 @@ function AdminPanel({ content, onSaved, onClose }: { content: SiteContent; onSav
       setFeedback(`已匯入 Spotify 專輯，可編輯後儲存。${result.error ? `狀態：${result.error}` : ""}`);
     } catch (error) {
       setFeedback(error instanceof Error ? error.message : "Spotify releases could not be imported.");
+    }
+  }
+
+  async function syncSpotifyAlbums() {
+    setFeedback("正在從 Spotify 同步最新作品與曲目…");
+    try {
+      const result = await fetchSpotifyReleaseStatus();
+      if (!result.releases.length) {
+        setFeedback(`Spotify 沒有回傳作品。狀態：${result.error || "NO_SPOTIFY_RELEASES"}`);
+        return;
+      }
+
+      const existing = draft.albums || [];
+      const remoteByKey = new Map(result.releases.map(album => [album.id || album.spotifyUrl || `${album.title}|${album.releaseDate || album.year}`, album]));
+      const merged = existing.map(album => {
+        const key = album.id || album.spotifyUrl || `${album.title}|${album.releaseDate || album.year}`;
+        const remote = remoteByKey.get(key);
+        if (!remote) return album;
+        remoteByKey.delete(key);
+        return { ...album, ...remote, tracks: remote.tracks.length ? remote.tracks : album.tracks };
+      });
+      const additions = [...remoteByKey.values()];
+      const albums = [...additions, ...merged].sort((a, b) => String(b.releaseDate || b.year).localeCompare(String(a.releaseDate || a.year)));
+      const nextContent = { ...draft, albums };
+      const { siteName: _siteName, faviconUrl: _faviconUrl, ...savedContent } = nextContent;
+      await saveSiteContent(savedContent);
+      setDraft(nextContent);
+      onSaved({ ...savedContent, siteName: OFFICIAL_BRAND_NAME, faviconUrl: FIXED_FAVICON_URL });
+      const filledTracks = result.releases.filter(album => album.tracks.length).length;
+      setFeedback(`Spotify 同步完成：新增 ${additions.length} 筆作品，${filledTracks} 筆作品已抓取曲目並自動儲存。`);
+    } catch (error) {
+      setFeedback(error instanceof Error ? `Spotify 同步失敗：${error.message}` : "Spotify 同步失敗。");
     }
   }
 
@@ -1891,11 +1923,12 @@ function AdminPanel({ content, onSaved, onClose }: { content: SiteContent; onSav
             <h3 className="text-white font-bold">專輯／單曲管理</h3>
             <div className="flex flex-wrap gap-2 justify-end">
               <button type="button" onClick={() => void importSpotifyAlbums()} className="px-3 py-2 border border-red-500/35 text-red-300/80 text-xs hover:text-red-200">匯入 Spotify</button>
+              <button type="button" onClick={() => void syncSpotifyAlbums()} className="px-3 py-2 bg-[#E01020] text-white text-xs hover:bg-red-700">自動同步最新作品</button>
               <button type="button" onClick={addAlbum} className="px-3 py-2 border border-white/15 text-white/60 text-xs hover:text-white">新增專輯</button>
             </div>
           </div>
           <p className="text-white/35 text-xs leading-relaxed mb-4">
-            Spotify 自動抓取需要部署 Edge Function 並設定 secrets。手動新增時，封面請使用 Spotify 回傳圖片、官方允許 embed 的圖片，或你已取得授權的圖片，並附 Spotify 連結。
+            「自動同步最新作品」會從 Spotify 抓取 BABYMONSTER 的專輯、單曲、封面與完整曲目，新增尚未存在的作品、補齊既有曲目並立即儲存。手動曲目請每行輸入一首。
           </p>
           <div className="grid gap-4">
             {albums.map((album, index) => <div key={album.id || index} className="border border-white/8 p-4">
@@ -1905,7 +1938,7 @@ function AdminPanel({ content, onSaved, onClose }: { content: SiteContent; onSav
                 <label className={labelClass}>類型<input value={album.type || ""} onChange={e => updateAlbum(index, "type", e.target.value)} placeholder="Album / Single / EP" className={inputClass} /></label>
                 <label className={labelClass}>Spotify 連結<input value={album.spotifyUrl || ""} onChange={e => updateAlbum(index, "spotifyUrl", e.target.value)} placeholder="https://open.spotify.com/..." className={inputClass} /></label>
                 <label className={`${labelClass} md:col-span-2`}>封面圖片 URL<input value={album.imageUrl || ""} onChange={e => updateAlbum(index, "imageUrl", e.target.value)} placeholder="https://i.scdn.co/..." className={inputClass} /></label>
-                <label className={`${labelClass} md:col-span-2`}>曲目，以逗號分隔<input value={(album.tracks || []).join(", ")} onChange={e => updateAlbum(index, "tracks", e.target.value)} className={inputClass} /></label>
+                <label className={`${labelClass} md:col-span-2`}>曲目（每行一首）<textarea rows={Math.min(10, Math.max(3, album.tracks?.length || 3))} value={(album.tracks || []).join("\n")} onChange={e => updateAlbum(index, "tracks", e.target.value)} placeholder={"DRIP\nCLIK CLAK\nLove In My Heart"} className={inputClass} /></label>
               </div>
               <button type="button" onClick={() => removeAlbum(index)} className="mt-3 text-red-400/70 hover:text-red-300 text-xs">刪除這張專輯</button>
             </div>)}

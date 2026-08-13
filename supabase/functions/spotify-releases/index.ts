@@ -17,8 +17,23 @@ type SpotifyAlbum = {
 };
 
 type SpotifyAlbumDetail = {
-  tracks?: { items?: Array<{ name?: string }> };
+  tracks?: { items?: Array<{ name?: string }>; next?: string | null };
 };
+
+type SpotifyPage<T> = { items?: T[]; next?: string | null };
+
+async function spotifyPageItems<T>(url: string, accessToken: string): Promise<T[]> {
+  const items: T[] = [];
+  let nextUrl: string | null = url;
+  while (nextUrl) {
+    const response = await fetch(nextUrl, { headers: { authorization: `Bearer ${accessToken}` } });
+    const page = await response.json() as SpotifyPage<T>;
+    if (!response.ok) throw new Error(`SPOTIFY_PAGE_FAILED_${response.status}`);
+    items.push(...(page.items || []));
+    nextUrl = page.next || null;
+  }
+  return items;
+}
 
 Deno.serve(async request => {
   const requestOrigin = request.headers.get("origin") || "";
@@ -48,16 +63,15 @@ Deno.serve(async request => {
     const token = await tokenResponse.json();
     if (!tokenResponse.ok || !token.access_token) throw new Error(`SPOTIFY_TOKEN_FAILED_${tokenResponse.status}`);
 
-    const albumsResponse = await fetch(`https://api.spotify.com/v1/artists/${BABYMONSTER_SPOTIFY_ARTIST_ID}/albums?include_groups=album,single&market=US&limit=10`, {
-      headers: { authorization: `Bearer ${token.access_token}` },
-    });
-    const albums = await albumsResponse.json();
-    if (!albumsResponse.ok) throw new Error(`SPOTIFY_RELEASES_FAILED_${albumsResponse.status}`);
+    const albumItems = await spotifyPageItems<SpotifyAlbum>(
+      `https://api.spotify.com/v1/artists/${BABYMONSTER_SPOTIFY_ARTIST_ID}/albums?include_groups=album,single&market=TW&limit=50`,
+      token.access_token,
+    );
 
     const seen = new Set<string>();
-    const uniqueAlbums = (albums.items || [])
+    const uniqueAlbums = albumItems
       .filter((item: SpotifyAlbum) => {
-        const key = item.name.toLowerCase();
+        const key = `${item.name.toLowerCase()}|${item.release_date || ""}`;
         if (seen.has(key)) return false;
         seen.add(key);
         return true;
@@ -74,6 +88,14 @@ Deno.serve(async request => {
           trackNames = (albumDetail.tracks?.items || [])
             .map(track => String(track.name || "").trim())
             .filter(Boolean);
+          let nextTracksUrl = albumDetail.tracks?.next || null;
+          while (nextTracksUrl) {
+            const tracksResponse = await fetch(nextTracksUrl, { headers: { authorization: `Bearer ${token.access_token}` } });
+            const tracksPage = await tracksResponse.json() as SpotifyPage<{ name?: string }>;
+            if (!tracksResponse.ok) break;
+            trackNames.push(...(tracksPage.items || []).map(track => String(track.name || "").trim()).filter(Boolean));
+            nextTracksUrl = tracksPage.next || null;
+          }
         }
       } catch {
         trackNames = [];
@@ -91,7 +113,8 @@ Deno.serve(async request => {
       };
     }));
 
-    return Response.json({ releases }, { headers: { ...cors, "cache-control": "public, max-age=3600" } });
+    releases.sort((a, b) => String(b.releaseDate).localeCompare(String(a.releaseDate)));
+    return Response.json({ releases }, { headers: { ...cors, "cache-control": "no-store" } });
   } catch (error) {
     return Response.json({ releases: [], error: error instanceof Error ? error.message : "SPOTIFY_UNAVAILABLE" }, { status: 200, headers: cors });
   }

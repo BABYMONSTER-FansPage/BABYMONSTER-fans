@@ -155,6 +155,8 @@ test("bundles six static languages and translates fan posts only", async () => {
   assert.doesNotMatch(page, /Loading BABYMONSTER fan site/);
   assert.doesNotMatch(page, /\{messages\[locale\]\.streamsLabel\}<\/div>/);
   assert.match(page, /fetchSpotifyReleaseStatus/);
+  assert.match(page, /自動同步最新作品/);
+  assert.match(page, /value\.split\(\/\\r\?\\n\//);
   assert.match(i18n, /Spotify 專輯資料暫時沒有載入/);
   assert.match(page, /normalizeTrackNames/);
   assert.match(i18n, /顯示全部歌曲/);
