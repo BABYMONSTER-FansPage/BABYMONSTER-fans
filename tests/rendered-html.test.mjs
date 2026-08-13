@@ -194,6 +194,8 @@ test("bundles six static languages and translates fan posts only", async () => {
   assert.match(spotifyFunction, /x-client-info/);
   assert.match(spotifyFunction, /access-control-allow-methods/);
   assert.match(spotifyFunction, /\/albums\/\$\{item\.id\}\?market=US/);
+  assert.match(spotifyFunction, /include_groups=album,single&market=TW&limit=10/);
+  assert.doesNotMatch(spotifyFunction, /artists\/\$\{BABYMONSTER_SPOTIFY_ARTIST_ID\}\/albums\?[^`]*limit=50/);
   assert.match(spotifyFunction, /trackNames/);
   assert.doesNotMatch(spotifyFunction, /\$\{item\.total_tracks\} tracks/);
   assert.match(translateFunction, /x-client-info/);

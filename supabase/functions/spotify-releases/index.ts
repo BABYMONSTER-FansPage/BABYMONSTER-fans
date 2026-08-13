@@ -64,7 +64,7 @@ Deno.serve(async request => {
     if (!tokenResponse.ok || !token.access_token) throw new Error(`SPOTIFY_TOKEN_FAILED_${tokenResponse.status}`);
 
     const albumItems = await spotifyPageItems<SpotifyAlbum>(
-      `https://api.spotify.com/v1/artists/${BABYMONSTER_SPOTIFY_ARTIST_ID}/albums?include_groups=album,single&market=TW&limit=50`,
+      `https://api.spotify.com/v1/artists/${BABYMONSTER_SPOTIFY_ARTIST_ID}/albums?include_groups=album,single&market=TW&limit=10`,
       token.access_token,
     );
 
