@@ -2,9 +2,15 @@ import { createClient, type Provider, type SupabaseClient, type User as AuthUser
 
 export type FanRole = "monstiez" | "admin" | "artist";
 export type FanUser = { id: string; nickname: string; email?: string; role: FanRole; needsNickname?: boolean };
+export type FanReply = {
+  id: number; postId: number; userId: string; nickname: string; role: FanRole; body: string; sourceLanguage: string; createdAt: string;
+};
 export type FanPost = {
   id: number; userId: string; nickname: string; role: FanRole; body: string; sourceLanguage: string;
-  likes: number; comments: number; liked: boolean; canEdit: boolean; createdAt: string;
+  likes: number; comments: number; replies: FanReply[]; liked: boolean; canEdit: boolean; createdAt: string;
+};
+export type ModerationNotification = {
+  id: number; postId: number; reportCount: number; postBody: string; authorNickname: string; createdAt: string;
 };
 export type EditableEvent = {
   id?: string | number;
@@ -249,20 +255,41 @@ export async function listFanPosts(viewer: FanUser | null): Promise<FanPost[]> {
     .order("created_at", { ascending: false }).limit(50);
   if (error) throw error;
   const ids = (data || []).map(row => Number(row.id));
-  const [{ data: counts }, { data: ownLikes }] = ids.length ? await Promise.all([
+  const [{ data: counts }, { data: ownLikes }, { data: replyCounts }] = ids.length ? await Promise.all([
     client.from("post_like_counts").select("post_id,likes").in("post_id", ids),
     viewer ? client.from("post_likes").select("post_id").in("post_id", ids) : Promise.resolve({ data: [] }),
-  ]) : [{ data: [] }, { data: [] }];
+    client.from("post_reply_counts").select("post_id,replies").in("post_id", ids),
+  ]) : [{ data: [] }, { data: [] }, { data: [] }];
   const countMap = new Map((counts || []).map(row => [Number(row.post_id), Number(row.likes)]));
   const ownLikeIds = new Set((ownLikes || []).map(row => Number(row.post_id)));
+  const replyCountMap = new Map((replyCounts || []).map(row => [Number(row.post_id), Number(row.replies)]));
   return (data || []).map((row: Record<string, unknown>) => {
     const profileValue = row.profiles as { nickname?: string; role?: FanRole } | Array<{ nickname?: string; role?: FanRole }> | null;
     const profile = Array.isArray(profileValue) ? profileValue[0] : profileValue;
     return {
       id: Number(row.id), userId: String(row.user_id), nickname: profile?.nickname || "MONSTIEZ", role: profile?.role || "monstiez",
-      body: String(row.body), sourceLanguage: String(row.source_language), likes: countMap.get(Number(row.id)) || 0, comments: 0,
+      body: String(row.body), sourceLanguage: String(row.source_language), likes: countMap.get(Number(row.id)) || 0,
+      replies: [], comments: replyCountMap.get(Number(row.id)) || 0,
       liked: ownLikeIds.has(Number(row.id)),
       canEdit: Boolean(viewer && (viewer.id === row.user_id || viewer.role === "admin")),
+      createdAt: new Date(String(row.created_at)).toLocaleDateString("en-CA"),
+    };
+  });
+}
+
+export async function listFanReplies(postId: number): Promise<FanReply[]> {
+  const client = supabaseClient();
+  if (!client) return [];
+  const { data, error } = await client.from("post_replies")
+    .select("id,post_id,user_id,body,source_language,created_at,profiles!post_replies_user_id_fkey(nickname,role)")
+    .eq("post_id", postId).order("created_at", { ascending: true }).limit(200);
+  if (error) throw error;
+  return (data || []).map(row => {
+    const profileValue = row.profiles as { nickname?: string; role?: FanRole } | Array<{ nickname?: string; role?: FanRole }> | null;
+    const profile = Array.isArray(profileValue) ? profileValue[0] : profileValue;
+    return {
+      id: Number(row.id), postId: Number(row.post_id), userId: String(row.user_id), nickname: profile?.nickname || "MONSTIEZ",
+      role: profile?.role || "monstiez", body: String(row.body), sourceLanguage: String(row.source_language),
       createdAt: new Date(String(row.created_at)).toLocaleDateString("en-CA"),
     };
   });
@@ -272,6 +299,15 @@ export async function createFanPost(body: string, sourceLanguage: string) {
   const client = supabaseClient();
   if (!client) throw new Error("SUPABASE_NOT_CONFIGURED");
   const { error } = await client.from("posts").insert({ body, source_language: sourceLanguage });
+  if (error) throw error;
+}
+
+export async function createFanReply(postId: number, body: string, sourceLanguage: string) {
+  const client = supabaseClient();
+  if (!client) throw new Error("SUPABASE_NOT_CONFIGURED");
+  const clean = body.trim();
+  if (!clean || clean.length > 500) throw new Error("REPLY_INVALID");
+  const { error } = await client.from("post_replies").insert({ post_id: postId, body: clean, source_language: sourceLanguage });
   if (error) throw error;
 }
 
@@ -300,6 +336,29 @@ export async function reportFanPost(postId: number, reason = "community-report")
   const client = supabaseClient();
   if (!client) throw new Error("SUPABASE_NOT_CONFIGURED");
   const { error } = await client.from("reports").upsert({ post_id: postId, reason }, { onConflict: "post_id,reporter_id", ignoreDuplicates: true });
+  if (error) throw error;
+}
+
+export async function listModerationNotifications(): Promise<ModerationNotification[]> {
+  const client = supabaseClient();
+  if (!client) return [];
+  const { data, error } = await client.from("moderation_notifications")
+    .select("id,post_id,report_count,created_at,posts!moderation_notifications_post_id_fkey(body,profiles!posts_user_id_fkey(nickname))")
+    .eq("status", "pending").order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data || []).map((row: Record<string, unknown>) => {
+    const postValue = row.posts as { body?: string; profiles?: { nickname?: string } | Array<{ nickname?: string }> } | Array<{ body?: string; profiles?: { nickname?: string } | Array<{ nickname?: string }> }> | null;
+    const post = Array.isArray(postValue) ? postValue[0] : postValue;
+    const profileValue = post?.profiles;
+    const profile = Array.isArray(profileValue) ? profileValue[0] : profileValue;
+    return { id: Number(row.id), postId: Number(row.post_id), reportCount: Number(row.report_count), postBody: post?.body || "", authorNickname: profile?.nickname || "MONSTIEZ", createdAt: String(row.created_at) };
+  });
+}
+
+export async function reviewModerationNotification(notificationId: number, _postId: number, action: "restored" | "hidden") {
+  const client = supabaseClient();
+  if (!client) throw new Error("SUPABASE_NOT_CONFIGURED");
+  const { error } = await client.rpc("review_reported_post", { notification_id: notificationId, decision: action });
   if (error) throw error;
 }
 

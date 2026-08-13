@@ -8,11 +8,11 @@ import {
 } from "lucide-react";
 import { fixedMessages, getInitialLocale, localeLabels, messages, supportedLocales, type Locale } from "./i18n";
 import {
-  addNicknameBlacklist, createFanPost, currentFanUser, deleteFanPost, editFanPost, emailAuth, listFanPosts, listNicknameBlacklist,
-  fetchSpotifyReleaseStatus, listAnnouncements, loadSiteContent, moderateFanPost, observeFanUser, reportFanPost,
+  addNicknameBlacklist, createFanPost, createFanReply, currentFanUser, deleteFanPost, editFanPost, emailAuth, listFanPosts, listNicknameBlacklist,
+  fetchSpotifyReleaseStatus, listAnnouncements, listFanReplies, listModerationNotifications, loadSiteContent, moderateFanPost, observeFanUser, reportFanPost, reviewModerationNotification,
   removeNicknameBlacklist, requestPasswordReset, resendSignupOtp, saveSiteContent, signOutFan, socialAuth, toggleFanLike, translateFanPost, updateFanNickname, updateFanPassword,
   verifyEmailOtp, verifyPasswordRecoveryOtp,
-  type EditableEvent, type FanPost as ApiPost, type FanUser as User, type NicknameBlacklistEntry, type SiteContent, type SpotifyRelease,
+  type EditableEvent, type FanPost as ApiPost, type FanReply, type FanUser as User, type ModerationNotification, type NicknameBlacklistEntry, type SiteContent, type SpotifyRelease,
 } from "./lib/supabase-browser";
 
 // ─────────────────────────────────────────────
@@ -27,6 +27,17 @@ const HERO_PARTICLES = Array.from({ length: 18 }, (_, i) => ({
   delay: (i * 0.29) % 4.5,
   size: i % 3 === 0 ? 3 : 1.5,
 }));
+
+const communityActions: Record<Locale, {
+  reply: string; replyPlaceholder: string; sendReply: string; reported: string; reportFailed: string;
+}> = {
+  "zh-TW": { reply: "回覆", replyPlaceholder: "在這則留言下回覆…", sendReply: "送出回覆", reported: "已送出檢舉", reportFailed: "目前無法檢舉" },
+  "zh-CN": { reply: "回复", replyPlaceholder: "在这条留言下回复…", sendReply: "发送回复", reported: "已提交举报", reportFailed: "目前无法举报" },
+  th: { reply: "ตอบกลับ", replyPlaceholder: "ตอบกลับใต้โพสต์นี้…", sendReply: "ส่งคำตอบ", reported: "ส่งรายงานแล้ว", reportFailed: "ไม่สามารถรายงานได้" },
+  en: { reply: "Reply", replyPlaceholder: "Reply to this post…", sendReply: "Post reply", reported: "Report submitted", reportFailed: "Unable to report" },
+  ko: { reply: "답글", replyPlaceholder: "이 게시물에 답글 쓰기…", sendReply: "답글 등록", reported: "신고가 접수되었습니다", reportFailed: "신고할 수 없습니다" },
+  ja: { reply: "返信", replyPlaceholder: "この投稿に返信…", sendReply: "返信を投稿", reported: "通報しました", reportFailed: "通報できません" },
+};
 
 function useMobileViewport() {
   const [mobile, setMobile] = useState(() => typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches);
@@ -1155,7 +1166,14 @@ function PostCard({
   const isInView = useInView(ref, { once: true, amount: 0.1 });
   const [copy, setCopy] = useState(post.body);
   const [showOriginal, setShowOriginal] = useState(false);
+  const [replyOpen, setReplyOpen] = useState(false);
+  const [replyBody, setReplyBody] = useState("");
+  const [replySubmitting, setReplySubmitting] = useState(false);
+  const [replies, setReplies] = useState<FanReply[]>([]);
+  const [repliesLoading, setRepliesLoading] = useState(false);
+  const [reportFeedback, setReportFeedback] = useState("");
   const t = messages[locale];
+  const actions = communityActions[locale];
 
   useEffect(() => {
     let active = true;
@@ -1174,7 +1192,32 @@ function PostCard({
   async function removePost() {
     if (window.confirm(`${t.remove}?`)) try { await deleteFanPost(post.id); onRefresh(); } catch { /* RLS keeps unauthorized deletes out */ }
   }
-  async function reportPost() { try { await reportFanPost(post.id); } catch { /* retain post when reporting is unavailable */ } }
+  async function reportPost() {
+    try { await reportFanPost(post.id); setReportFeedback(actions.reported); onRefresh(); }
+    catch { setReportFeedback(actions.reportFailed); }
+  }
+  async function submitReply() {
+    if (!user || !replyBody.trim() || replySubmitting) return;
+    setReplySubmitting(true);
+    try {
+      await createFanReply(post.id, replyBody, locale);
+      setReplyBody("");
+      setReplyOpen(true);
+      setReplies(await listFanReplies(post.id));
+      onRefresh();
+    }
+    catch { /* keep the reply available for retry */ }
+    finally { setReplySubmitting(false); }
+  }
+  async function toggleReplies() {
+    const nextOpen = !replyOpen;
+    setReplyOpen(nextOpen);
+    if (nextOpen && !replies.length && post.comments > 0) {
+      setRepliesLoading(true);
+      try { setReplies(await listFanReplies(post.id)); } catch { setReplies([]); }
+      finally { setRepliesLoading(false); }
+    }
+  }
   async function moderatePost() {
     try { await moderateFanPost(post.id); onRefresh(); } catch { /* RLS verifies admin role */ }
   }
@@ -1210,15 +1253,38 @@ function PostCard({
               <Heart size={13} fill={post.liked ? "currentColor" : "none"} />
               {post.likes}
             </button>
-            <button className="flex items-center gap-1.5 text-xs text-white/28 hover:text-white/55 transition-colors duration-200">
+            <button onClick={() => void toggleReplies()} className="flex items-center gap-1.5 text-xs text-white/28 hover:text-white/55 transition-colors duration-200">
               <MessageCircle size={13} />
-              {post.comments}
+              {post.comments} {actions.reply}
             </button>
             {post.canEdit && <button onClick={editPost} className="text-white/28 hover:text-white/60 text-xs">{t.edit}</button>}
             {post.canEdit && <button onClick={removePost} className="text-white/28 hover:text-red-400 text-xs">{t.remove}</button>}
             {user && post.id > 0 && <button onClick={reportPost} className="text-white/28 hover:text-white/60 text-xs">{t.report}</button>}
             {user?.role === "admin" && <button onClick={moderatePost} className="text-red-400/70 hover:text-red-300 text-xs">{t.moderate}</button>}
+            {reportFeedback && <span className="text-white/35 text-xs" role="status">{reportFeedback}</span>}
           </div>
+          {replyOpen && <div className="mt-5 border-l border-white/10 pl-4">
+            <div className="space-y-3">
+              {replies.map(reply => <div key={reply.id} className="border-t border-white/6 pt-3 first:border-0 first:pt-0">
+                <div className="flex flex-wrap items-center gap-2 text-xs">
+                  <span className="text-white/65 font-medium">{reply.nickname}</span>
+                  {reply.role !== "monstiez" && <span className={reply.role === "admin" ? "text-red-400/70" : "text-blue-400/70"}>{reply.role === "admin" ? t.roleAdmin : t.roleArtist}</span>}
+                  <span className="text-white/20">{reply.createdAt}</span>
+                </div>
+                <p className="mt-1.5 text-white/50 text-sm leading-relaxed whitespace-pre-wrap">{reply.body}</p>
+              </div>)}
+              {repliesLoading && <p className="text-white/25 text-xs">…</p>}
+              {!repliesLoading && !replies.length && <p className="text-white/25 text-xs">{t.replies}: 0</p>}
+            </div>
+            {user ? <div className="mt-4 flex items-end gap-2">
+              <textarea value={replyBody} onChange={event => setReplyBody(event.target.value)} maxLength={500} rows={2}
+                placeholder={actions.replyPlaceholder}
+                className="min-h-16 flex-1 resize-none border border-white/10 bg-transparent p-3 text-sm text-white/70 placeholder:text-white/20 focus:border-red-500/40 focus:outline-none"
+                onKeyDown={event => { if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) void submitReply(); }} />
+              <button onClick={() => void submitReply()} disabled={!replyBody.trim() || replySubmitting}
+                className="min-h-11 shrink-0 bg-[#E01020] px-4 text-xs text-white disabled:opacity-35">{replySubmitting ? "…" : actions.sendReply}</button>
+            </div> : <p className="mt-4 text-white/25 text-xs">{t.signInToJoin}</p>}
+          </div>}
         </div>
       </div>
     </motion.div>
@@ -1495,6 +1561,7 @@ function AdminPanel({ content, onSaved, onClose }: { content: SiteContent; onSav
   const [feedback, setFeedback] = useState("");
   const [nicknameBlacklist, setNicknameBlacklist] = useState<NicknameBlacklistEntry[]>([]);
   const [blacklistName, setBlacklistName] = useState("");
+  const [moderationQueue, setModerationQueue] = useState<ModerationNotification[]>([]);
 
   useEffect(() => {
     let active = true;
@@ -1503,6 +1570,29 @@ function AdminPanel({ content, onSaved, onClose }: { content: SiteContent; onSav
       .catch(error => { if (active) setFeedback(error instanceof Error ? `暱稱黑名單載入失敗：${error.message}` : "暱稱黑名單載入失敗。"); });
     return () => { active = false; };
   }, []);
+
+  const refreshModerationQueue = useCallback(() => {
+    void listModerationNotifications()
+      .then(setModerationQueue)
+      .catch(error => setFeedback(error instanceof Error ? `審核通知載入失敗：${error.message}` : "審核通知載入失敗。"));
+  }, []);
+
+  useEffect(() => {
+    refreshModerationQueue();
+    const timer = window.setInterval(refreshModerationQueue, 30_000);
+    return () => window.clearInterval(timer);
+  }, [refreshModerationQueue]);
+
+  async function reviewReportedPost(item: ModerationNotification, action: "restored" | "hidden") {
+    setFeedback(action === "restored" ? "正在恢復貼文…" : "正在確認隱藏貼文…");
+    try {
+      await reviewModerationNotification(item.id, item.postId, action);
+      setModerationQueue(current => current.filter(notification => notification.id !== item.id));
+      setFeedback(action === "restored" ? "貼文已恢復公開。" : "貼文將維持隱藏。 ");
+    } catch (error) {
+      setFeedback(error instanceof Error ? `審核失敗：${error.message}` : "審核失敗。");
+    }
+  }
 
   async function addBlockedNickname() {
     const clean = blacklistName.trim();
@@ -1670,6 +1760,30 @@ function AdminPanel({ content, onSaved, onClose }: { content: SiteContent; onSav
       </div>
 
       <div className="grid gap-8">
+        <section className="border-t border-white/8 pt-6">
+          <div className="mb-4 flex items-center justify-between gap-4">
+            <div>
+              <h3 className="text-white font-bold">檢舉審核通知</h3>
+              <p className="mt-1 text-white/35 text-xs">同一貼文被五位不同使用者檢舉後會先自動隱藏，等待管理員決定。</p>
+            </div>
+            <span className="rounded-full bg-red-500/15 px-3 py-1 text-xs text-red-300">{moderationQueue.length} 待審</span>
+          </div>
+          <div className="grid gap-3">
+            {moderationQueue.map(item => <article key={item.id} className="border border-red-500/20 bg-red-500/[0.035] p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                <span className="font-medium text-white/65">{item.authorNickname}</span>
+                <span className="text-red-300">{item.reportCount} 次檢舉</span>
+              </div>
+              <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-white/55">{item.postBody}</p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <button type="button" onClick={() => void reviewReportedPost(item, "restored")} className="border border-white/15 px-3 py-2 text-xs text-white/60 hover:text-white">恢復貼文</button>
+                <button type="button" onClick={() => void reviewReportedPost(item, "hidden")} className="border border-red-500/35 bg-red-500/10 px-3 py-2 text-xs text-red-300">維持隱藏</button>
+              </div>
+            </article>)}
+            {!moderationQueue.length && <p className="text-white/30 text-xs">目前沒有等待審核的貼文。</p>}
+          </div>
+        </section>
+
         <section className="border-t border-white/8 pt-6">
           <h3 className="text-white font-bold mb-4">網站資訊</h3>
           <div className="grid md:grid-cols-2 gap-4">
