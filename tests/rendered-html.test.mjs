@@ -168,6 +168,7 @@ test("bundles six static languages and translates fan posts only", async () => {
   assert.ok(page.indexOf("<AppPurposeSection locale={locale} />") > page.indexOf("<Announcements"));
   assert.ok(page.indexOf("<AppPurposeSection locale={locale} />") < page.indexOf("<Footer"));
   assert.match(page, /MON<span style=\{\{ color: "#E01020" \}\}>STIEZ<\/span>/);
+  assert.match(page, /BABY<span style=\{\{ color: "#E01020" \}\}>MONSTER<\/span>/);
   assert.match(page, /&copy; 2026 \{OFFICIAL_BRAND_NAME\}/);
   assert.match(page, /aria-label=\{f\.loadingAria\}/);
   assert.match(i18n, /loadingAria: "Loading the Monstiez fan site"/);
