@@ -234,12 +234,11 @@ test("auth delivery notices cover six languages and emails use six-digit codes",
     assert.match(template, /support@babymonster\.fans/);
     assert.match(template, /https:\/\/babymonster\.fans\/favicon\.svg/);
     assert.match(template, /color-scheme" content="light dark"/);
-    assert.match(template, /prefers-color-scheme:\s*dark/);
-    assert.match(template, /background:\s*#f4f4f6\s*!important/);
-    assert.match(template, /background:\s*#0d0d0f\s*!important/);
-    assert.match(template, /background:\s*#17171a\s*!important/);
-    assert.match(template, /\[data-ogsb\]/);
-    assert.match(template, /\[data-ogsc\]/);
+    assert.match(template, /background:\s*Canvas\s*!important/i);
+    assert.match(template, /color:\s*CanvasText\s*!important/i);
+    assert.match(template, /color:\s*GrayText\s*!important/i);
+    assert.doesNotMatch(template, /prefers-color-scheme/);
+    assert.doesNotMatch(template, /\[data-ogs[bc]\]/);
     assert.doesNotMatch(template, /#9185f7|#a99fff|#b8afff/i);
     assert.doesNotMatch(template, /lang="(?:zh-Hans|th|ko|ja)"/);
   }
