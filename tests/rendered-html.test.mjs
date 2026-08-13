@@ -219,17 +219,18 @@ test("offers Google as the only social login", async () => {
 });
 
 test("auth delivery notices cover six languages and emails use six-digit codes", async () => {
-  const [page, confirmation, recovery, passwordChanged, config] = await Promise.all([
+  const [page, confirmation, recovery, magicLink, passwordChanged, config] = await Promise.all([
     readFile(new URL("../app/FanPage.tsx", import.meta.url), "utf8"),
     readFile(new URL("../supabase/templates/confirmation.html", import.meta.url), "utf8"),
     readFile(new URL("../supabase/templates/recovery.html", import.meta.url), "utf8"),
+    readFile(new URL("../supabase/templates/magic_link.html", import.meta.url), "utf8"),
     readFile(new URL("../supabase/templates/password_changed_notification.html", import.meta.url), "utf8"),
     readFile(new URL("../supabase/config.toml", import.meta.url), "utf8"),
   ]);
   for (const notice of ["垃圾郵件匣", "垃圾邮件文件夹", "สแปม", "spam or junk folder", "스팸 메일함", "迷惑メールフォルダ"]) {
     assert.match(page, new RegExp(notice));
   }
-  for (const template of [confirmation, recovery, passwordChanged]) {
+  for (const template of [confirmation, recovery, magicLink, passwordChanged]) {
     assert.match(template, /<html lang="en">/);
     assert.match(template, /support@babymonster\.fans/);
     assert.match(template, /https:\/\/babymonster\.fans\/favicon\.svg/);
@@ -246,9 +247,11 @@ test("auth delivery notices cover six languages and emails use six-digit codes",
   }
   assert.match(confirmation, /Confirm your email address/);
   assert.match(recovery, /Reset your password/);
+  assert.match(magicLink, /Your sign-in code/);
+  assert.match(magicLink, /OTP code/);
   assert.match(passwordChanged, /Your password was changed/);
   assert.match(config, /otp_length = 6/);
-  for (const template of [confirmation, recovery]) {
+  for (const template of [confirmation, recovery, magicLink]) {
     assert.match(template, /\{\{ \.Token \}\}/);
     assert.doesNotMatch(template, /ConfirmationURL|href="\{\{/);
   }
