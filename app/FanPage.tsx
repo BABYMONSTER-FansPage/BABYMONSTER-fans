@@ -211,6 +211,11 @@ function normalizeTrackNames(value: unknown) {
   return [];
 }
 
+function youtubeTrackUrl(trackName: string) {
+  const query = `BABYMONSTER ${trackName} official audio`;
+  return `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+}
+
 function normalizeInstagramUrl(value: unknown) {
   const raw = String(value || "").trim();
   if (!raw) return "";
@@ -857,12 +862,18 @@ function AlbumCard({ album, index, isVisible, locale }: { album: SpotifyRelease;
         className="mt-5 border-t border-white/8 pt-4 overflow-hidden">
         {visibleTracks.length > 0 ? (
           visibleTracks.map((trackName, ti) => (
-            <div key={`${trackName}-${ti}`} className="flex items-center gap-3 py-2 text-white/45 hover:text-white transition-colors duration-200 group/t">
+            <a key={`${trackName}-${ti}`}
+              href={youtubeTrackUrl(trackName)}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(event) => event.stopPropagation()}
+              aria-label={`Play ${trackName} on YouTube`}
+              className="flex items-center gap-3 py-2 text-white/45 hover:text-white transition-colors duration-200 group/t">
               <span className="text-xs text-white/20 w-4 text-right shrink-0">{ti + 1}</span>
               <Music size={11} style={{ color: "#E01020", opacity: 0.6 }} />
               <span className="text-sm tracking-wide flex-1">{trackName}</span>
               <Play size={11} className="text-red-600 opacity-0 group-hover/t:opacity-100 transition-opacity shrink-0" />
-            </div>
+            </a>
           ))
         ) : (
           <p className="text-white/28 text-sm leading-relaxed">{f.trackListMissing}</p>
@@ -927,9 +938,9 @@ function MusicSection({ locale, content }: { locale: Locale; content: SiteConten
           <a href="https://open.spotify.com/artist/1SIocsqdEefUTE6XKGUiVS" target="_blank" rel="noreferrer" className="inline-flex mt-4 items-center gap-2 text-red-300 hover:text-red-200 text-xs tracking-[0.25em] uppercase">{f.openSpotifyDiscography}<ExternalLink size={12} aria-hidden="true" /></a>
         </div>}
 
-        <div className="grid md:grid-cols-[1.4fr_.6fr] gap-8 mt-16">
-          <div className="border border-white/8 rounded-sm p-3" style={{ background: "rgba(255,255,255,0.018)" }}>
-            <iframe title="BABYMONSTER on Spotify" className="w-full rounded-sm" src="https://open.spotify.com/embed/artist/1SIocsqdEefUTE6XKGUiVS?utm_source=generator&theme=0" height="352" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy" />
+        <div className="grid md:grid-cols-[minmax(0,1.4fr)_minmax(260px,.6fr)] items-stretch gap-8 mt-16">
+          <div className="spotify-player-shell border border-white/8 rounded-sm p-3" style={{ background: "rgba(255,255,255,0.018)" }}>
+            <iframe title="BABYMONSTER on Spotify" className="spotify-player w-full rounded-sm" src="https://open.spotify.com/embed/artist/1SIocsqdEefUTE6XKGUiVS?utm_source=generator&theme=0" height="352" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy" />
           </div>
           <div className="grid gap-4">
             <a href="https://www.youtube.com/@BABYMONSTER" target="_blank" rel="noreferrer" className="border border-white/8 rounded-sm p-6 flex flex-col justify-between hover:border-red-600/30 transition-colors">
@@ -1554,6 +1565,54 @@ function OpeningLoader({ locale }: { locale: Locale }) {
 // APP
 // ─────────────────────────────────────────────
 
+function AdminAccordion({ title, description, badge, children }: { title: string; description?: string; badge?: ReactNode; children: ReactNode }) {
+  return <details className="admin-accordion group border-t border-white/8">
+    <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-5 text-left">
+      <div>
+        <h3 className="text-white font-bold">{title}</h3>
+        {description && <p className="mt-1 text-white/35 text-xs leading-relaxed">{description}</p>}
+      </div>
+      <div className="flex shrink-0 items-center gap-3">
+        {badge}
+        <ChevronDown size={18} className="text-white/40 transition-transform duration-200 group-open:rotate-180" aria-hidden="true" />
+      </div>
+    </summary>
+    <div className="pb-6">{children}</div>
+  </details>;
+}
+
+function AdminLocalizedTextFields({ baseKey, label, uiText, onChange, rows = 4 }: {
+  baseKey: string; label: string; uiText: Record<string, string>; onChange: (key: string, value: string) => void; rows?: number;
+}) {
+  return <fieldset className="admin-language-fields border border-white/8 p-4">
+    <legend className="px-2 text-xs font-bold tracking-wider text-white/65">{label}</legend>
+    <div className="grid gap-3 md:grid-cols-2">
+      {supportedLocales.map(item => <label key={item} className="block text-xs tracking-wider text-white/45">
+        {localeLabels[item]}
+        <textarea
+          rows={rows}
+          value={uiText[localizedTextKey(baseKey, item)] || ""}
+          onChange={event => onChange(localizedTextKey(baseKey, item), event.target.value)}
+          className="admin-language-input mt-2 w-full resize-y border border-white/15 bg-black p-3 text-sm leading-relaxed text-white/75 focus:border-red-600/60 focus:outline-none"
+        />
+      </label>)}
+    </div>
+  </fieldset>;
+}
+
+function initializeLocalizedIntroductions(content: SiteContent) {
+  const uiText = { ...(content.uiText || {}) };
+  const keys = ["storyLead", "storyBody", "groupDetail", ...MEMBERS.flatMap(member => [`member.${member.id}.bio`, `member.${member.id}.detail`])];
+  for (const key of keys) {
+    const legacyValue = contentText(uiText[key], key === "storyLead" ? contentText(content.storyLead, "") : key === "storyBody" ? contentText(content.storyBody, "") : "");
+    for (const item of supportedLocales) {
+      const localizedKey = localizedTextKey(key, item);
+      if (typeof uiText[localizedKey] !== "string") uiText[localizedKey] = legacyValue;
+    }
+  }
+  return uiText;
+}
+
 function AdminPanel({ content, onSaved, onClose }: { content: SiteContent; onSaved: (content: SiteContent) => void; onClose: () => void }) {
   const [draft, setDraft] = useState<SiteContent>(() => ({
     ...content,
@@ -1561,7 +1620,7 @@ function AdminPanel({ content, onSaved, onClose }: { content: SiteContent; onSav
     faviconUrl: FIXED_FAVICON_URL,
     siteTagline: contentText(content.siteTagline, DEFAULT_SITE_CONTENT.siteTagline),
     memberPhotos: { ...(content.memberPhotos || {}) },
-    uiText: { ...(content.uiText || {}) },
+    uiText: initializeLocalizedIntroductions(content),
     events: Array.isArray(content.events) ? content.events : [],
     albums: Array.isArray(content.albums) ? content.albums : [],
     instagramPosts: normalizeMemberInstagramPosts(content.instagramPosts),
@@ -1800,14 +1859,7 @@ function AdminPanel({ content, onSaved, onClose }: { content: SiteContent; onSav
       </div>
 
       <div className="grid gap-8">
-        <section className="border-t border-white/8 pt-6">
-          <div className="mb-4 flex items-center justify-between gap-4">
-            <div>
-              <h3 className="text-white font-bold">檢舉審核通知</h3>
-              <p className="mt-1 text-white/35 text-xs">同一貼文被五位不同使用者檢舉後會先自動隱藏，等待管理員決定。</p>
-            </div>
-            <span className="rounded-full bg-red-500/15 px-3 py-1 text-xs text-red-300">{moderationQueue.length} 待審</span>
-          </div>
+        <AdminAccordion title="檢舉審核通知" description="同一貼文被五位不同使用者檢舉後會先自動隱藏，等待管理員決定。" badge={<span className="rounded-full bg-red-500/15 px-3 py-1 text-xs text-red-300">{moderationQueue.length} 待審</span>}>
           <div className="grid gap-3">
             {moderationQueue.map(item => <article key={item.id} className="border border-red-500/20 bg-red-500/[0.035] p-4">
               <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
@@ -1822,55 +1874,48 @@ function AdminPanel({ content, onSaved, onClose }: { content: SiteContent; onSav
             </article>)}
             {!moderationQueue.length && <p className="text-white/30 text-xs">目前沒有等待審核的貼文。</p>}
           </div>
-        </section>
+        </AdminAccordion>
 
-        <section className="border-t border-white/8 pt-6">
-          <h3 className="text-white font-bold mb-4">網站資訊</h3>
+        <AdminAccordion title="網站資訊">
           <div className="grid md:grid-cols-2 gap-4">
             <div className={labelClass}>網站名稱<div className="mt-2 border border-white/10 bg-white/[0.025] p-3 text-white/40 text-sm">Monstiez（固定）</div></div>
             <label className={labelClass}>網站短標語<input value={draft.siteTagline || ""} onChange={e => update("siteTagline", e.target.value)} className={inputClass} /></label>
             <div className={labelClass}>Favicon / icon<div className="mt-2 border border-white/10 bg-white/[0.025] p-3 text-white/40 text-sm">/favicon.svg（固定）</div></div>
             <label className={labelClass}>社群分享圖片 URL<input value={draft.ogImageUrl || ""} onChange={e => update("ogImageUrl", e.target.value)} placeholder="https://..." className={inputClass} /></label>
           </div>
-        </section>
+        </AdminAccordion>
 
-        <section className="border-t border-white/8 pt-6">
-          <h3 className="text-white font-bold mb-4">首頁與介紹</h3>
+        <AdminAccordion title="首頁與介紹">
           <div className="grid md:grid-cols-2 gap-4">
             <label className={labelClass}>Hero 小標<input value={draft.heroKicker || ""} onChange={e => update("heroKicker", e.target.value)} className={inputClass} /></label>
             <label className={labelClass}>Hero 背景圖片 URL<input value={draft.heroImageUrl || ""} onChange={e => update("heroImageUrl", e.target.value)} placeholder="https://..." className={inputClass} /></label>
             <label className={`${labelClass} md:col-span-2`}>Hero 文字<textarea rows={3} value={draft.heroNote || ""} onChange={e => update("heroNote", e.target.value)} className={inputClass} /></label>
             <label className={labelClass}>介紹圖片 URL<input value={draft.aboutImageUrl || ""} onChange={e => update("aboutImageUrl", e.target.value)} placeholder="https://..." className={inputClass} /></label>
-            <label className={labelClass}>介紹短文<textarea rows={4} value={draft.storyLead || ""} onChange={e => update("storyLead", e.target.value)} className={inputClass} /></label>
-            <label className={`${labelClass} md:col-span-2`}>完整介紹<textarea rows={5} value={draft.storyBody || ""} onChange={e => update("storyBody", e.target.value)} className={inputClass} /></label>
-            <label className={`${labelClass} md:col-span-2`}>團體詳細介紹（彈窗）<textarea rows={6} value={uiText.groupDetail || ""} onChange={e => updateUiText("groupDetail", e.target.value)} className={inputClass} /></label>
+            <div className="md:col-span-2"><AdminLocalizedTextFields baseKey="storyLead" label="介紹短文（六種語言）" uiText={uiText} onChange={updateUiText} rows={4} /></div>
+            <div className="md:col-span-2"><AdminLocalizedTextFields baseKey="storyBody" label="完整介紹（六種語言）" uiText={uiText} onChange={updateUiText} rows={5} /></div>
+            <div className="md:col-span-2"><AdminLocalizedTextFields baseKey="groupDetail" label="團體詳細介紹／彈窗（六種語言）" uiText={uiText} onChange={updateUiText} rows={6} /></div>
           </div>
-        </section>
+        </AdminAccordion>
 
-        <section className="border-t border-white/8 pt-6">
-          <h3 className="text-white font-bold mb-4">成員圖片 URL</h3>
-          <p className="text-white/35 text-xs leading-relaxed mb-4">建議使用官方允許 embed 的內容、授權素材、自己拍攝或粉絲授權圖片。不要直接抓未授權官方照或 Google 圖片。</p>
+        <AdminAccordion title="成員圖片 URL" description="建議使用官方允許 embed 的內容、授權素材、自己拍攝或粉絲授權圖片。不要直接抓未授權官方照或 Google 圖片。">
           <div className="grid md:grid-cols-2 gap-4">
             {MEMBERS.map(member => <label key={member.id} className={labelClass}>{member.name}<input value={draft.memberPhotos?.[member.id] || ""} onChange={e => updateMemberPhoto(member.id, e.target.value)} placeholder="https://..." className={inputClass} /></label>)}
           </div>
-        </section>
+        </AdminAccordion>
 
-        <section className="border-t border-white/8 pt-6">
-          <h3 className="text-white font-bold mb-4">團員介紹與詳細介紹</h3>
+        <AdminAccordion title="團員介紹與詳細介紹">
           <div className="grid gap-4">
-            {MEMBERS.map(member => <div key={member.id} className="border border-white/8 p-4">
-              <h4 className="text-white/70 font-bold mb-3">{member.name}</h4>
-              <div className="grid md:grid-cols-2 gap-3">
-                <label className={labelClass}>頁面短介紹<textarea rows={4} value={uiText[`member.${member.id}.bio`] || ""} onChange={e => updateUiText(`member.${member.id}.bio`, e.target.value)} className={inputClass} /></label>
-                <label className={labelClass}>詳細介紹（彈窗）<textarea rows={4} value={uiText[`member.${member.id}.detail`] || ""} onChange={e => updateUiText(`member.${member.id}.detail`, e.target.value)} className={inputClass} /></label>
+            {MEMBERS.map(member => <details key={member.id} className="admin-item-accordion border border-white/8">
+              <summary className="flex cursor-pointer list-none items-center justify-between p-4 text-white/70 font-bold">{member.name}<ChevronDown size={16} className="text-white/35 transition-transform duration-200" /></summary>
+              <div className="grid gap-4 px-4 pb-4">
+                <AdminLocalizedTextFields baseKey={`member.${member.id}.bio`} label="頁面短介紹（六種語言）" uiText={uiText} onChange={updateUiText} rows={4} />
+                <AdminLocalizedTextFields baseKey={`member.${member.id}.detail`} label="詳細介紹／彈窗（六種語言）" uiText={uiText} onChange={updateUiText} rows={5} />
               </div>
-            </div>)}
+            </details>)}
           </div>
-        </section>
+        </AdminAccordion>
 
-        <section className="border-t border-white/8 pt-6">
-          <h3 className="text-white font-bold mb-2">暱稱黑名單</h3>
-          <p className="text-white/35 text-xs leading-relaxed mb-4">只封鎖完全相同的暱稱，不分大小寫。例如封鎖 ahyeon 後，Ahyeon 與 AHYEON 都不能使用，但 ahyeon lover 與 aheyno 仍可使用。</p>
+        <AdminAccordion title="暱稱黑名單" description="只封鎖完全相同的暱稱，不分大小寫。例如封鎖 ahyeon 後，Ahyeon 與 AHYEON 都不能使用，但 ahyeon lover 與 aheyno 仍可使用。">
           <div className="flex flex-col sm:flex-row gap-2">
             <input value={blacklistName} onChange={event => setBlacklistName(event.target.value)} maxLength={24} placeholder="輸入要封鎖的完整暱稱" className={`${inputClass} mt-0`} />
             <button type="button" onClick={() => void addBlockedNickname()} className="shrink-0 px-4 py-3 border border-red-500/40 bg-red-600/10 text-red-200 text-xs hover:bg-red-600/20">加入黑名單</button>
@@ -1881,16 +1926,16 @@ function AdminPanel({ content, onSaved, onClose }: { content: SiteContent; onSav
               <button type="button" onClick={() => void removeBlockedNickname(entry)} className="text-red-400 hover:text-red-300" aria-label={`從黑名單移除 ${entry.name}`}><X size={13} aria-hidden="true" /></button>
             </div>) : <p className="text-white/30 text-xs">目前沒有黑名單名稱。</p>}
           </div>
-        </section>
+        </AdminAccordion>
 
-        <section className="border-t border-white/8 pt-6">
-          <div className="flex items-center justify-between gap-4 mb-4">
-            <h3 className="text-white font-bold">近期活動</h3>
+        <AdminAccordion title="近期活動">
+          <div className="flex justify-end mb-4">
             <button type="button" onClick={addEvent} className="px-3 py-2 border border-white/15 text-white/60 text-xs hover:text-white">新增活動</button>
           </div>
           <div className="grid gap-4">
-            {events.map((event, index) => <div key={event.id ?? index} className="border border-white/8 p-4">
-              <div className="grid md:grid-cols-2 gap-3">
+            {events.map((event, index) => <details key={event.id ?? index} className="admin-item-accordion border border-white/8">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4"><span className="text-white/70 font-bold">{event.title || `活動 ${index + 1}`}</span><span className="flex items-center gap-2 text-xs text-white/35">{event.startDate || "未設定日期"}<ChevronDown size={16} className="transition-transform duration-200" /></span></summary>
+              <div className="grid md:grid-cols-2 gap-3 px-4 pb-4">
                 <label className={labelClass}>標題<input value={event.title} onChange={e => updateEvent(index, "title", e.target.value)} className={inputClass} /></label>
                 <label className={labelClass}>副標<input value={event.sub} onChange={e => updateEvent(index, "sub", e.target.value)} className={inputClass} /></label>
                 <label className={labelClass}>開始日期<input type="date" value={event.startDate || ""} onChange={e => updateEvent(index, "startDate", e.target.value)} className={inputClass} /></label>
@@ -1899,51 +1944,49 @@ function AdminPanel({ content, onSaved, onClose }: { content: SiteContent; onSav
                 <div className={labelClass}>自動狀態<div className="mt-2 border border-white/10 bg-white/[0.025] p-3 text-white/55 text-sm">{eventStatusLabel(classifiedEvents[index]?.status || "future", "zh-TW")}</div></div>
                 <label className={labelClass}>類型<input value={event.type} onChange={e => updateEvent(index, "type", e.target.value)} className={inputClass} /></label>
                 <label className={`${labelClass} md:col-span-2`}>說明<textarea rows={3} value={event.desc} onChange={e => updateEvent(index, "desc", e.target.value)} className={inputClass} /></label>
+                <button type="button" onClick={() => removeEvent(index)} className="text-left text-red-400/70 hover:text-red-300 text-xs">刪除這筆活動</button>
               </div>
-              <button type="button" onClick={() => removeEvent(index)} className="mt-3 text-red-400/70 hover:text-red-300 text-xs">刪除這筆活動</button>
-            </div>)}
+            </details>)}
           </div>
-        </section>
+        </AdminAccordion>
 
-        <section className="border-t border-white/8 pt-6">
-          <div className="flex items-center justify-between gap-4 mb-4">
-            <h3 className="text-white font-bold">成員 Instagram 貼文</h3>
+        <AdminAccordion title="成員 Instagram 貼文">
+          <div className="flex justify-end mb-4">
             <button type="button" onClick={() => void saveInstagramPostsOnly()} className="px-3 py-2 border border-red-500/40 bg-red-600/10 text-red-200 text-xs hover:bg-red-600/20">儲存 Instagram</button>
           </div>
           <div className="grid gap-3">
-            {MEMBERS.map(member => <label key={member.id} className={`${labelClass} border border-white/8 p-4`}>
-              {member.name}（每行一個貼文網址）
-              <textarea rows={3} value={(instagramPosts[member.id] || []).join("\n")} onChange={event => updateMemberInstagramPosts(member.id, event.target.value)} placeholder="https://www.instagram.com/p/..." className={inputClass} />
-            </label>)}
+            {MEMBERS.map(member => <details key={member.id} className="admin-item-accordion border border-white/8">
+              <summary className="flex cursor-pointer list-none items-center justify-between p-4 text-white/70 font-bold">{member.name}<ChevronDown size={16} className="text-white/35 transition-transform duration-200" /></summary>
+              <label className={`${labelClass} block px-4 pb-4`}>每行一個貼文網址
+                <textarea rows={3} value={(instagramPosts[member.id] || []).join("\n")} onChange={event => updateMemberInstagramPosts(member.id, event.target.value)} placeholder="https://www.instagram.com/p/..." className={inputClass} />
+              </label>
+            </details>)}
           </div>
-        </section>
+        </AdminAccordion>
 
-        <section className="border-t border-white/8 pt-6">
-          <div className="flex items-center justify-between gap-4 mb-4">
-            <h3 className="text-white font-bold">專輯／單曲管理</h3>
+        <AdminAccordion title="專輯／單曲管理" description="自動同步會從 Spotify 抓取 BABYMONSTER 的作品、封面與完整曲目並立即儲存；手動曲目請每行輸入一首。">
+          <div className="flex justify-end mb-4">
             <div className="flex flex-wrap gap-2 justify-end">
               <button type="button" onClick={() => void importSpotifyAlbums()} className="px-3 py-2 border border-red-500/35 text-red-300/80 text-xs hover:text-red-200">匯入 Spotify</button>
               <button type="button" onClick={() => void syncSpotifyAlbums()} className="px-3 py-2 bg-[#E01020] text-white text-xs hover:bg-red-700">自動同步最新作品</button>
               <button type="button" onClick={addAlbum} className="px-3 py-2 border border-white/15 text-white/60 text-xs hover:text-white">新增專輯</button>
             </div>
           </div>
-          <p className="text-white/35 text-xs leading-relaxed mb-4">
-            「自動同步最新作品」會從 Spotify 抓取 BABYMONSTER 的專輯、單曲、封面與完整曲目，新增尚未存在的作品、補齊既有曲目並立即儲存。手動曲目請每行輸入一首。
-          </p>
           <div className="grid gap-4">
-            {albums.map((album, index) => <div key={album.id || index} className="border border-white/8 p-4">
-              <div className="grid md:grid-cols-2 gap-3">
+            {albums.map((album, index) => <details key={album.id || index} className="admin-item-accordion border border-white/8">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4"><span className="text-white/70 font-bold">{album.title || `作品 ${index + 1}`}</span><span className="flex items-center gap-2 text-xs text-white/35">{album.year || ""}<ChevronDown size={16} className="transition-transform duration-200" /></span></summary>
+              <div className="grid md:grid-cols-2 gap-3 px-4 pb-4">
                 <label className={labelClass}>標題<input value={album.title || ""} onChange={e => updateAlbum(index, "title", e.target.value)} className={inputClass} /></label>
                 <label className={labelClass}>年份<input value={album.year || ""} onChange={e => updateAlbum(index, "year", e.target.value)} className={inputClass} /></label>
                 <label className={labelClass}>類型<input value={album.type || ""} onChange={e => updateAlbum(index, "type", e.target.value)} placeholder="Album / Single / EP" className={inputClass} /></label>
                 <label className={labelClass}>Spotify 連結<input value={album.spotifyUrl || ""} onChange={e => updateAlbum(index, "spotifyUrl", e.target.value)} placeholder="https://open.spotify.com/..." className={inputClass} /></label>
                 <label className={`${labelClass} md:col-span-2`}>封面圖片 URL<input value={album.imageUrl || ""} onChange={e => updateAlbum(index, "imageUrl", e.target.value)} placeholder="https://i.scdn.co/..." className={inputClass} /></label>
                 <label className={`${labelClass} md:col-span-2`}>曲目（每行一首）<textarea rows={Math.min(10, Math.max(3, album.tracks?.length || 3))} value={(album.tracks || []).join("\n")} onChange={e => updateAlbum(index, "tracks", e.target.value)} placeholder={"DRIP\nCLIK CLAK\nLove In My Heart"} className={inputClass} /></label>
+                <button type="button" onClick={() => removeAlbum(index)} className="text-left text-red-400/70 hover:text-red-300 text-xs">刪除這張專輯</button>
               </div>
-              <button type="button" onClick={() => removeAlbum(index)} className="mt-3 text-red-400/70 hover:text-red-300 text-xs">刪除這張專輯</button>
-            </div>)}
+            </details>)}
           </div>
-        </section>
+        </AdminAccordion>
 
       </div>
 
