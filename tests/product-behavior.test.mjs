@@ -46,9 +46,10 @@ test("nickname blacklist uses exact case-insensitive matches", () => {
 
 test("replies and five-user report moderation are enforced in the database", async () => {
   const { readFile } = await import("node:fs/promises");
-  const [sql, counts] = await Promise.all([
+  const [sql, counts, replyRpc] = await Promise.all([
     readFile(new URL("../supabase/migrations/202608130001_post_replies_moderation.sql", import.meta.url), "utf8"),
     readFile(new URL("../supabase/migrations/202608130002_post_reply_counts.sql", import.meta.url), "utf8"),
+    readFile(new URL("../supabase/migrations/202608130003_create_post_reply_rpc.sql", import.meta.url), "utf8"),
   ]);
   assert.match(sql, /create table if not exists public\.post_replies/i);
   assert.match(sql, /create table if not exists public\.moderation_notifications/i);
@@ -59,4 +60,7 @@ test("replies and five-user report moderation are enforced in the database", asy
   assert.match(sql, /create or replace function public\.review_reported_post/i);
   assert.match(sql, /for update/i);
   assert.match(counts, /create or replace view public\.post_reply_counts/i);
+  assert.match(replyRpc, /create or replace function public\.create_post_reply/i);
+  assert.match(replyRpc, /viewer_id uuid := auth\.uid\(\)/i);
+  assert.match(replyRpc, /status = 'published'/i);
 });

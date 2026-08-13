@@ -307,7 +307,11 @@ export async function createFanReply(postId: number, body: string, sourceLanguag
   if (!client) throw new Error("SUPABASE_NOT_CONFIGURED");
   const clean = body.trim();
   if (!clean || clean.length > 500) throw new Error("REPLY_INVALID");
-  const { error } = await client.from("post_replies").insert({ post_id: postId, body: clean, source_language: sourceLanguage });
+  const { error } = await client.rpc("create_post_reply", {
+    target_post_id: postId,
+    reply_body: clean,
+    reply_language: sourceLanguage,
+  });
   if (error) throw error;
 }
 

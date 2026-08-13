@@ -29,14 +29,14 @@ const HERO_PARTICLES = Array.from({ length: 18 }, (_, i) => ({
 }));
 
 const communityActions: Record<Locale, {
-  reply: string; replyPlaceholder: string; sendReply: string; reported: string; reportFailed: string;
+  reply: string; replyPlaceholder: string; sendReply: string; replySaved: string; replyFailed: string; reported: string; reportFailed: string;
 }> = {
-  "zh-TW": { reply: "回覆", replyPlaceholder: "在這則留言下回覆…", sendReply: "送出回覆", reported: "已送出檢舉", reportFailed: "目前無法檢舉" },
-  "zh-CN": { reply: "回复", replyPlaceholder: "在这条留言下回复…", sendReply: "发送回复", reported: "已提交举报", reportFailed: "目前无法举报" },
-  th: { reply: "ตอบกลับ", replyPlaceholder: "ตอบกลับใต้โพสต์นี้…", sendReply: "ส่งคำตอบ", reported: "ส่งรายงานแล้ว", reportFailed: "ไม่สามารถรายงานได้" },
-  en: { reply: "Reply", replyPlaceholder: "Reply to this post…", sendReply: "Post reply", reported: "Report submitted", reportFailed: "Unable to report" },
-  ko: { reply: "답글", replyPlaceholder: "이 게시물에 답글 쓰기…", sendReply: "답글 등록", reported: "신고가 접수되었습니다", reportFailed: "신고할 수 없습니다" },
-  ja: { reply: "返信", replyPlaceholder: "この投稿に返信…", sendReply: "返信を投稿", reported: "通報しました", reportFailed: "通報できません" },
+  "zh-TW": { reply: "回覆", replyPlaceholder: "在這則留言下回覆…", sendReply: "送出回覆", replySaved: "回覆已發布", replyFailed: "回覆儲存失敗，請重新登入後再試", reported: "已送出檢舉", reportFailed: "目前無法檢舉" },
+  "zh-CN": { reply: "回复", replyPlaceholder: "在这条留言下回复…", sendReply: "发送回复", replySaved: "回复已发布", replyFailed: "回复保存失败，请重新登录后再试", reported: "已提交举报", reportFailed: "目前无法举报" },
+  th: { reply: "ตอบกลับ", replyPlaceholder: "ตอบกลับใต้โพสต์นี้…", sendReply: "ส่งคำตอบ", replySaved: "เผยแพร่คำตอบแล้ว", replyFailed: "บันทึกคำตอบไม่สำเร็จ โปรดเข้าสู่ระบบอีกครั้ง", reported: "ส่งรายงานแล้ว", reportFailed: "ไม่สามารถรายงานได้" },
+  en: { reply: "Reply", replyPlaceholder: "Reply to this post…", sendReply: "Post reply", replySaved: "Reply published", replyFailed: "Reply could not be saved. Sign in again and retry", reported: "Report submitted", reportFailed: "Unable to report" },
+  ko: { reply: "답글", replyPlaceholder: "이 게시물에 답글 쓰기…", sendReply: "답글 등록", replySaved: "답글이 게시되었습니다", replyFailed: "답글을 저장하지 못했습니다. 다시 로그인해 주세요", reported: "신고가 접수되었습니다", reportFailed: "신고할 수 없습니다" },
+  ja: { reply: "返信", replyPlaceholder: "この投稿に返信…", sendReply: "返信を投稿", replySaved: "返信を投稿しました", replyFailed: "返信を保存できませんでした。再ログインしてください", reported: "通報しました", reportFailed: "通報できません" },
 };
 
 function useMobileViewport() {
@@ -1171,6 +1171,7 @@ function PostCard({
   const [replySubmitting, setReplySubmitting] = useState(false);
   const [replies, setReplies] = useState<FanReply[]>([]);
   const [repliesLoading, setRepliesLoading] = useState(false);
+  const [replyFeedback, setReplyFeedback] = useState("");
   const [reportFeedback, setReportFeedback] = useState("");
   const t = messages[locale];
   const actions = communityActions[locale];
@@ -1199,14 +1200,20 @@ function PostCard({
   async function submitReply() {
     if (!user || !replyBody.trim() || replySubmitting) return;
     setReplySubmitting(true);
+    setReplyFeedback("");
     try {
       await createFanReply(post.id, replyBody, locale);
       setReplyBody("");
       setReplyOpen(true);
       setReplies(await listFanReplies(post.id));
+      setReplyFeedback(actions.replySaved);
       onRefresh();
     }
-    catch { /* keep the reply available for retry */ }
+    catch (error) {
+      const errorMessage = error && typeof error === "object" && "message" in error ? String(error.message || "") : "";
+      const detail = errorMessage ? ` (${errorMessage})` : "";
+      setReplyFeedback(`${actions.replyFailed}${detail}`);
+    }
     finally { setReplySubmitting(false); }
   }
   async function toggleReplies() {
@@ -1284,6 +1291,7 @@ function PostCard({
               <button onClick={() => void submitReply()} disabled={!replyBody.trim() || replySubmitting}
                 className="min-h-11 shrink-0 bg-[#E01020] px-4 text-xs text-white disabled:opacity-35">{replySubmitting ? "…" : actions.sendReply}</button>
             </div> : <p className="mt-4 text-white/25 text-xs">{t.signInToJoin}</p>}
+            {replyFeedback && <p className="mt-2 text-xs text-white/40" role="status">{replyFeedback}</p>}
           </div>}
         </div>
       </div>
