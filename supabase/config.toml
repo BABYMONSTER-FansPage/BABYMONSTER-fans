@@ -153,7 +153,7 @@ enabled = true
 # in emails.
 site_url = "https://babymonster.fans"
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
-additional_redirect_urls = ["https://babymonster.fans", "https://babymonster.fans/", "http://localhost:3000", "http://127.0.0.1:3000", "http://127.0.0.1:5173/**"]
+additional_redirect_urls = ["https://babymonster.fans", "https://babymonster.fans/", "https://babymonster.fans/?auth=confirmed", "https://babymonster.fans/?mode=reset-password", "http://localhost:3000", "http://127.0.0.1:3000", "http://127.0.0.1:5173/**"]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
 # JWT issuer URL. If not set, defaults to the local API URL (http://127.0.0.1:<port>/auth/v1).
@@ -210,7 +210,7 @@ enable_confirmations = true
 # If enabled, users will need to reauthenticate or have logged in recently to change their password.
 secure_password_change = false
 # Controls the minimum amount of time that must pass before sending another signup confirmation or password reset email.
-max_frequency = "1m"
+max_frequency = "30s"
 # Number of characters used in the email OTP.
 otp_length = 6
 # Number of seconds before the email OTP expires (defaults to 1 hour).
@@ -237,7 +237,7 @@ content_path = "./supabase/templates/recovery.html"
 [auth.email.notification.password_changed]
 enabled = true
 subject = "[Monstiez] Your password was changed"
-content_path = "./supabase/templates/password_changed_notification.html"
+content_path = "./templates/password_changed_notification.html"
 
 [auth.sms]
 # Allow/disallow new user signups via SMS to your project.
