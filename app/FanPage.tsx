@@ -195,6 +195,21 @@ function contentUrl(value: unknown, fallback: string) {
   return typeof value === "string" && /^https?:\/\//.test(value.trim()) ? value.trim() : fallback;
 }
 
+function localizedMemberBio(name: string, nationality: string, locale: Locale, detailed = false) {
+  const country = nationality === "Japan"
+    ? fixedMessages[locale].countryJapan
+    : nationality === "Korea" ? fixedMessages[locale].countryKorea : fixedMessages[locale].countryThailand;
+  const copy: Record<Locale, [string, string]> = {
+    "zh-TW": [`${name} 是來自${country}的 BABYMONSTER 成員。`, `認識 ${name} 在 BABYMONSTER 的音樂、舞台與官方公開活動。本站僅整理公開資訊；最新資料請以 YG Entertainment 與 BABYMONSTER 官方公告為準。`],
+    "zh-CN": [`${name} 是来自${country}的 BABYMONSTER 成员。`, `了解 ${name} 在 BABYMONSTER 的音乐、舞台与官方公开活动。本站仅整理公开信息；最新资料请以 YG Entertainment 与 BABYMONSTER 官方公告为准。`],
+    th: [`${name} เป็นสมาชิก BABYMONSTER จาก${country}`, `ติดตามผลงานเพลง เวที และกิจกรรมทางการของ ${name} กับ BABYMONSTER เว็บไซต์นี้รวบรวมเฉพาะข้อมูลสาธารณะ โปรดตรวจสอบข้อมูลล่าสุดจาก YG Entertainment และช่องทางทางการของ BABYMONSTER`],
+    en: [`${name} is a BABYMONSTER member from ${country}.`, `Explore ${name}'s music, performances, and officially announced activities with BABYMONSTER. This site summarizes public information only; check YG Entertainment and BABYMONSTER's official channels for the latest details.`],
+    ko: [`${name}는 ${country} 출신의 BABYMONSTER 멤버입니다.`, `${name}의 BABYMONSTER 음악, 무대 및 공식 활동을 살펴보세요. 이 사이트는 공개 정보만 정리하며 최신 내용은 YG Entertainment와 BABYMONSTER 공식 채널을 확인해 주세요.`],
+    ja: [`${name}は${country}出身のBABYMONSTERメンバーです。`, `${name}のBABYMONSTERでの音楽、ステージ、公式活動を紹介します。本サイトは公開情報のみを整理しており、最新情報はYG EntertainmentおよびBABYMONSTER公式チャンネルをご確認ください。`],
+  };
+  return copy[locale][detailed ? 1 : 0];
+}
+
 function localizedTextKey(key: string, locale: Locale) {
   return `${key}.${locale}`;
 }
@@ -318,9 +333,10 @@ function EditableText({ k, fallback = "", as = "span", className, style, childre
   className?: string; style?: CSSProperties; children?: ReactNode;
 }) {
   const editor = useContext(InlineEditContext);
+  const f = fixedMessages[editor.locale];
   const Tag = as;
   const value = editor.text(k, fallback);
-  const visible = value || (editor.editing ? "點鉛筆新增文字" : "");
+  const visible = value || (editor.editing ? f.editPlaceholder : "");
   if (!visible && !children) return null;
   return <Tag className={className} style={style}>
     {children ?? visible}
@@ -330,14 +346,15 @@ function EditableText({ k, fallback = "", as = "span", className, style, childre
 
 function EditableImage({ k, alt, className, style }: { k: string; alt: string; className?: string; style?: CSSProperties }) {
   const editor = useContext(InlineEditContext);
+  const f = fixedMessages[editor.locale];
   const url = editor.image(k);
   if (!url && !editor.editing) return null;
   return <div className="relative w-full h-full">
     {url
       ? <img src={url} alt={alt} className={className} style={style} />
-      : <div className={`${className || ""} grid place-items-center border border-dashed border-red-500/35 text-red-300/60 text-xs tracking-widest uppercase`}>新增圖片</div>}
+      : <div className={`${className || ""} grid place-items-center border border-dashed border-red-500/35 text-red-300/60 text-xs tracking-widest uppercase`}>{f.addImagePlaceholder}</div>}
     {editor.editing && <div className="absolute top-3 right-3"><EditPencil label={`Edit image ${k}`} onClick={() => {
-      const next = window.prompt("貼上圖片 URL（請使用授權素材或官方允許嵌入的來源）", url);
+      const next = window.prompt(f.imageUrlPrompt, url);
       if (next !== null) editor.updateImage(k, next);
     }} /></div>}
   </div>;
@@ -471,7 +488,7 @@ function Hero({ locale, content }: { locale: Locale; content: SiteContent }) {
         <motion.p initial={mobile ? false : { opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.3 }}
           className="text-white/35 text-xs tracking-[0.45em] uppercase mb-8">
-          <EditableText k="heroKicker" fallback={contentText(content.heroKicker, "")} />
+          <EditableText k="heroKicker" fallback={contentText(content.heroKicker, t.heroKicker)} />
         </motion.p>
 
         {/* MONSTIEZ — official site brand */}
@@ -488,7 +505,7 @@ function Hero({ locale, content }: { locale: Locale; content: SiteContent }) {
         <motion.p initial={mobile ? false : { opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 1.1 }}
           className="text-white/50 text-sm md:text-base tracking-[0.35em] uppercase mt-8 mb-14">
-          <EditableText k="heroNote" fallback={contentText(content.heroNote, "")} />
+          <EditableText k="heroNote" fallback={contentText(content.heroNote, t.heroNote)} />
         </motion.p>
 
         {/* Stat row */}
@@ -611,13 +628,13 @@ function AboutSection({ locale, content }: { locale: Locale; content: SiteConten
             <motion.p initial={mobile ? false : { opacity: 0, y: 28 }} animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.8, delay: 0.4 }}
               className="text-white/60 leading-relaxed text-sm md:text-base mb-5">
-              <EditableText k="storyLead" fallback={contentText(content.storyLead, "")} />
+              <EditableText k="storyLead" fallback={contentText(content.storyLead, t.storyLead)} />
             </motion.p>
 
             <motion.p initial={mobile ? false : { opacity: 0, y: 28 }} animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.8, delay: 0.52 }}
               className="text-white/40 leading-relaxed text-sm mb-12">
-              <EditableText k="storyBody" fallback={contentText(content.storyBody, "")} />
+              <EditableText k="storyBody" fallback={contentText(content.storyBody, t.storyBody)} />
             </motion.p>
 
             <motion.div initial={mobile ? false : { opacity: 0, y: 28 }} animate={isInView ? { opacity: 1, y: 0 } : {}}
@@ -640,7 +657,7 @@ function AboutSection({ locale, content }: { locale: Locale; content: SiteConten
           </div>
         </div>
       </div>
-      {detailOpen && <DetailModal title="BABYMONSTER" textKey="groupDetail" fallback="" onClose={() => setDetailOpen(false)} />}
+      {detailOpen && <DetailModal title="BABYMONSTER" textKey="groupDetail" fallback={t.storyBody} onClose={() => setDetailOpen(false)} />}
     </section>
   );
 }
@@ -664,6 +681,9 @@ function MemberSpotlight({ member, index, photoUrl, locale, instagramPosts = [] 
   const reduceMotion = useReducedMotion();
   const mobile = useMobileViewport();
   const disableCinematicMotion = Boolean(reduceMotion || mobile);
+  const nationality = member.nationality === "Japan" ? f.countryJapan : member.nationality === "Korea" ? f.countryKorea : f.countryThailand;
+  const memberBirthDates: Record<string, string> = { ruka: "2002-03-20", pharita: "2005-08-26", asa: "2006-04-17", ahyeon: "2007-04-11", rami: "2007-10-17", rora: "2008-08-14", chiquita: "2009-02-17" };
+  const birthDate = new Intl.DateTimeFormat(locale, { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(`${memberBirthDates[member.id]}T00:00:00Z`));
 
   return (
     <div ref={ref} className="cinematic-member min-h-[145vh] md:min-h-[175vh] relative overflow-clip border-t border-white/5">
@@ -699,7 +719,7 @@ function MemberSpotlight({ member, index, photoUrl, locale, instagramPosts = [] 
 
               {/* Bottom info */}
               <div className="absolute bottom-0 left-0 right-0 p-6">
-                <div className="text-white/60 text-xs tracking-[0.3em] uppercase mb-1">{member.flag} {member.nationality}</div>
+                <div className="text-white/60 text-xs tracking-[0.3em] uppercase mb-1">{member.flag} {nationality}</div>
                 <div className="text-white font-black text-4xl leading-none"
                   style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>{member.name}</div>
               </div>
@@ -729,7 +749,7 @@ function MemberSpotlight({ member, index, photoUrl, locale, instagramPosts = [] 
                 {member.num}
               </span>
               <div className="h-px flex-1 bg-white/10" />
-              <span className="text-white/25 text-xs tracking-widest uppercase">{member.nationality}</span>
+              <span className="text-white/25 text-xs tracking-widest uppercase">{nationality}</span>
             </motion.div>
 
             {/* Name reveal */}
@@ -749,7 +769,7 @@ function MemberSpotlight({ member, index, photoUrl, locale, instagramPosts = [] 
               className="flex items-center gap-4 mb-7">
               <span className="text-white/30 text-xl">{member.hangul}</span>
               <span className="w-1 h-1 rounded-full" style={{ background: member.accent }} />
-              <span className="text-white/40 text-sm tracking-wider">{member.birth}</span>
+              <span className="text-white/40 text-sm tracking-wider">{birthDate}</span>
             </motion.div>
 
             {/* Description */}
@@ -757,7 +777,7 @@ function MemberSpotlight({ member, index, photoUrl, locale, instagramPosts = [] 
               animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.8, delay: 0.58 }}
               className="text-white/55 leading-relaxed text-sm md:text-base mb-8">
-              <EditableText k={`member.${member.id}.bio`} fallback="" />
+              <EditableText k={`member.${member.id}.bio`} fallback={localizedMemberBio(member.name, member.nationality, locale)} />
             </motion.p>
             <button onClick={() => setDetailOpen(true)} className="text-red-400/80 hover:text-red-300 text-xs tracking-[0.25em] uppercase">{f.detailIntro}</button>
 
@@ -770,7 +790,7 @@ function MemberSpotlight({ member, index, photoUrl, locale, instagramPosts = [] 
           </motion.div>
         </div>
       </div>
-      {detailOpen && <DetailModal title={member.name} textKey={`member.${member.id}.detail`} fallback="" onClose={() => setDetailOpen(false)} />}
+      {detailOpen && <DetailModal title={member.name} textKey={`member.${member.id}.detail`} fallback={localizedMemberBio(member.name, member.nationality, locale, true)} onClose={() => setDetailOpen(false)} />}
     </div>
   );
 }
@@ -934,7 +954,7 @@ function MusicSection({ locale, content }: { locale: Locale; content: SiteConten
         </div>}
         {albums.length === 0 && spotifyStatus && <div className="border border-white/8 bg-white/[0.018] p-6 text-white/45 text-sm leading-relaxed">
           <p className="text-white/65 mb-2">{f.spotifyUnavailableTitle}</p>
-          <p>狀態：<code className="text-red-300">{spotifyStatus}</code>。{f.spotifyUnavailableHelp}</p>
+          <p>{f.statusLabel}: <code className="text-red-300">{spotifyStatus}</code>. {f.spotifyUnavailableHelp}</p>
           <a href="https://open.spotify.com/artist/1SIocsqdEefUTE6XKGUiVS" target="_blank" rel="noreferrer" className="inline-flex mt-4 items-center gap-2 text-red-300 hover:text-red-200 text-xs tracking-[0.25em] uppercase">{f.openSpotifyDiscography}<ExternalLink size={12} aria-hidden="true" /></a>
         </div>}
 
@@ -970,6 +990,12 @@ function eventStatusLabel(status: EditableEvent["status"], locale: Locale) {
     ja: { past: "終了", upcoming: "近日開催", future: "今後" },
   };
   return labels[locale][status];
+}
+
+function localizedEvent(event: EditableEvent, locale: Locale): EditableEvent {
+  if (!/CHOOM/i.test(event.title) || !/World Tour/i.test(event.type || event.title)) return event;
+  const f = fixedMessages[locale];
+  return { ...event, type: f.eventWorldTour, desc: f.eventInCity(event.sub || event.locations) };
 }
 
 function eventDateTimestamp(event: EditableEvent, boundary: "start" | "end" = "start") {
@@ -1010,6 +1036,7 @@ function EventCard({ event, index, locale, onOpen }: { event: EditableEvent; ind
   const isInView = useInView(ref, { once: true, amount: 0.2 });
   const isLeft = index % 2 === 0;
   const t = messages[locale];
+  const displayEvent = localizedEvent(event, locale);
   const localizedTitle = [
     `BABYMONSTER — ${t.eventsLabel}`,
     `SPOTIFY · YOUTUBE — ${t.streamsLabel}`,
@@ -1054,9 +1081,9 @@ function EventCard({ event, index, locale, onOpen }: { event: EditableEvent; ind
 
         <h3 className="text-white font-black text-2xl md:text-3xl leading-tight mb-1 group-hover:text-red-400 transition-colors duration-300"
           style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>
-          {contentText(event.title, localizedTitle)}
+          {contentText(displayEvent.title, localizedTitle)}
         </h3>
-        <p className="text-white/35 text-xs tracking-widest uppercase mb-4">{contentText(event.sub, t.verifyOfficial)}</p>
+        <p className="text-white/35 text-xs tracking-widest uppercase mb-4">{contentText(displayEvent.sub, t.verifyOfficial)}</p>
         <div className="flex flex-wrap gap-5 text-xs text-white/35">
           <span className="flex items-center gap-1.5">
             <Calendar size={11} style={{ color: "rgba(224,16,32,0.6)" }} />
@@ -1064,7 +1091,7 @@ function EventCard({ event, index, locale, onOpen }: { event: EditableEvent; ind
           </span>
           <span className="flex items-center gap-1.5">
             <MapPin size={11} style={{ color: "rgba(224,16,32,0.6)" }} />
-            {event.locations}
+            {displayEvent.locations}
           </span>
         </div>
         <span className="mt-5 inline-flex items-center gap-2 text-xs tracking-[0.2em] uppercase text-red-300/80">{fixedMessages[locale].detailIntro}<ExternalLink size={12} aria-hidden="true" /></span>
@@ -1113,7 +1140,7 @@ function EventsSection({ locale, content }: { locale: Locale; content: SiteConte
         </div>
         {events.length > 0 && <div className="mt-12 text-center">
           <button onClick={() => setAllEventsOpen(true)} className="border border-red-500/35 px-6 py-3 text-xs tracking-[0.22em] uppercase text-red-300 transition hover:bg-red-600/10">
-            {locale === "zh-TW" ? "查看全部活動" : locale === "zh-CN" ? "查看全部活动" : locale === "ja" ? "全イベントを見る" : locale === "ko" ? "전체 일정 보기" : locale === "th" ? "ดูกิจกรรมทั้งหมด" : "View all events"}
+            {fixedMessages[locale].viewAllEvents}
           </button>
         </div>}
       </div>
@@ -1125,40 +1152,43 @@ function EventsSection({ locale, content }: { locale: Locale; content: SiteConte
 
 function AllEventsModal({ events, locale, onSelect, onClose }: { events: EditableEvent[]; locale: Locale; onSelect: (event: EditableEvent) => void; onClose: () => void }) {
   const sortedEvents = [...events].sort((a, b) => eventDateTimestamp(a) - eventDateTimestamp(b));
-  return <div className="fixed inset-0 z-[115] grid place-items-center bg-black/88 p-5" role="dialog" aria-modal="true" aria-label="All events">
+  const f = fixedMessages[locale];
+  return <div className="fixed inset-0 z-[115] grid place-items-center bg-black/88 p-5" role="dialog" aria-modal="true" aria-label={f.allEventsTitle}>
     <div className="w-full max-w-4xl max-h-[88vh] overflow-auto border border-white/15 bg-[#090909] p-6 shadow-2xl md:p-8">
       <div className="mb-6 flex items-start justify-between gap-5">
-        <h2 className="text-4xl font-black leading-none text-white md:text-5xl" style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>BABYMONSTER EVENTS</h2>
-        <button onClick={onClose} className="text-white/50 hover:text-white" aria-label="Close"><X size={22} aria-hidden="true" /></button>
+        <h2 className="text-4xl font-black leading-none text-white md:text-5xl" style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>{f.allEventsTitle}</h2>
+        <button onClick={onClose} className="text-white/50 hover:text-white" aria-label={f.closeDialog}><X size={22} aria-hidden="true" /></button>
       </div>
       <div className="grid gap-3">
-        {sortedEvents.map(event => <button key={event.id ?? `${event.sub}-${event.startDate}`} onClick={() => onSelect(event)} className="grid gap-2 border border-white/10 p-4 text-left transition hover:border-red-500/40 md:grid-cols-[150px_1fr_auto] md:items-center">
+        {sortedEvents.map(event => { const displayEvent = localizedEvent(event, locale); return <button key={event.id ?? `${event.sub}-${event.startDate}`} onClick={() => onSelect(event)} className="grid gap-2 border border-white/10 p-4 text-left transition hover:border-red-500/40 md:grid-cols-[150px_1fr_auto] md:items-center">
           <span className="text-sm text-red-300">{eventDisplayDate(event)}</span>
-          <span><strong className="block text-lg text-white">{event.sub || event.title}</strong><span className="text-xs text-white/40">{event.locations}</span></span>
+          <span><strong className="block text-lg text-white">{displayEvent.sub || displayEvent.title}</strong><span className="text-xs text-white/40">{displayEvent.locations}</span></span>
           <span className="inline-flex items-center gap-2 text-xs uppercase tracking-wider text-white/35">{eventStatusLabel(event.status, locale)}<ExternalLink size={12} aria-hidden="true" /></span>
-        </button>)}
+        </button>; })}
       </div>
     </div>
   </div>;
 }
 
 function EventDetailModal({ event, locale, onClose }: { event: EditableEvent; locale: Locale; onClose: () => void }) {
+  const f = fixedMessages[locale];
+  const displayEvent = localizedEvent(event, locale);
   return <div className="fixed inset-0 z-[115] grid place-items-center bg-black/88 p-5" role="dialog" aria-modal="true" aria-label={event.title}>
     <div className="w-full max-w-3xl max-h-[86vh] overflow-auto border border-white/15 bg-[#090909] p-7 shadow-2xl">
       <div className="mb-6 flex items-start justify-between gap-5">
         <div>
           <span className="text-xs tracking-[0.25em] uppercase text-red-400">{eventStatusLabel(event.status, locale)}</span>
-          <h2 className="mt-2 text-4xl font-black leading-none text-white md:text-5xl" style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>{event.title}</h2>
-          {event.sub && <p className="mt-3 text-xs tracking-widest uppercase text-white/40">{event.sub}</p>}
+          <h2 className="mt-2 text-4xl font-black leading-none text-white md:text-5xl" style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>{displayEvent.title}</h2>
+          {displayEvent.sub && <p className="mt-3 text-xs tracking-widest uppercase text-white/40">{displayEvent.sub}</p>}
         </div>
-        <button onClick={onClose} className="text-white/50 hover:text-white" aria-label="Close"><X size={22} aria-hidden="true" /></button>
+        <button onClick={onClose} className="text-white/50 hover:text-white" aria-label={f.closeDialog}><X size={22} aria-hidden="true" /></button>
       </div>
       <div className="mb-6 flex flex-wrap gap-5 text-sm text-white/45">
         <span className="flex items-center gap-2"><Calendar size={14} className="text-red-400" />{eventDisplayDate(event)}</span>
-        <span className="flex items-center gap-2"><MapPin size={14} className="text-red-400" />{event.locations}</span>
-        {event.type && <span>{event.type}</span>}
+        <span className="flex items-center gap-2"><MapPin size={14} className="text-red-400" />{displayEvent.locations}</span>
+        {displayEvent.type && <span>{displayEvent.type}</span>}
       </div>
-      <p className="whitespace-pre-wrap text-sm leading-7 text-white/65">{event.desc}</p>
+      <p className="whitespace-pre-wrap text-sm leading-7 text-white/65">{displayEvent.desc}</p>
     </div>
   </div>;
 }
@@ -1412,8 +1442,8 @@ function AllPostsModal({ posts, onLike, onRefresh, user, locale, onClose }: {
   return <div className="fixed inset-0 z-[112] bg-black/90 grid place-items-center p-4" role="dialog" aria-modal="true" aria-label={f.allPostsAria}>
     <div className="w-full max-w-4xl max-h-[90vh] overflow-auto bg-[#090909] border border-white/15 p-6 shadow-2xl">
       <div className="flex items-start justify-between gap-5 mb-6">
-        <h2 className="text-white font-black text-5xl leading-none" style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>MONSTIEZ BOARD</h2>
-        <button onClick={onClose} className="text-white/50 hover:text-white" aria-label="Close"><X size={22} aria-hidden="true" /></button>
+        <h2 className="text-white font-black text-5xl leading-none" style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>{f.boardTitle}</h2>
+        <button onClick={onClose} className="text-white/50 hover:text-white" aria-label={f.closeDialog}><X size={22} aria-hidden="true" /></button>
       </div>
       <div className="space-y-4">
         {posts.map((post, index) => <PostCard key={post.id} post={post} index={index} onLike={onLike} onRefresh={onRefresh} user={user} locale={locale} />)}
@@ -1460,11 +1490,13 @@ function LegalModal({ title, body, onClose }: { title: string; body: string; onC
 }
 
 function DetailModal({ title, textKey, fallback, onClose }: { title: string; textKey: string; fallback?: string; onClose: () => void }) {
+  const editor = useContext(InlineEditContext);
+  const f = fixedMessages[editor.locale];
   return <div className="fixed inset-0 z-[115] bg-black/88 grid place-items-center p-5" role="dialog" aria-modal="true" aria-label={title}>
     <div className="w-full max-w-3xl max-h-[86vh] overflow-auto bg-[#090909] border border-white/15 p-7 shadow-2xl">
       <div className="flex items-start justify-between gap-5 mb-6">
         <h2 className="text-white font-black text-5xl leading-none" style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>{title}</h2>
-        <button onClick={onClose} className="text-white/50 hover:text-white" aria-label="Close"><X size={22} aria-hidden="true" /></button>
+        <button onClick={onClose} className="text-white/50 hover:text-white" aria-label={f.closeDialog}><X size={22} aria-hidden="true" /></button>
       </div>
       <EditableText k={textKey} fallback={fallback || ""} as="p" className="whitespace-pre-wrap text-white/58 text-sm leading-7" />
     </div>
@@ -1490,8 +1522,8 @@ function Footer({ locale, content }: { locale: Locale; content: SiteContent }) {
               {siteName}
             </div>
             <p className="text-white/28 text-xs leading-relaxed">
-              {contentText(content.siteTagline, DEFAULT_SITE_CONTENT.siteTagline)}<br />
-              {contentText(content.heroNote, t.heroNote)}
+              <EditableText k="siteTagline" fallback={contentText(content.siteTagline, t.heroKicker)} /><br />
+              <EditableText k="heroNote" fallback={contentText(content.heroNote, t.heroNote)} />
             </p>
           </motion.div>
 
@@ -1538,7 +1570,7 @@ function OpeningLoader({ locale }: { locale: Locale }) {
     className="opening-loader fixed inset-0 z-[200] bg-black overflow-hidden grid place-items-center"
     role="status"
     aria-live="polite"
-    aria-label="Loading Monstiez fan site">
+    aria-label={f.loadingAria}>
     <div className="opening-loader__glow absolute inset-0" />
 
     <div className="relative z-10 text-center px-6">
@@ -2030,27 +2062,29 @@ function CustomSections({ sections }: { sections: NonNullable<SiteContent["custo
   </section>;
 }
 
-function TextEditModal({ editKey, values, fallback, onSave, onClose }: {
+function TextEditModal({ editKey, values, fallback, locale, onSave, onClose }: {
   editKey: string;
   values: Record<Locale, string>;
   fallback: string;
+  locale: Locale;
   onSave: (values: Record<Locale, string>) => void;
   onClose: () => void;
 }) {
   const [draft, setDraft] = useState<Record<Locale, string>>(() => ({ ...values }));
+  const f = fixedMessages[locale];
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     onSave(draft);
   }
-  return <div className="fixed inset-0 z-[130] bg-black/90 grid place-items-center p-4" role="dialog" aria-modal="true" aria-label="Edit multilingual text">
+  return <div className="fixed inset-0 z-[130] bg-black/90 grid place-items-center p-4" role="dialog" aria-modal="true" aria-label={f.textEditorTitle}>
     <form onSubmit={submit} className="w-full max-w-5xl max-h-[92vh] overflow-auto bg-[#090909] border border-white/15 p-6 md:p-8 shadow-2xl">
       <div className="flex items-start justify-between gap-5 mb-6">
         <div>
-          <p className="text-red-400 text-xs tracking-[0.35em] uppercase mb-2">MULTILINGUAL COPY</p>
-          <h2 className="text-white font-black text-4xl md:text-5xl leading-none" style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>EDIT TEXT</h2>
+          <p className="text-red-400 text-xs tracking-[0.35em] uppercase mb-2">{f.textEditorKicker}</p>
+          <h2 className="text-white font-black text-4xl md:text-5xl leading-none" style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>{f.textEditorTitle}</h2>
           <p className="text-white/30 text-xs mt-3 break-all">{editKey}</p>
         </div>
-        <button type="button" onClick={onClose} className="text-white/50 hover:text-white" aria-label="Close"><X size={22} aria-hidden="true" /></button>
+        <button type="button" onClick={onClose} className="text-white/50 hover:text-white" aria-label={f.closeDialog}><X size={22} aria-hidden="true" /></button>
       </div>
       <div className="grid md:grid-cols-2 gap-4">
         {supportedLocales.map(item => (
@@ -2063,8 +2097,8 @@ function TextEditModal({ editKey, values, fallback, onSave, onClose }: {
         ))}
       </div>
       <div className="mt-7 flex flex-wrap items-center justify-end gap-3">
-        <button type="button" onClick={onClose} className="px-5 py-3 border border-white/15 text-white/55 text-xs tracking-[0.2em] uppercase">取消</button>
-        <button type="submit" className="px-5 py-3 bg-[#E01020] text-white text-xs tracking-[0.2em] uppercase">儲存 6 種語言</button>
+        <button type="button" onClick={onClose} className="px-5 py-3 border border-white/15 text-white/55 text-xs tracking-[0.2em] uppercase">{f.cancel}</button>
+        <button type="submit" className="px-5 py-3 bg-[#E01020] text-white text-xs tracking-[0.2em] uppercase">{f.saveSixLanguages}</button>
       </div>
     </form>
   </div>;
@@ -2265,7 +2299,7 @@ function AuthModal({ locale, mode, onMode, onClose, onAuthenticated, onPasswordR
         <button type="submit" disabled={pending} className="p-4 bg-[#E01020] text-white text-xs tracking-[.2em] uppercase disabled:opacity-50">{pending ? "…" : authCopy.send}</button>
         <button type="button" onClick={() => { setForgotPassword(false); setFeedback(""); }} className="text-xs text-white/45 hover:text-white">{authCopy.back}</button>
       </form> : <>
-      <button onClick={() => void oauth("google")} disabled={pending} className="w-full min-h-11 border border-white/15 p-3 text-center text-white/60 text-xs disabled:opacity-50">{pending ? "Connecting…" : "Google"}</button>
+      <button onClick={() => void oauth("google")} disabled={pending} className="w-full min-h-11 border border-white/15 p-3 text-center text-white/60 text-xs disabled:opacity-50">{pending ? f.connecting : "Google"}</button>
       <div className="text-center text-white/25 text-xs my-5">— {t.orEmail} —</div>
       <form onSubmit={submit} className="grid gap-4">
         {mode === "register" && <label className="text-white/45 text-xs">{t.nickname}<input name="nickname" required minLength={2} maxLength={24} className="block w-full mt-2 p-3 bg-black border border-white/15 text-white focus:outline-none focus:border-red-600/60" /></label>}
@@ -2425,7 +2459,7 @@ export default function App() {
     } catch (error) {
       const message = error instanceof Error ? error.message : "Site content could not be saved.";
       setEditFeedback(message);
-      window.alert(`儲存失敗：${message}`);
+      window.alert(`${fixedMessages[locale].saveFailed}: ${message}`);
     }
   }
 
@@ -2458,7 +2492,7 @@ export default function App() {
       {adminOpen && user?.role === "admin" && <AdminPanel content={siteContent} onSaved={setSiteContent} onClose={() => setAdminOpen(false)} />}
       {editMode && user?.role === "admin" && <EditToolbar dirty={dirty} locale={locale} onSave={() => void saveEdits()} onAddSection={addSection} onOpenAdmin={() => setAdminOpen(true)} onStop={() => setEditMode(false)} />}
       {editMode && editFeedback && <div className="fixed left-1/2 -translate-x-1/2 bottom-[calc(8.25rem+env(safe-area-inset-bottom))] z-[121] rounded-full border border-white/12 bg-black/90 px-4 py-2 text-white/55 text-xs shadow-2xl">{editFeedback}</div>}
-      {textEditRequest && <TextEditModal editKey={textEditRequest.key} fallback={textEditRequest.fallback} values={localizedTextValues(textEditRequest.key, textEditRequest.fallback)} onSave={values => updateLocalizedText(textEditRequest.key, values)} onClose={() => setTextEditRequest(null)} />}
+      {textEditRequest && <TextEditModal editKey={textEditRequest.key} fallback={textEditRequest.fallback} locale={locale} values={localizedTextValues(textEditRequest.key, textEditRequest.fallback)} onSave={values => updateLocalizedText(textEditRequest.key, values)} onClose={() => setTextEditRequest(null)} />}
       {user?.needsNickname && <NicknameModal locale={locale} onSaved={setUser} />}
     </div>
     </InlineEditContext.Provider>

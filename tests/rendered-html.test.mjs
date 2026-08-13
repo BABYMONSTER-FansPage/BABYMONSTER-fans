@@ -94,7 +94,8 @@ test("bundles six static languages and translates fan posts only", async () => {
   assert.match(page, /eventDateTimestamp/);
   assert.match(page, /EventDetailModal/);
   assert.match(page, /AllEventsModal/);
-  assert.match(page, /查看全部活動/);
+  assert.match(page, /fixedMessages\[locale\]\.viewAllEvents/);
+  assert.match(i18n, /viewAllEvents: "查看全部活動"/);
   assert.match(page, /type="date"/);
   assert.match(page, /開始日期/);
   assert.match(page, /結束日期/);
@@ -167,7 +168,8 @@ test("bundles six static languages and translates fan posts only", async () => {
   assert.ok(page.indexOf("<AppPurposeSection locale={locale} />") < page.indexOf("<Footer"));
   assert.match(page, /MON<span style=\{\{ color: "#E01020" \}\}>STIEZ<\/span>/);
   assert.match(page, /&copy; 2026 \{OFFICIAL_BRAND_NAME\}/);
-  assert.match(page, /aria-label="Loading Monstiez fan site"/);
+  assert.match(page, /aria-label=\{f\.loadingAria\}/);
+  assert.match(i18n, /loadingAria: "Loading the Monstiez fan site"/);
   assert.match(page, />\s*Monstiez\s*<\/h1>/);
   assert.doesNotMatch(page, /Loading BABYMONSTER fan site/);
   assert.doesNotMatch(page, /\{messages\[locale\]\.streamsLabel\}<\/div>/);

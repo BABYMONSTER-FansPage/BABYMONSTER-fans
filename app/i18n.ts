@@ -108,6 +108,11 @@ type FixedCopy = {
   addImage: string;
   addSection: string;
   activityManager: string;
+  statusLabel: string; viewAllEvents: string; allEventsTitle: string; boardTitle: string; closeDialog: string;
+  loadingAria: string; connecting: string; editPlaceholder: string; addImagePlaceholder: string; imageUrlPrompt: string;
+  textEditorKicker: string; textEditorTitle: string; cancel: string; saveSixLanguages: string; saveFailed: string;
+  eventWorldTour: string; eventInCity: (city: string) => string;
+  countryJapan: string; countryKorea: string; countryThailand: string;
 };
 
 export const fixedMessages: Record<Locale, FixedCopy> = {
@@ -142,7 +147,10 @@ export const fixedMessages: Record<Locale, FixedCopy> = {
     addText: "新增文字",
     addImage: "新增圖片",
     addSection: "新增板塊",
-    activityManager: "活動管理",
+    activityManager: "活動管理", statusLabel: "狀態", viewAllEvents: "查看全部活動", allEventsTitle: "BABYMONSTER 活動", boardTitle: "MONSTIEZ 留言板", closeDialog: "關閉",
+    loadingAria: "正在載入 Monstiez 粉絲網站", connecting: "連線中…", editPlaceholder: "點鉛筆新增文字", addImagePlaceholder: "新增圖片", imageUrlPrompt: "貼上圖片 URL（請使用授權素材或官方允許嵌入的來源）",
+    textEditorKicker: "多語言文案", textEditorTitle: "編輯文字", cancel: "取消", saveSixLanguages: "儲存六種語言", saveFailed: "儲存失敗",
+    eventWorldTour: "世界巡迴演唱會", eventInCity: city => `BABYMONSTER《CHOOM》2026–27 世界巡迴演唱會－${city}站。`, countryJapan: "日本", countryKorea: "韓國", countryThailand: "泰國",
   },
   "zh-CN": {
     officialAppNameLabel: "什么是 Monstiez？",
@@ -175,7 +183,10 @@ export const fixedMessages: Record<Locale, FixedCopy> = {
     addText: "新增文字",
     addImage: "新增图片",
     addSection: "新增板块",
-    activityManager: "活动管理",
+    activityManager: "活动管理", statusLabel: "状态", viewAllEvents: "查看全部活动", allEventsTitle: "BABYMONSTER 活动", boardTitle: "MONSTIEZ 留言板", closeDialog: "关闭",
+    loadingAria: "正在载入 Monstiez 粉丝网站", connecting: "连接中…", editPlaceholder: "点击铅笔新增文字", addImagePlaceholder: "新增图片", imageUrlPrompt: "粘贴图片 URL（请使用已获授权或官方允许嵌入的来源）",
+    textEditorKicker: "多语言文案", textEditorTitle: "编辑文字", cancel: "取消", saveSixLanguages: "保存六种语言", saveFailed: "保存失败",
+    eventWorldTour: "世界巡回演唱会", eventInCity: city => `BABYMONSTER《CHOOM》2026–27 世界巡回演唱会－${city}站。`, countryJapan: "日本", countryKorea: "韩国", countryThailand: "泰国",
   },
   th: {
     officialAppNameLabel: "Monstiez คืออะไร?",
@@ -208,7 +219,10 @@ export const fixedMessages: Record<Locale, FixedCopy> = {
     addText: "เพิ่มข้อความ",
     addImage: "เพิ่มรูปภาพ",
     addSection: "เพิ่มส่วน",
-    activityManager: "จัดการกิจกรรม",
+    activityManager: "จัดการกิจกรรม", statusLabel: "สถานะ", viewAllEvents: "ดูกิจกรรมทั้งหมด", allEventsTitle: "กิจกรรม BABYMONSTER", boardTitle: "กระดาน MONSTIEZ", closeDialog: "ปิด",
+    loadingAria: "กำลังโหลดเว็บไซต์แฟนคลับ Monstiez", connecting: "กำลังเชื่อมต่อ…", editPlaceholder: "กดดินสอเพื่อเพิ่มข้อความ", addImagePlaceholder: "เพิ่มรูปภาพ", imageUrlPrompt: "วาง URL รูปภาพ (โปรดใช้สื่อที่ได้รับอนุญาตหรือแหล่งที่ทางการอนุญาตให้ฝัง)",
+    textEditorKicker: "ข้อความหลายภาษา", textEditorTitle: "แก้ไขข้อความ", cancel: "ยกเลิก", saveSixLanguages: "บันทึกทั้งหกภาษา", saveFailed: "บันทึกไม่สำเร็จ",
+    eventWorldTour: "เวิลด์ทัวร์", eventInCity: city => `BABYMONSTER <CHOOM> 2026–27 WORLD TOUR ที่ ${city}`, countryJapan: "ญี่ปุ่น", countryKorea: "เกาหลีใต้", countryThailand: "ไทย",
   },
   en: {
     officialAppNameLabel: "What is Monstiez?",
@@ -241,7 +255,10 @@ export const fixedMessages: Record<Locale, FixedCopy> = {
     addText: "Add text",
     addImage: "Add image",
     addSection: "Add section",
-    activityManager: "Activity manager",
+    activityManager: "Activity manager", statusLabel: "Status", viewAllEvents: "View all events", allEventsTitle: "BABYMONSTER Events", boardTitle: "MONSTIEZ Board", closeDialog: "Close",
+    loadingAria: "Loading the Monstiez fan site", connecting: "Connecting…", editPlaceholder: "Select the pencil to add text", addImagePlaceholder: "Add image", imageUrlPrompt: "Paste an image URL (use licensed material or a source that officially permits embedding)",
+    textEditorKicker: "Multilingual copy", textEditorTitle: "Edit text", cancel: "Cancel", saveSixLanguages: "Save all six languages", saveFailed: "Save failed",
+    eventWorldTour: "World Tour", eventInCity: city => `BABYMONSTER <CHOOM> 2026–27 WORLD TOUR in ${city}.`, countryJapan: "Japan", countryKorea: "South Korea", countryThailand: "Thailand",
   },
   ko: {
     officialAppNameLabel: "Monstiez란?",
@@ -274,7 +291,10 @@ export const fixedMessages: Record<Locale, FixedCopy> = {
     addText: "텍스트 추가",
     addImage: "이미지 추가",
     addSection: "섹션 추가",
-    activityManager: "활동 관리",
+    activityManager: "활동 관리", statusLabel: "상태", viewAllEvents: "전체 일정 보기", allEventsTitle: "BABYMONSTER 일정", boardTitle: "MONSTIEZ 게시판", closeDialog: "닫기",
+    loadingAria: "Monstiez 팬 사이트를 불러오는 중", connecting: "연결 중…", editPlaceholder: "연필을 눌러 텍스트 추가", addImagePlaceholder: "이미지 추가", imageUrlPrompt: "이미지 URL을 붙여넣으세요(허가된 자료 또는 공식적으로 임베드를 허용한 출처만 사용)",
+    textEditorKicker: "다국어 문구", textEditorTitle: "텍스트 편집", cancel: "취소", saveSixLanguages: "6개 언어 저장", saveFailed: "저장 실패",
+    eventWorldTour: "월드 투어", eventInCity: city => `BABYMONSTER <CHOOM> 2026–27 WORLD TOUR ${city} 공연.`, countryJapan: "일본", countryKorea: "대한민국", countryThailand: "태국",
   },
   ja: {
     officialAppNameLabel: "Monstiezとは？",
@@ -307,7 +327,10 @@ export const fixedMessages: Record<Locale, FixedCopy> = {
     addText: "テキストを追加",
     addImage: "画像を追加",
     addSection: "セクションを追加",
-    activityManager: "活動管理",
+    activityManager: "イベント管理", statusLabel: "ステータス", viewAllEvents: "すべてのイベントを見る", allEventsTitle: "BABYMONSTER イベント", boardTitle: "MONSTIEZ掲示板", closeDialog: "閉じる",
+    loadingAria: "Monstiezファンサイトを読み込み中", connecting: "接続中…", editPlaceholder: "鉛筆を押してテキストを追加", addImagePlaceholder: "画像を追加", imageUrlPrompt: "画像URLを貼り付けてください（許諾済み素材または公式に埋め込みが許可された提供元を使用）",
+    textEditorKicker: "多言語コピー", textEditorTitle: "テキストを編集", cancel: "キャンセル", saveSixLanguages: "6言語を保存", saveFailed: "保存に失敗しました",
+    eventWorldTour: "ワールドツアー", eventInCity: city => `BABYMONSTER <CHOOM> 2026–27 WORLD TOUR ${city}公演。`, countryJapan: "日本", countryKorea: "韓国", countryThailand: "タイ",
   },
 };
 
