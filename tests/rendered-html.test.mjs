@@ -168,7 +168,7 @@ test("bundles six static languages and translates fan posts only", async () => {
   assert.ok(page.indexOf("<AppPurposeSection locale={locale} />") > page.indexOf("<Announcements"));
   assert.ok(page.indexOf("<AppPurposeSection locale={locale} />") < page.indexOf("<Footer"));
   assert.match(page, /MON<span style=\{\{ color: "#E01020" \}\}>STIEZ<\/span>/);
-  assert.match(page, /BABY<span style=\{\{ color: "#E01020" \}\}>MONSTER<\/span>/);
+  assert.match(page, /<span className="block">BABY<\/span>\s*<span className="block" style=\{\{ color: "#E01020" \}\}>MONSTER<\/span>/);
   const heroSource = page.slice(page.indexOf("function Hero("), page.indexOf("function AppPurposeSection("));
   assert.doesNotMatch(heroSource, /k="heroNote"/);
   assert.doesNotMatch(page, /setShowOriginal|showOriginal \?/);

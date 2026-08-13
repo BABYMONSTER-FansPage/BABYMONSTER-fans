@@ -495,9 +495,10 @@ function Hero({ locale, content }: { locale: Locale; content: SiteContent }) {
         <div className="overflow-hidden leading-none">
           <motion.div initial={mobile ? false : { y: "110%" }} animate={{ y: 0 }}
             transition={{ duration: 1, delay: 0.45, ease: [0.16, 1, 0.3, 1] }}>
-            <span className="font-black text-white block leading-[0.88]"
-              style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: "clamp(3.25rem, 12.5vw, 11rem)" }}>
-              BABY<span style={{ color: "#E01020" }}>MONSTER</span>
+            <span className="font-black text-white block leading-[0.78]"
+              style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: "clamp(5.5rem, 18vw, 15rem)" }}>
+              <span className="block">BABY</span>
+              <span className="block" style={{ color: "#E01020" }}>MONSTER</span>
             </span>
           </motion.div>
         </div>
