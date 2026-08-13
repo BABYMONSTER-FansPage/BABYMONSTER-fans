@@ -502,16 +502,10 @@ function Hero({ locale, content }: { locale: Locale; content: SiteContent }) {
           </motion.div>
         </div>
 
-        <motion.p initial={mobile ? false : { opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 1.1 }}
-          className="text-white/50 text-sm md:text-base tracking-[0.35em] uppercase mt-8 mb-14">
-          <EditableText k="heroNote" fallback={contentText(content.heroNote, t.heroNote)} />
-        </motion.p>
-
         {/* Stat row */}
         <motion.div initial={mobile ? false : { opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 1.35 }}
-          className="flex items-center justify-center gap-10 md:gap-20 mb-16">
+          className="flex items-center justify-center gap-10 md:gap-20 mt-12 mb-16">
           {[{ v: "7", l: t.membersLabel }, { v: "3", l: t.nationalities }, { v: "2024", l: t.debut }].map(({ v, l }) => (
             <div key={l} className="text-center">
               <div className="font-black text-white text-4xl md:text-5xl leading-none"
@@ -1204,7 +1198,6 @@ function PostCard({
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, amount: 0.1 });
   const [copy, setCopy] = useState(post.body);
-  const [showOriginal, setShowOriginal] = useState(false);
   const [replyOpen, setReplyOpen] = useState(false);
   const [replyBody, setReplyBody] = useState("");
   const [replySubmitting, setReplySubmitting] = useState(false);
@@ -1289,8 +1282,6 @@ function PostCard({
             <span className="text-white/22 text-xs">{post.createdAt} · {post.sourceLanguage}</span>
           </div>
           <p className="text-white/62 text-sm leading-relaxed">{copy}</p>
-          {post.sourceLanguage !== locale && <button onClick={() => setShowOriginal(value => !value)} className="mt-2 text-red-400/70 text-xs hover:text-red-300">{showOriginal ? t.hideOriginal : t.original}</button>}
-          {showOriginal && <p className="mt-2 pl-3 border-l border-white/15 text-white/35 text-xs leading-relaxed">{post.body}</p>}
           <div className="flex flex-wrap items-center gap-5 mt-4">
             <button onClick={() => onLike(post)}
               className={`flex items-center gap-1.5 text-xs transition-colors duration-200 ${
